@@ -144,6 +144,35 @@ test("HTTP validation rejects malformed or ambiguous submissions before session 
   expect(app.controller.sessions()).toEqual([]);
   expect(app.requests).toEqual([]);
 });
+test.each(["buffered", "streamed"])(
+  "HTTP rejects oversized %s bodies without breaking subsequent requests",
+  async (mode) => {
+    await using app = await liveApplication();
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const payload = new Uint8Array(requestBodyLimit + 1),
+        body =
+          mode === "buffered"
+            ? payload
+            : new ReadableStream<Uint8Array>({
+                start(controller) {
+                  controller.enqueue(payload);
+                  controller.close();
+                },
+              }),
+        rejected = await fetch(`${app.url}/api/sessions/absent/composer-draft`, {
+          body,
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        });
+      expect(rejected.status).toBe(413);
+      expect(rejected.headers.get("connection")).toBe("close");
+      expect(await rejected.json()).toMatchObject({ error: { code: "PAYLOAD_TOO_LARGE" } });
+      const subsequent = await fetch(`${app.url}/api/sessions`);
+      expect(subsequent.status).toBe(200);
+      expect(await subsequent.json()).toEqual({ sessions: [] });
+    }
+  },
+);
 function json(body: unknown): RequestInit {
   return {
     body: JSON.stringify(body),

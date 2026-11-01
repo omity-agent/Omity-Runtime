@@ -1,18 +1,21 @@
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-export class UserMessageStorage {
+export class UserMessageArchive {
   constructor(private readonly directory: string) {}
   append(content: string) {
     mkdirSync(this.directory, { recursive: true });
+    const occupied = new Set(readdirSync(this.directory));
     for (let id = 0; ; id += 1) {
-      const path = this.path(id);
-      try {
-        writeFileSync(path, content, { encoding: "utf8", flag: "wx" });
-        return path;
-      } catch (error) {
-        if (!isExistsError(error)) {
-          throw error;
+      if (!occupied.has(`${id.toString()}.txt`)) {
+        const path = this.path(id);
+        try {
+          writeFileSync(path, content, { encoding: "utf8", flag: "wx" });
+          return path;
+        } catch (error) {
+          if (!isExistsError(error)) {
+            throw error;
+          }
         }
       }
     }

@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite";
 
 import { resolveSessionPaths } from "../../../configuration/sessionPaths";
-import { UserMessageStorage } from "../../session/userMessages";
+import { UserMessageArchive } from "../../session/archive";
 import { runTransaction } from "../../sqlite/connection";
 import { clearComposerDraftRecord } from "../session/composerDrafts";
 import { requireSessionRecord, touchSessionRecord } from "../session/metadata";
@@ -37,14 +37,14 @@ export class InputSubmissionStore {
     try {
       return runTransaction(this.db, () =>
         operation(() => {
-          savedPath = new UserMessageStorage(resolveSessionPaths(sessionId).userMessagesDir).append(
+          savedPath = new UserMessageArchive(resolveSessionPaths(sessionId).userMessagesDir).append(
             content,
           );
         }),
       );
     } catch (error) {
       if (savedPath) {
-        new UserMessageStorage(resolveSessionPaths(sessionId).userMessagesDir).remove(savedPath);
+        new UserMessageArchive(resolveSessionPaths(sessionId).userMessagesDir).remove(savedPath);
       }
       throw error;
     }

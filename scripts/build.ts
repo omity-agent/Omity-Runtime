@@ -143,7 +143,7 @@ async function runTests() {
   }
 }
 async function runMcpBenchmark() {
-  const child = Bun.spawn([process.execPath, "run", "tests/performance/runLatency.ts"], {
+  const child = Bun.spawn([process.execPath, "run", "scripts/benchmark/runLatency.ts"], {
       cwd: root,
       stderr: "inherit",
       stdout: "inherit",

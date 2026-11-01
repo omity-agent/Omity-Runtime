@@ -6,13 +6,16 @@ import {
   sessionPaths,
 } from "../../infrastructure/configuration/sessionPaths";
 import { AgentDatabase } from "../../infrastructure/database/agentDatabase";
+import { UserMessageArchive } from "../../infrastructure/database/session/archive";
 import { initializeConversation } from "../../infrastructure/database/session/initialConversation";
 import {
   emptySessionDefinition,
   type SessionDefinition,
 } from "../../infrastructure/database/session/sessionDefinition";
-import { UserMessageStorage } from "../../infrastructure/database/session/userMessages";
-import { removeDatabaseDirectory } from "../../infrastructure/database/sqlite/connection";
+import {
+  removeDatabaseDirectory,
+  runTransaction,
+} from "../../infrastructure/database/sqlite/connection";
 import { openStoredSession } from "../../storedSessions";
 import { forkDatabaseBeforeMessage } from "../fork";
 import { initialHistory, type InitialMessagePair } from "../initialState";
@@ -25,22 +28,11 @@ export function createSessionStorage(
   message: string,
   definition: SessionDefinition = emptySessionDefinition(),
 ) {
-  const paths = sessionPaths(sessionId);
-  let initialized = false;
-  try {
-    using db = new AgentDatabase(paths.dbPath);
+  initializeSessionStorage(sessionId, (db) => {
     db.createSession(sessionId, workspace, profiles, definition);
     initializeConversation(db.db, sessionId, initialHistory(history), message);
-    new UserMessageStorage(paths.userMessagesDir).writeAll([
-      ...history.map(({ user }) => user),
-      message,
-    ]);
-    initialized = true;
-  } finally {
-    if (!initialized) {
-      removeDatabaseDirectory(paths.dir);
-    }
-  }
+    return [...history.map(({ user }) => user), message];
+  });
 }
 export function forkSessionStorage({
   sourceSessionId,
@@ -55,12 +47,9 @@ export function forkSessionStorage({
   profiles: string[];
   beforeMessageId: number;
 }) {
-  const targetPaths = sessionPaths(targetSessionId);
-  let created = false;
-  try {
-    using source = openStoredSession(sourceSessionId),
-      target = new AgentDatabase(targetPaths.dbPath);
-    const userMessages = forkDatabaseBeforeMessage({
+  initializeSessionStorage(targetSessionId, (target) => {
+    using source = openStoredSession(sourceSessionId);
+    return forkDatabaseBeforeMessage({
       beforeMessageId,
       profiles,
       source,
@@ -69,13 +58,7 @@ export function forkSessionStorage({
       targetSessionId,
       workspace,
     });
-    new UserMessageStorage(targetPaths.userMessagesDir).writeAll(userMessages);
-    created = true;
-  } finally {
-    if (!created) {
-      removeDatabaseDirectory(targetPaths.dir);
-    }
-  }
+  });
 }
 export function removeSessionStorage(sessionId: string) {
   const paths = resolveSessionPaths(sessionId);
@@ -86,4 +69,22 @@ export function removeSessionStorage(sessionId: string) {
     }
   }
   removeDatabaseDirectory(paths.dir);
+}
+function initializeSessionStorage(
+  sessionId: string,
+  initialize: (db: AgentDatabase) => readonly string[],
+) {
+  const paths = sessionPaths(sessionId);
+  using db = new AgentDatabase(paths.dbPath);
+  try {
+    runTransaction(db.db, () => {
+      const messages = initialize(db);
+      new UserMessageArchive(paths.userMessagesDir).writeAll(messages);
+    });
+  } catch (error) {
+    if (!db.hasSession(sessionId)) {
+      removeDatabaseDirectory(paths.dir);
+    }
+    throw error;
+  }
 }
