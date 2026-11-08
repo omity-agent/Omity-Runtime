@@ -89,7 +89,7 @@ test.each([true, false])(
           },
         },
       });
-      expect(loadSessionMcp(logger, context, snapshot)).rejects.toMatchObject({
+      await expect(loadSessionMcp(logger, context, snapshot)).rejects.toMatchObject({
         code: "MCP_LOAD_FAILED",
         details: {
           failures: [

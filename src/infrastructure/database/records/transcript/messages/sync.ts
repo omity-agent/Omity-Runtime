@@ -53,8 +53,7 @@ function firstChangedIndex(
       after = incoming[index];
     if (
       !before ||
-      !after ||
-      before.sourceId !== after.sourceId ||
+      before.sourceId !== after?.sourceId ||
       before.messageJson !== after.messageJson
     ) {
       return index;

@@ -61,7 +61,9 @@ export class AppController {
       context: this.settingsContext,
       events: this.events,
       owner: options.owner ?? appOwner(),
-      prediction: (sessionId) => this.prediction.onIdle(sessionId),
+      prediction: (sessionId) => {
+        void this.prediction.onIdle(sessionId);
+      },
       root: appRoot,
       sessionInfo: (id) => this.sessionInfo(this.registry.require(id)),
       settings: this.settings,

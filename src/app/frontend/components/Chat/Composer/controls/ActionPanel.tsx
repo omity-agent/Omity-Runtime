@@ -7,9 +7,9 @@ export function ActionPanel({ children, footer }: { children: ReactNode; footer?
   const { t } = useTranslation();
   return (
     <div className={composerActions}>
-      <div aria-label={t("composerActions")} className={composerControls} role="group">
+      <fieldset aria-label={t("composerActions")} className={composerControls}>
         {children}
-      </div>
+      </fieldset>
       {footer}
     </div>
   );

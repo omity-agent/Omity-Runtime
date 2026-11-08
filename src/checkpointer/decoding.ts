@@ -21,8 +21,7 @@ export class CheckpointDecoder {
   async decode(row: RecoverySnapshot, serde: SerializerProtocol): Promise<CheckpointTuple> {
     let { head } = this;
     if (
-      !head ||
-      head.serde !== serde ||
+      head?.serde !== serde ||
       head.row.type !== row.type ||
       !sameBytes(head.row.checkpoint, row.checkpoint) ||
       !sameBytes(head.row.metadata, row.metadata)

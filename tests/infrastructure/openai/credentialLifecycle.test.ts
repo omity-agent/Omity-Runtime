@@ -132,9 +132,9 @@ test("refresh failures propagate without overwriting credentials and permit anot
     });
   globalThis.fetch = runtime.fetch;
   try {
-    expect(Promise.all(Array.from({ length: 8 }, () => connection.websocket()))).rejects.toThrow(
-      "HTTP 403",
-    );
+    await expect(
+      Promise.all(Array.from({ length: 8 }, () => connection.websocket())),
+    ).rejects.toThrow("HTTP 403");
     expect(requests).toBe(1);
     expect(await Bun.file(auth.path).text()).toBe(original);
     const retried = await connection.websocket();

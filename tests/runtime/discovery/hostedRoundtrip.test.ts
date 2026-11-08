@@ -35,7 +35,7 @@ test.each(["responses", "messages"] as const)(
     await db.syncHistory("discovery", [new HumanMessage("Find a file"), response]);
     const restored = required(db.history("discovery").at(-1));
     expect(toModelMessages([restored], api)).toEqual(toModelMessages([response], api));
-    expect(
+    await expect(
       streamAiModel({
         ...options,
         messages: [

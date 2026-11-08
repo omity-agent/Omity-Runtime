@@ -163,7 +163,7 @@ test("WebSocket proxy failures do not open a direct connection", async () => {
       new URL("/responses", target.url),
       { body: JSON.stringify({ input: [], model: "test-model" }), method: "POST" },
     );
-    expect(response.text()).rejects.toThrow("Responses WebSocket 连接失败");
+    await expect(response.text()).rejects.toThrow("Responses WebSocket 连接失败");
     expect(directRequests).toBe(0);
   } finally {
     globalThis.fetch = previousFetch;

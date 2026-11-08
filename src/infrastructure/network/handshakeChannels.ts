@@ -18,7 +18,6 @@ const requests = new WeakMap<object, ConnectionEvidence>(),
     ),
     subscriber("undici:request:create", ({ request }) => {
       const evidence = connectionContext.getStore();
-      // The same context also creates a proxy CONNECT request; only associate the target WebSocket handshake.
       if (evidence && "upgrade" in request && request.upgrade === "websocket") {
         requests.set(request, evidence);
       }

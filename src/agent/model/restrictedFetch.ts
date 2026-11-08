@@ -60,7 +60,6 @@ export function restrictedModelFetch(api: ModelApi, fetch?: OutboundFetch) {
 }
 function configureGeminiTools(body: z.infer<typeof modelRequestSchema>, api: ModelApi) {
   if (body.tools.length === 0) {
-    // Gemini rejects function-calling configuration without function declarations.
     Reflect.deleteProperty(body, "tools");
     return;
   }

@@ -1,4 +1,5 @@
 import { type ComponentProps, useDeferredValue, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { css, cx } from "styled-system/css";
 import { Virtualizer, type VirtualizerHandle } from "virtua";
 
@@ -34,7 +35,8 @@ export function Transcript({
   allowFork: boolean;
   messages: TimelineMessage[];
 }) {
-  const messages = useDeferredValue(incomingMessages),
+  const { t } = useTranslation(),
+    messages = useDeferredValue(incomingMessages),
     segments = useMemo(() => segmentTranscript(messages), [messages]),
     copies = useMessageCopies(segments),
     scrollRef = useRef<HTMLElement>(null),
@@ -50,7 +52,12 @@ export function Transcript({
     });
   return (
     <DisclosureProvider registerDetail={registerDetail}>
-      <section className={cx(scroll, viewport)} ref={scrollRef} tabIndex={0}>
+      <section
+        aria-label={t("conversation")}
+        className={cx(scroll, viewport)}
+        ref={scrollRef}
+        tabIndex={0}
+      >
         <div className={content} ref={contentRef}>
           <Virtualizer
             as={FlowWindow}

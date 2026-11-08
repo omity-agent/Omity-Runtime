@@ -34,8 +34,6 @@ export function explicitHeaderDispatcher(
 ) {
   const names = new Set([...headers.keys(), ...transportHeaders]);
   return dispatcher.compose((dispatch) => (options, handler) => {
-    // Undici Fetch adds browser defaults before dispatch; keep caller headers and content length only.
-    // Read the header record supplied to Fetch and preserve headers already removed during redirects.
     const input = options.headers;
     if (!isPlainObject(input) || Object.values(input).some((value) => typeof value !== "string")) {
       throw new TypeError(localize("network:outbound.headersFormatChanged"));

@@ -19,7 +19,6 @@ export function observeStdioProcess(
       signal: null,
     };
   let child: ChildProcess | undefined;
-  // Preserve the SDK transport prototype so protocol detection can use its temporary child process.
   transport.start = async () => {
     const starting = start(),
       spawned: unknown = Reflect.get(transport, "_process");

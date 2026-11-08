@@ -4,9 +4,11 @@ import { createServer } from "node:http";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
+import { getRequestListener } from "@hono/node-server";
 import { raceSignal } from "race-signal";
 import type { z } from "zod";
 
+import { requestListenerOptions } from "../../../../settings/networking";
 import { createAppMcp } from "../../../../src/app/runtime/resources/toolPool";
 import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
 import type { mcpServerSchema } from "../../../../src/infrastructure/mcp/configuration/connections";
@@ -37,17 +39,19 @@ export async function coordinateStartup(
         ),
       ),
     ),
-    server = createServer(async (request, response) => {
-      const url = new URL(request.url!, "http://127.0.0.1"),
+    handleRequest = getRequestListener(async (request) => {
+      const url = new URL(request.url),
         checkpoint = checkpoints.get(url.pathname);
       if (!checkpoint) {
-        response.writeHead(404).end("未知测试同步点");
-        return;
+        return new Response("未知测试同步点", { status: 404 });
       }
       processes.set(url.pathname.split("/")[1]!, Number(url.searchParams.get("pid")));
       checkpoint.reached.resolve();
       const { failure } = await checkpoint.response.promise;
-      response.writeHead(failure ? 500 : 200).end(failure);
+      return new Response(failure, { status: failure ? 500 : 200 });
+    }, requestListenerOptions),
+    server = createServer((request, response) => {
+      void handleRequest(request, response);
     });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");

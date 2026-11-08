@@ -38,5 +38,5 @@ test("real MCP process crash rejects the interrupted call and the next call uses
   } finally {
     await client.close();
   }
-  expect(client.listTools({})).rejects.toThrow("正在关闭");
+  await expect(client.listTools({})).rejects.toThrow("正在关闭");
 }, 10_000);

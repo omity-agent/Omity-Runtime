@@ -10,7 +10,7 @@ import { discoverySettings, wireModel } from "./wireFixtures";
 
 test("Messages disables strict for unsupported regular-expression features", async () => {
   await using wire = wireModel("messages");
-  expect(
+  await expect(
     streamAiModel({
       messages: [new HumanMessage("Use a tool")],
       model: wire.model,
@@ -47,7 +47,7 @@ test.each(["completions", "responses", "messages"] as const)(
         name,
       })),
       before = JSON.stringify(definitions);
-    expect(
+    await expect(
       streamAiModel({
         messages: [new HumanMessage("Use a tool")],
         model: wire.model,
@@ -90,7 +90,7 @@ test.each([...geminiApis])(
           })),
         tools = aiModelTools(definitions, api);
       expect(Object.values(tools).every((tool) => tool.strict === !mixed)).toBe(true);
-      expect(
+      await expect(
         streamAiModel({
           messages: [new HumanMessage("Use a tool")],
           sessionId: "strict-group",
@@ -110,7 +110,7 @@ test.each([...geminiApis])(
 );
 test.each(schemaBoundaries)("Responses checks the strict $name boundary", async ({ schemas }) => {
   await using wire = wireModel("responses");
-  expect(
+  await expect(
     streamAiModel({
       messages: [new HumanMessage("Use a tool")],
       model: wire.model,

@@ -67,9 +67,10 @@ retryDelayMs: 1000
   });
   const controller = new AppController(root),
     access = new AccessService(loadSettings(root)),
-    server = createServer(
-      getRequestListener(createApi(controller, access).fetch, requestListenerOptions),
-    ),
+    handleRequest = getRequestListener(createApi(controller, access).fetch, requestListenerOptions),
+    server = createServer((request, response) => {
+      void handleRequest(request, response);
+    }),
     connections = new Set<Socket>();
   server.on("connection", (socket) => {
     connections.add(socket);

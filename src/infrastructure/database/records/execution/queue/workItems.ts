@@ -39,7 +39,6 @@ function prepareWorkQueries(db: Database) {
       userMessageId: messages.id,
     },
     active = and(activeRuns(), ne(inputs.delivery, "canceled")),
-    // Parameterized LIMIT adds overhead to this hot query with the SQLite/Bun combination.
     nextId = orm
       .select({ id: min(inputs.id) })
       .from(inputs)

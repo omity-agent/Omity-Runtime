@@ -72,7 +72,7 @@ test("Responses request cancellation closes the active WebSocket", async () => {
         signal: controller.signal,
       },
     );
-    expect(response.text()).rejects.toThrow("request cancelled");
+    await expect(response.text()).rejects.toThrow("request cancelled");
     await closed.promise;
   } finally {
     globalThis.fetch = previousFetch;
@@ -89,7 +89,7 @@ test("an already cancelled Responses request never starts a WebSocket handshake"
     previousFetch = globalThis.fetch;
   globalThis.fetch = runtime.fetch;
   try {
-    expect(
+    await expect(
       createResponsesWebsocketFetch({ apiKey: "test-key" })("http://cancelled.invalid/responses", {
         body: JSON.stringify({ input: [], model: "test-model" }),
         method: "POST",

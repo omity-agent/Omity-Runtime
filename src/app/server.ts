@@ -39,7 +39,7 @@ export async function startAppServer(options: AppServerOptions) {
     controller: AppController | undefined,
     server: ReturnType<typeof createServer> | undefined;
   const connections = new Set<Socket>();
-  let failure: unknown, signal: Awaited<typeof shutdown.signal> | undefined;
+  let failure: Error | undefined, signal: Awaited<typeof shutdown.signal> | undefined;
   try {
     access = new AccessService(settings);
     controller = new AppController(options.root, {
@@ -76,12 +76,15 @@ export async function startAppServer(options: AppServerOptions) {
     options.onReady?.(url);
     signal = await shutdown.signal;
   } catch (error) {
-    failure = error;
+    failure =
+      error instanceof Error
+        ? error
+        : new Error(localize("application:server.startupFailed"), { cause: error });
   } finally {
     shutdown.dispose();
   }
   const logger = createShutdownLogger();
-  let closeFailure: unknown;
+  let closeFailure: Error | undefined;
   try {
     await closeAppResources(
       {
@@ -94,7 +97,10 @@ export async function startAppServer(options: AppServerOptions) {
       signal ?? "startup-failure",
     );
   } catch (error) {
-    closeFailure = error;
+    closeFailure =
+      error instanceof Error
+        ? error
+        : new Error(localize("application:shutdown.failed"), { cause: error });
   }
   if (failure && closeFailure) {
     throw new AggregateError(

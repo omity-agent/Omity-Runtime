@@ -51,7 +51,7 @@ export class OutboundRouting {
   }
   private state() {
     const environment = JSON.stringify(environmentNames.map(readEnvironment));
-    if (!this.current || this.current.environment !== environment) {
+    if (this.current?.environment !== environment) {
       this.close();
       this.current = { environment, resolver: this.createResolver() };
     }

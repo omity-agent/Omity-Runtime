@@ -103,7 +103,7 @@ test.each([
       port: 0,
     });
     try {
-      expect(
+      await expect(
         restrictedModelFetch(api)(server.url, {
           body: JSON.stringify({ model: "test", ...options }),
           headers: { "content-type": "application/json" },

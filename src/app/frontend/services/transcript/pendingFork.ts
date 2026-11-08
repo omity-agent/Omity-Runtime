@@ -84,7 +84,7 @@ export function usePendingFork({
           setBusy(false);
         }
       },
-      [navigateRef, pageRef, queryClientRef],
+      [navigateRef, pageRef, queryClientRef, setBusy],
     ),
     begin = useCallback(
       (nextSourceSessionId: string, nextMessageId: number) => {
@@ -135,7 +135,7 @@ export function usePendingFork({
           setPendingMessage(null);
         }
       },
-      [activate, submit],
+      [activate, setPendingMessage, submit],
     );
   return { begin, busy, control, discard, pendingMessage, send };
 }

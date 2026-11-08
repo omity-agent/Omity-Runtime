@@ -45,9 +45,7 @@ export function ConfigurationPanel({
           </Button>
         </div>
       ) : !selection.ready ? (
-        <span className={setupFirst} role="status">
-          {t("loadingOptions")}
-        </span>
+        <output className={setupFirst}>{t("loadingOptions")}</output>
       ) : (
         <>
           <CapabilityGroup

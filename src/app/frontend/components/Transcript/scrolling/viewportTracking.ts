@@ -47,7 +47,6 @@ export function useTranscriptScroll({
         if (!changed || !userIntent) {
           return;
         }
-        // Virtua's scroll observer may run after this listener.
         queueMicrotask(() => {
           if (!disposed) {
             layout.capture();
@@ -73,7 +72,6 @@ export function useTranscriptScroll({
     }
     observer.observe(content);
     observer.observe(element);
-    // Nested virtualizers can change height after this frame's resize delivery.
     mutations.observe(content, {
       attributeFilter: ["style", "hidden"],
       childList: true,

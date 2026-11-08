@@ -54,11 +54,9 @@ export class ReadingAnchor {
       const measureDelta = () =>
         element.getBoundingClientRect().bottom - viewport.getBoundingClientRect().top - bottom;
       if (!this.isMeasured(row)) {
-        // Keep the visual anchor without scrolling through an outdated size cache.
         content.style.translate = `0 ${(-measureDelta()).toString()}px`;
         return;
       }
-      // Settling copy overlays can clamp scrollTop, so measure the remaining delta afterwards.
       this.onLayout();
       const delta = measureDelta();
       if (delta !== 0) {

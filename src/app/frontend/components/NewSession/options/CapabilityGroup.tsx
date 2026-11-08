@@ -103,6 +103,7 @@ function CapabilityToggle({
         )}
       </span>
       <Switch.HiddenInput
+        aria-checked={option.enable}
         aria-describedby={option.description ? descriptionId : undefined}
         role="switch"
       />

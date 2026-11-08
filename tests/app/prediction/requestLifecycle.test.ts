@@ -72,7 +72,7 @@ test("model failures are visible to callers and do not prevent a subsequent retr
       Response.json({ error: { message: "prediction unavailable" } }, { status: 500 }),
     ),
   );
-  expect(value.service.get(value.sessionId)).rejects.toThrow("prediction unavailable");
+  await expect(value.service.get(value.sessionId)).rejects.toThrow("prediction unavailable");
   value.respondWith(() => Promise.resolve(Response.json(completion(value.replies))));
   expect(await value.service.get(value.sessionId)).toEqual(value.replies);
   expect(value.requests).toHaveLength(2);
@@ -80,7 +80,7 @@ test("model failures are visible to callers and do not prevent a subsequent retr
 test("invalid blank candidates are rejected instead of being persisted", async () => {
   const value = await fixture();
   value.respondWith(() => Promise.resolve(Response.json(completion([" ", "可用文本"]))));
-  expect(value.service.get(value.sessionId)).rejects.toThrow();
+  await expect(value.service.get(value.sessionId)).rejects.toThrow();
   expect(
     value.database.db
       .query<{ total: number }, []>("SELECT COUNT(*) AS total FROM input_predictions")

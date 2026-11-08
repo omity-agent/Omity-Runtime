@@ -23,7 +23,7 @@ test("does not silently substitute a version when npm is unavailable", async () 
   const resolver = createCodexVersionResolver(undefined, async () => {
     throw new Error("npm unavailable");
   });
-  expect(resolver()).rejects.toThrow();
+  await expect(resolver()).rejects.toThrow();
 });
 test("uses the session's in-memory Codex version in client headers", async () => {
   const headers = codexDefaultHeaders(await createCodexVersionResolver("0.154.4")());

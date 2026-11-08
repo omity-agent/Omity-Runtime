@@ -24,19 +24,25 @@ export const composerActions = css({
 });
 export const composerControls = css({
   alignItems: "center",
+  borderWidth: "zero",
   display: "flex",
   flexWrap: "wrap",
   gap: "1",
   justifyContent: "flex-end",
   minHeight: "controlTarget",
+  minWidth: "zero",
   order: { base: 1, md: 0 },
+  padding: "zero",
   width: "full",
 });
 export const runtimeControls = css({
+  borderWidth: "zero",
   display: "flex",
   flexShrink: 0,
   gap: "1",
   justifyContent: "flex-end",
+  minWidth: "zero",
+  padding: "zero",
   width: "runtimeControls",
 });
 export const composerRole = css({

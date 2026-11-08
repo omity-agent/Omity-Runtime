@@ -5,12 +5,10 @@ import type { CustomContainerComponentProps, CustomItemComponentProps } from "vi
 import { localize } from "../../../i18n";
 
 const row = css({
-  // Only the first mounted row consumes the virtual offset; siblings flow together.
   "&:first-child": { marginBlockStart: "var(--window-offset)" },
   flexShrink: 0,
 });
 function flowStyle(style: CSSProperties): CSSProperties {
-  // Disclosure anchoring scrolls this window while its controls remain interactive.
   return { ...style, display: "flex", flexDirection: "column", pointerEvents: "auto" };
 }
 function rowStyle(

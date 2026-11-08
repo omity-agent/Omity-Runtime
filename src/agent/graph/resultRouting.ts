@@ -12,7 +12,6 @@ interface ResultUpdate {
 }
 export function createResultRouter(runHooks: ReturnType<typeof createHookNode>, hasHooks: boolean) {
   return async (state: HookState, update: ResultUpdate, config: LangGraphRunnableConfig) => {
-    // Keep a separate final-response boundary so inputs appended during execution can be accepted.
     if (hasHooks || update.hookPlan?.kind !== "tools") {
       return new Command({ goto: hookNode, update: { ...update } });
     }

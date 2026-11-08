@@ -32,11 +32,11 @@ test("cancellation returns null without forwarding repeated or unterminated warn
 });
 test("native process failures remain visible and reject the folder selection", async () => {
   const diagnostics: string[] = [];
-  expect(launch("failed", diagnostics)).rejects.toThrow("7");
+  await expect(launch("failed", diagnostics)).rejects.toThrow("7");
   expect(diagnostics).toEqual(["native dialog failure\n"]);
 });
 test("invalid folder results are rejected instead of being treated as cancellation", async () => {
-  expect(launch("invalid", [])).rejects.toThrow();
+  await expect(launch("invalid", [])).rejects.toThrow();
 });
 test("compiled applications reopen their executable to isolate native diagnostics", async () => {
   const executable = join(createTestDirectory("folder-dialog"), "selection-probe.exe"),

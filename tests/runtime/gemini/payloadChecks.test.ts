@@ -63,7 +63,7 @@ test.each([...geminiApis])(
   "%s surfaces HTTP errors without executing application tools",
   async (api) => {
     await using wire = geminiWire(api);
-    expect(
+    await expect(
       streamAiModel({
         messages: [new HumanMessage("Echo hello")],
         sessionId: "http-error",
@@ -81,7 +81,7 @@ test.each([...geminiApis])("%s rejects built-in tools before sending requests", 
     google.tools.codeExecution({}),
     google.tools.urlContext({}),
   ]) {
-    expect(
+    await expect(
       streamAiModel({
         messages: [new HumanMessage("Use a built-in tool")],
         sessionId: "blocked-tool",
@@ -97,7 +97,7 @@ test.each(["none", "xhigh", "max"] as const)(
   async (reasoning_effort) => {
     await using wire = geminiWire("interactions");
     wire.settings.model.reasoning_effort = reasoning_effort;
-    expect(
+    await expect(
       streamAiModel({
         messages: [new HumanMessage("Think")],
         sessionId: "unsupported-reasoning",
@@ -111,7 +111,7 @@ test.each(["none", "xhigh", "max"] as const)(
 test("Generate Content maps reasoning to a budget for Gemini 2.5", async () => {
   await using wire = geminiWire("generate-content");
   wire.settings.model.model = "gemini-2.5-flash";
-  expect(
+  await expect(
     streamAiModel({
       messages: [new HumanMessage("Think")],
       sessionId: "budget",

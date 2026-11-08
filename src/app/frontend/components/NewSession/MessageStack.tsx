@@ -79,7 +79,7 @@ function MessagePairEditor({
       <MessageEditor
         disabled={disabled}
         label={userLabel}
-        role="user"
+        speaker="user"
         value={item.user}
         onChange={changeUser}
         onSubmit={onSubmit}
@@ -87,7 +87,7 @@ function MessagePairEditor({
       <MessageEditor
         disabled={disabled}
         label={assistantLabel}
-        role="assistant"
+        speaker="assistant"
         value={item.assistant}
         onChange={changeAssistant}
         onRemove={remove}
@@ -99,7 +99,7 @@ function MessagePairEditor({
 function MessageEditor({
   disabled,
   label,
-  role,
+  speaker,
   value,
   onChange,
   onRemove,
@@ -107,14 +107,14 @@ function MessageEditor({
 }: {
   disabled: boolean;
   label: string;
-  role: "user" | "assistant";
+  speaker: "user" | "assistant";
   value: string;
   onChange: (value: string) => void;
   onRemove?: () => void;
   onSubmit: () => void;
 }) {
   const { t } = useTranslation(),
-    RoleIcon = role === "user" ? UserRound : Bot,
+    RoleIcon = speaker === "user" ? UserRound : Bot,
     footer = useMemo(
       () => (
         <span aria-label={label} className={composerRole} title={label}>

@@ -14,9 +14,10 @@ test("static asset responses expose their complete body length", async () => {
     assetPath = join(root, "assets", "config.json"),
     content = '{"ready":true}';
   await Bun.write(assetPath, content);
-  const server = createServer(
-    getRequestListener(createStaticApp(root).fetch, requestListenerOptions),
-  );
+  const handleRequest = getRequestListener(createStaticApp(root).fetch, requestListenerOptions),
+    server = createServer((request, response) => {
+      void handleRequest(request, response);
+    });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   const address = server.address();

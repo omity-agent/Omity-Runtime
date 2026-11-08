@@ -70,7 +70,7 @@ test.each(operations)("%s preserves an existing destination on a session conflic
 });
 test("attachment initialization only discards its own files on a session conflict", async () => {
   createSessionStorage("target", workspace, [], [], "existing message");
-  expect(
+  await expect(
     createSessionWithAttachments({
       attachments: [{ file: new File(["attachment"], "notes.txt"), id: "a1b2c3d4" }],
       definition: emptySessionDefinition(),

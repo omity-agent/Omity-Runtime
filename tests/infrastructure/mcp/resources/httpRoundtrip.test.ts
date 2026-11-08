@@ -91,8 +91,8 @@ test.each(["modern", "legacy"] as const)(
         resource: { mimeType: "text/plain", text: "resource", uri: "file:///result.txt" },
         type: "resource",
       });
-      expect(tools[1]!.invoke({})).rejects.toThrow("tool rejected");
-      expect(tools[2]!.invoke({})).rejects.toThrow("upstream unavailable");
+      await expect(tools[1]!.invoke({})).rejects.toThrow("tool rejected");
+      await expect(tools[2]!.invoke({})).rejects.toThrow("upstream unavailable");
       expect(methods.filter((method) => method === "tools/call")).toHaveLength(3);
     } finally {
       await pool.close();

@@ -39,6 +39,8 @@
   "creating": "正在创建",
   "empty": "选择或新建会话",
   "noMessages": "没有消息",
+  "conversation": "对话记录",
+  "codeBlock": "代码块",
   "user": "用户",
   "assistant": "助手",
   "tool": "工具",

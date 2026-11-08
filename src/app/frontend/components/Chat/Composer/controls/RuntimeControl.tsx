@@ -87,8 +87,8 @@ export function RuntimeControl({
         </IconButton>
       ) : null;
   return (
-    <div aria-label={controlLabel} className={runtimeControls} role="group">
+    <fieldset aria-label={controlLabel} className={runtimeControls}>
       {control}
-    </div>
+    </fieldset>
   );
 }

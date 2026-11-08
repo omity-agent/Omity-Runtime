@@ -69,7 +69,7 @@ test("proxy failure never retries the target directly", async () => {
     runtime = createNetworkRuntime(async () => brokenProxy.url.href);
   await brokenProxy.stop(true);
   try {
-    expect(runtime.fetch(target.url)).rejects.toThrow();
+    await expect(runtime.fetch(target.url)).rejects.toThrow();
     expect(directRequests).toBe(0);
   } finally {
     await runtime.close();

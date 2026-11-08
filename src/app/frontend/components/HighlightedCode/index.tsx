@@ -1,4 +1,5 @@
 import { Fragment, memo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { cx } from "styled-system/css";
 import { type CustomContainerComponentProps, Virtualizer } from "virtua";
 
@@ -41,7 +42,8 @@ function HighlightedCodeView({
   language?: string;
   layout?: "contained" | "flow";
 }) {
-  const normalized = normalizeCodeMatches(code, fileLinkMatches),
+  const { t } = useTranslation(),
+    normalized = normalizeCodeMatches(code, fileLinkMatches),
     lines = codeLines(normalized.code, normalized.matches),
     widestLine = lines.reduce(
       (widest, line) => (line.text.length > widest.length ? line.text : widest),
@@ -58,6 +60,7 @@ function HighlightedCodeView({
     <div className={container}>
       <CopyButton className={copyButton} value={code} />
       <pre
+        aria-label={t("codeBlock")}
         className={cx(block({ layout }), className)}
         ref={blockRef}
         onScroll={onScroll}

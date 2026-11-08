@@ -12,3 +12,82 @@ logLevel = "warn"
 sortImports = true
 sortTailwindcss = true
 sortPackageJson = true
+
+[lint]
+typeAware = true
+typeCheck = true
+plugins = [
+  { name = "@tanstack/query", specifier = "@tanstack/eslint-plugin-query" },
+  { name = "@pandacss", specifier = "@pandacss/eslint-plugin/oxlint" },
+]
+
+[lint.categories]
+correctness = "error"
+nursery = "warn"
+perf = "warn"
+style = "warn"
+suspicious = "warn"
+
+[lint.rules]
+"import/no-unused-modules" = ["warn", { unusedExports = true }]
+"import/no-unassigned-import" = ["warn", { allow = ["**/*.css"] }]
+"@pandacss/file-not-included" = "error"
+"@pandacss/no-debug" = "warn"
+"@pandacss/consistent-property-style" = "warn"
+"@pandacss/no-invalid-nesting" = "error"
+"@pandacss/no-invalid-token-paths" = "error"
+"@pandacss/no-deprecated" = "warn"
+"@pandacss/no-important" = "warn"
+"@pandacss/no-physical-properties" = "warn"
+"@pandacss/no-descendant-selectors" = "warn"
+"@pandacss/no-margin-properties" = "warn"
+"@pandacss/no-primitive-token" = "warn"
+"@pandacss/no-shorthand-longhand-mix" = "warn"
+"@pandacss/prefer-text-style" = "warn"
+"@pandacss/extraction-diagnostics" = "warn"
+"@pandacss/prefer-token" = "warn"
+"@tanstack/query/no-rest-destructuring" = "warn"
+"@tanstack/query/stable-query-client" = "error"
+"@tanstack/query/no-unstable-deps" = "error"
+"@tanstack/query/infinite-query-property-order" = "error"
+"@tanstack/query/no-void-query-fn" = "error"
+"@tanstack/query/mutation-property-order" = "error"
+"@typescript-eslint/no-deprecated" = "warn"
+"react-hooks/memo-dependencies" = "off"
+"jsx-a11y/no-noninteractive-tabindex" = "off"
+"capitalized-comments" = "off"
+"import/consistent-type-specifier-style" = "off"
+"import/exports-last" = "off"
+"unicorn/filename-case" = "off"
+"func-style" = "off"
+"import/group-exports" = "off"
+"id-length" = "off"
+"react/jsx-max-depth" = "off"
+"init-declarations" = "off"
+"one-var" = "off"
+"max-lines-per-function" = "off"
+"unicorn/max-nested-calls" = "off"
+"max-params" = "off"
+"max-statements" = "off"
+"new-cap" = "off"
+"no-await-in-loop" = "off"
+"no-magic-numbers" = "off"
+"import/no-named-export" = "off"
+"no-nested-ternary" = "off"
+"unicorn/no-nested-ternary" = "off"
+"import/no-nodejs-modules" = "off"
+"unicorn/no-null" = "off"
+"no-ternary" = "off"
+"no-undef" = "off"
+"unicorn/no-useless-undefined" = "off"
+"@typescript-eslint/parameter-properties" = "off"
+"@typescript-eslint/prefer-readonly-parameter-types" = "off"
+"import/prefer-default-export" = "off"
+"react/react-in-jsx-scope" = "off"
+"bun:test/require-hook" = "off"
+"jest/require-hook" = "off"
+"sort-imports" = "off"
+
+[[lint.overrides]]
+files = ["panda.config.ts", "vite.config.ts"]
+rules = { "import/no-unused-modules" = "off" }

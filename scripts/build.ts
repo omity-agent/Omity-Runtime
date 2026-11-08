@@ -17,9 +17,7 @@ const database = {
   executableOutput = resolve(root, "dist/omity.exe");
 try {
   await generateDatabaseSchema();
-  const [node, script, command] = process.argv;
-  void node;
-  void script;
+  const [, , command] = process.argv;
   if (command !== undefined && command !== "--test" && command !== "--benchmark-mcp") {
     throw new Error(localize("build:unknownArgument", { command }));
   }

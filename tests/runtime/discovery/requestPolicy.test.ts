@@ -16,7 +16,7 @@ test.each(["completions", "responses", "messages"] as const)(
   async (api) => {
     await using wire = wireModel(api);
     const settings = discoverySettings(api);
-    expect(
+    await expect(
       streamAiModel({
         messages: [new HumanMessage("Reply without tools")],
         model: wire.model,
@@ -25,7 +25,7 @@ test.each(["completions", "responses", "messages"] as const)(
         tools: {},
       }),
     ).rejects.toThrow("request captured");
-    expect(
+    await expect(
       generateText({
         ...structuredRequestOptions(settings.model),
         maxRetries: 0,
@@ -47,7 +47,7 @@ test.each(["completions", "responses", "messages"] as const)(
   "%s preserves application functions even when named like built-in tools",
   async (api) => {
     await using wire = wireModel(api);
-    expect(
+    await expect(
       streamAiModel({
         messages: [new HumanMessage("Use the application tool")],
         model: wire.model,
@@ -76,7 +76,7 @@ test.each(["responses", "messages"] as const)(
   "%s rejects built-in web search before sending a request",
   async (api) => {
     await using wire = wireModel(api);
-    expect(
+    await expect(
       streamAiModel({
         messages: [new HumanMessage("Search")],
         model: wire.model,
@@ -95,7 +95,7 @@ test.each(["responses", "messages"] as const)(
 );
 test("Responses preserves application free-form tools", async () => {
   await using wire = wireModel("responses");
-  expect(
+  await expect(
     streamAiModel({
       messages: [new HumanMessage("Run a local command")],
       model: wire.model,
