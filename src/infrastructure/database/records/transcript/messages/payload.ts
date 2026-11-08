@@ -95,7 +95,7 @@ function storedReasoning(message: AIMessage) {
       ? message.additional_kwargs["reasoning"]
       : undefined,
     { output } = message.response_metadata,
-    raw = Array.isArray(output)
+    raw: unknown = Array.isArray(output)
       ? output.find((item) => isRecord(item) && item["type"] === "reasoning")
       : undefined;
   if (!direct && !isRecord(raw)) {

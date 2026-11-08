@@ -22,7 +22,7 @@ export interface ConnectedStdioClient {
   diagnostics: () => string;
   isClosed: () => boolean;
 }
-export type StdioConnector = (
+type StdioConnector = (
   serverName: string,
   connection: StdioConnection,
   signal?: AbortSignal,

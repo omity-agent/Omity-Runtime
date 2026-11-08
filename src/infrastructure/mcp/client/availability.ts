@@ -49,7 +49,9 @@ export function findMcpStdioUnavailable(error: unknown): McpStdioUnavailableErro
           pending.push(current["cause"]);
         }
         if (Array.isArray(current["errors"])) {
-          pending.push(...current["errors"]);
+          for (const failure of current["errors"]) {
+            pending.push(failure);
+          }
         }
       }
     }

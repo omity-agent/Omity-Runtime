@@ -73,12 +73,21 @@ export async function settleLayout(page: Page) {
     await promise;
   });
 }
-export async function readScrollPositions(page: Page) {
-  return page.locator("#root > section, pre").evaluateAll((elements) =>
-    elements.map((element) => ({
+export async function readScrollPositions(page: Page, expectedCount?: number) {
+  const snapshot = await page.waitForFunction((count) => {
+    const elements = [...document.querySelectorAll("#root > section, pre")];
+    if (count !== undefined && elements.length !== count) {
+      return undefined;
+    }
+    return elements.map((element) => ({
       gap: element.scrollHeight - element.clientHeight - element.scrollTop,
       tag: element.tagName,
       top: element.scrollTop,
-    })),
-  );
+    }));
+  }, expectedCount);
+  try {
+    return (await snapshot.jsonValue())!;
+  } finally {
+    await snapshot.dispose();
+  }
 }

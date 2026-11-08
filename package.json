@@ -9,10 +9,10 @@
   "scripts": {
     "format": "bun fmt .",
     "lint": "bun lint --fix --fix-suggestions --format=agent .",
-    "test": "cross-env AGENT=1 bun scripts/build.ts --test",
-    "benchmark:mcp": "bun scripts/build.ts --benchmark-mcp",
-    "omity": "bun src/cli.ts",
-    "build": "bun scripts/build.ts"
+    "test": "cross-env AGENT=1 bun run scripts/build.ts --test",
+    "benchmark:mcp": "bun run scripts/build.ts --benchmark-mcp",
+    "omity": "bun run src/cli.ts",
+    "build": "bun run scripts/build.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "latest",

@@ -160,7 +160,9 @@ function embeddedErrorLevels(error: ErrorDetails): unknown[] {
       levels.push(omit(candidate, ["causes"]));
       const causes: unknown = candidate["causes"];
       if (Array.isArray(causes)) {
-        levels.push(...causes);
+        for (const cause of causes) {
+          levels.push(cause);
+        }
       }
     }
   }

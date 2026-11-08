@@ -90,8 +90,8 @@ async function inspectConfiguration(resolver: NativeResolver) {
       });
     }
   }
-  for (const value of Object.values(config.environment)) {
-    if (value?.error) {
+  for (const value of Object.values({ ...config.environment })) {
+    if (value.error) {
       throw new Error(
         localize("network:proxy.environmentInvalid", {
           value0: value.variable,

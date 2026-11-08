@@ -98,7 +98,7 @@ function readImage(value: Record<string, unknown>): ToolImage | null {
     return null;
   }
   const raw = value["image_url"],
-    src = typeof raw === "string" ? raw : isRecord(raw) ? raw["url"] : null;
+    src: unknown = typeof raw === "string" ? raw : isRecord(raw) ? raw["url"] : null;
   return typeof src === "string" ? parseImageDataUrl(src) : null;
 }
 function parseImageDataUrl(src: string): ToolImage | null {

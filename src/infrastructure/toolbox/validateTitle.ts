@@ -1,4 +1,4 @@
-import { tool } from "@langchain/core/tools";
+import { tool, type ToolRunnableConfig } from "@langchain/core/tools";
 import { z } from "zod";
 
 import { countTokens } from "../../runtime/tokenizer";
@@ -8,7 +8,7 @@ export function createTitleTool(settings: NonNullable<BuiltInPreferences["update
   const { title } = settings.parameters,
     range = `${title.minTokens.toString()}–${title.maxTokens.toString()} tokens`,
     titleTool = tool(
-      ({ title: input }, config) => {
+      ({ title: input }, config: ToolRunnableConfig) => {
         config.signal?.throwIfAborted();
         const normalized = input.trim(),
           tokens = countTokens(normalized);

@@ -83,7 +83,7 @@ function customToolInput(call: NonNullable<AIMessage["tool_calls"]>[number]) {
   if (Reflect.get(call, "isCustomTool") !== true) {
     return call.args;
   }
-  const input = isPlainObject(call.args) ? call.args["input"] : undefined;
+  const input: unknown = isPlainObject(call.args) ? call.args["input"] : undefined;
   if (typeof input !== "string") {
     throw new Error(localize("agent:messages.freeformInputNotString", { value0: call.name }));
   }

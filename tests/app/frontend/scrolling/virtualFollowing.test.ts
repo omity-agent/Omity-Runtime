@@ -16,7 +16,7 @@ test.each(["tools", "timeline"])(
       for (let revision = 9; revision <= 58; revision += 1) {
         await page.evaluate(() => globalThis.scrolling.advance());
         await settleLayout(page);
-        const positions = await readScrollPositions(page);
+        const positions = await readScrollPositions(page, 4);
         expect(positions.filter(({ gap }) => gap > 1)).toEqual([]);
         expect(positions).toHaveLength(4);
       }

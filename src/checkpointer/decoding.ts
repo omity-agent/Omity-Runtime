@@ -27,21 +27,25 @@ export class CheckpointDecoder {
       !sameBytes(head.row.metadata, row.metadata)
     ) {
       const [checkpoint, metadata] = await Promise.all([
-        serde.loadsTyped(row.type, row.checkpoint),
-        serde.loadsTyped(row.type, row.metadata),
+        serde
+          .loadsTyped(row.type, row.checkpoint)
+          .then((value: unknown) => checkpointSchema.parse(value)),
+        serde
+          .loadsTyped(row.type, row.metadata)
+          .then((value: unknown) => metadataSchema.parse(value)),
       ]);
       head = {
-        checkpoint: checkpointSchema.parse(checkpoint),
-        metadata: metadataSchema.parse(metadata),
+        checkpoint,
+        metadata,
         row,
         serde,
       };
       this.head = head;
     }
     const pendingWrites = await Promise.all(
-      row.pendingWrites.map(async (write) => {
-        const value = await serde.loadsTyped(write.type, write.value);
-        return [write.taskId, write.channel, value] as [string, string, unknown];
+      row.pendingWrites.map(async (write): Promise<[string, string, unknown]> => {
+        const value: unknown = await serde.loadsTyped(write.type, write.value);
+        return [write.taskId, write.channel, value];
       }),
     );
     return {

@@ -34,7 +34,7 @@ export function createToolInvoker(
     const execution = options.toolExecutions?.begin(callId, config.signal);
     try {
       execution?.signal.throwIfAborted();
-      const raw = await tool.invoke(
+      const raw: unknown = await tool.invoke(
           materializeFreeformInput(call, options.freeformToolParameters),
           {
             configurable: { ...config.configurable, sessionId: options.sessionId },
@@ -73,7 +73,7 @@ export function createToolInvoker(
 }
 function materializeFreeformInput(call: ToolCall, parameters: ReadonlyMap<string, string>) {
   const parameter = parameters.get(call.name),
-    input = isRecord(call.args) ? call.args["input"] : undefined;
+    input: unknown = isRecord(call.args) ? call.args["input"] : undefined;
   return parameter && typeof input === "string"
     ? { [parameter]: trimFreeformInput(input) }
     : call.args;

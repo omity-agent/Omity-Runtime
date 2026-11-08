@@ -1,6 +1,7 @@
 import type { Database } from "bun:sqlite";
 
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import { groupBy } from "es-toolkit";
 
 import { localize } from "../../i18n/server";
 import { decodeMessage } from "../../infrastructure/database/records/transcript/messages/hydration";
@@ -23,10 +24,10 @@ interface SessionRow {
   updated_at: number;
 }
 export interface PredictionSample {
+  assistant: string;
   contextTokens: number;
   createdAt: number;
   id: string;
-  model: string;
   user: string;
   userTokens: number;
 }
@@ -54,9 +55,9 @@ export function loadPredictionSnapshot(db: Database) {
       ).map(({ id, updated_at }) => [id, updated_at]),
     ),
     samples: PredictionSample[] = [];
-  for (const sessionMessages of groupMessages(messages)) {
+  for (const sessionMessages of Object.values(groupBy(messages, (row) => row.session_id))) {
     let contextTokens = 0,
-      latestModel: { content: string; id: string } | undefined;
+      latestAssistant: { content: string; id: string } | undefined;
     for (const row of sessionMessages) {
       const message = decodeMessage(row.message_json, row.source_id),
         content =
@@ -64,34 +65,25 @@ export function loadPredictionSnapshot(db: Database) {
         tokenCount = row.token_count ?? countTokens(content);
       contextTokens = addTokens(contextTokens, tokenCount);
       if (AIMessage.isInstance(message)) {
-        latestModel =
+        latestAssistant =
           content.trim() && !message.tool_calls?.length
             ? { content, id: row.source_id }
             : undefined;
-      } else if (HumanMessage.isInstance(message) && latestModel) {
+      } else if (HumanMessage.isInstance(message) && latestAssistant) {
         const userTokens = row.token_count ?? countTokens(content);
         samples.push({
+          assistant: latestAssistant.content,
           contextTokens: contextTokens - tokenCount,
           createdAt: row.created_at,
-          id: `${row.session_id}:${latestModel.id}:${row.source_id}`,
-          model: latestModel.content,
+          id: `${row.session_id}:${latestAssistant.id}:${row.source_id}`,
           user: content,
           userTokens,
         });
-        latestModel = undefined;
+        latestAssistant = undefined;
       }
     }
   }
   return { samples, sessionUpdates };
-}
-function groupMessages(rows: MessageRow[]) {
-  const groups = new Map<string, MessageRow[]>();
-  for (const row of rows) {
-    const group = groups.get(row.session_id) ?? [];
-    group.push(row);
-    groups.set(row.session_id, group);
-  }
-  return groups.values();
 }
 function addTokens(left: number, right: number) {
   const result = left + right;

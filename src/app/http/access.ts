@@ -18,13 +18,12 @@ export interface AccessEnvironment {
   Variables: { client: ClientIdentity };
 }
 export function mountAccess(app: Hono<AccessEnvironment>, access: AccessService | undefined) {
-  app.use("/api/*", async (c, next) => {
+  app.use("/api/*", async (c: Context<AccessEnvironment>, next) => {
     c.header("cache-control", "no-store");
     c.header("x-content-type-options", "nosniff");
     if (!access) {
       c.set("client", { address: "127.0.0.1", local: true });
-      await next();
-      return;
+      return next();
     }
     const identity = access.identify(c.env.incoming);
     c.set("client", identity);
@@ -34,7 +33,7 @@ export function mountAccess(app: Hono<AccessEnvironment>, access: AccessService 
     if (!isPublicEndpoint(c.req.path)) {
       access.requireAccess(identity, getCookie(c, accessSessionCookie));
     }
-    await next();
+    return next();
   });
   return app
     .get("/api/access", (c) =>

@@ -1,5 +1,6 @@
 import { setTimeout as sleep } from "node:timers/promises";
 
+import { once } from "es-toolkit";
 import { raceSignal } from "race-signal";
 
 import { captureError, summarizeError } from "../../../failures/details";
@@ -12,7 +13,7 @@ import {
   type StdioRestartPolicy,
 } from "./availability";
 import type { McpOperations } from "./protocol";
-import { type ConnectedStdioClient, connectStdioClient, type StdioConnector } from "./stdio";
+import { type ConnectedStdioClient, connectStdioClient } from "./stdio";
 
 export class RestartingStdioClient implements McpOperations {
   private readonly controller = new AbortController();
@@ -26,17 +27,15 @@ export class RestartingStdioClient implements McpOperations {
     private readonly connection: StdioConnection,
     private readonly policy: StdioRestartPolicy,
     private readonly logger: Logger,
-    private readonly connect: StdioConnector,
   ) {}
   static async create(
     serverName: string,
     connection: StdioConnection,
     policy: StdioRestartPolicy,
     logger: Logger,
-    connect: StdioConnector = connectStdioClient,
   ) {
-    const client = new RestartingStdioClient(serverName, connection, policy, logger, connect);
-    client.install(await connect(serverName, connection, client.controller.signal));
+    const client = new RestartingStdioClient(serverName, connection, policy, logger);
+    client.install(await connectStdioClient(serverName, connection, client.controller.signal));
     return client;
   }
   callTool: McpOperations["callTool"] = (params, options) =>
@@ -46,40 +45,36 @@ export class RestartingStdioClient implements McpOperations {
     this.invoke("listTools", (client) => client.listTools(params, options), options?.signal);
   readResource: McpOperations["readResource"] = (params, options) =>
     this.invoke("readResource", (client) => client.readResource(params, options), options?.signal);
-  async close() {
-    this.controller.abort(
-      new Error(
-        localize("mcp:client.closingServer", {
-          value0: this.serverName,
-        }),
-      ),
-    );
+  close = once(async () => {
+    const reason = localize("mcp:client.closingServer", { value0: this.serverName });
+    this.controller.abort(new Error(reason));
     try {
       await this.recovering;
-    } catch {
-      if (!this.controller.signal.aborted) {
-        throw new Error(
-          localize("mcp:client.recoveryBeforeCloseFailed", {
-            value0: this.serverName,
-          }),
+    } catch (error) {
+      if (error !== this.controller.signal.reason) {
+        this.logger.error(
+          localize("mcp:client.recoveryBeforeCloseFailed", { value0: this.serverName }),
+          summarizeError(captureError(error)),
         );
       }
     }
     const { current } = this;
     this.current = undefined;
     await current?.close();
-  }
+  });
   private async invoke<Result>(
     method: Exclude<keyof McpOperations, "getProtocolEra">,
     operation: (client: McpOperations) => Promise<Result>,
     signal?: AbortSignal,
   ) {
+    this.controller.signal.throwIfAborted();
     if (this.unavailable) {
       this.unavailable = undefined;
       this.restartAttempts = 0;
     }
     signal?.throwIfAborted();
     const connection = this.current ?? (await raceSignal(this.ensureRecovery(), signal));
+    this.controller.signal.throwIfAborted();
     try {
       const result = await operation(connection.client);
       this.restartAttempts = 0;
@@ -111,10 +106,8 @@ export class RestartingStdioClient implements McpOperations {
     this.recordClosure(connection);
     try {
       await this.ensureRecovery();
-    } catch (error: unknown) {
-      if (error instanceof McpStdioUnavailableError) {
-        return;
-      }
+    } catch {
+      return;
     }
   }
   private recordClosure(
@@ -150,38 +143,32 @@ export class RestartingStdioClient implements McpOperations {
     if (this.recovering) {
       return this.recovering;
     }
-    const recovery = this.manageRecovery(this.restart());
-    this.recovering = recovery;
-    return recovery;
-  }
-  private async manageRecovery(task: Promise<ConnectedStdioClient>) {
-    try {
-      return await task;
-    } catch (error) {
-      if (!(error instanceof McpStdioUnavailableError) && !this.controller.signal.aborted) {
-        this.logger.error(localize("mcp:client.recoveryFailed"), {
-          error: error instanceof Error ? error.message : String(error),
-          server: this.serverName,
-        });
-      }
-      throw error;
-    } finally {
-      this.recovering = undefined;
-    }
+    this.recovering = this.restart()
+      .catch((error: unknown) => {
+        this.controller.signal.throwIfAborted();
+        if (!(error instanceof McpStdioUnavailableError)) {
+          this.logger.error(localize("mcp:client.recoveryFailed"), {
+            error: error instanceof Error ? error.message : String(error),
+            server: this.serverName,
+          });
+        }
+        throw error;
+      })
+      .finally(() => {
+        this.recovering = undefined;
+      });
+    return this.recovering;
   }
   private async restart() {
+    const { signal } = this.controller;
     while (this.restartAttempts < this.policy.maxAttempts) {
       if (this.restartAttempts > 0) {
-        await sleep(this.policy.delayMs, undefined, { signal: this.controller.signal });
+        await sleep(this.policy.delayMs, undefined, { signal });
       }
-      this.controller.signal.throwIfAborted();
+      signal.throwIfAborted();
       const attempt = ++this.restartAttempts;
       try {
-        const connection = await this.connect(
-          this.serverName,
-          this.connection,
-          this.controller.signal,
-        );
+        const connection = await connectStdioClient(this.serverName, this.connection, signal);
         this.install(connection);
         this.logger.info(localize("mcp:client.processRestarted"), {
           attempt,
@@ -189,8 +176,8 @@ export class RestartingStdioClient implements McpOperations {
         });
         return connection;
       } catch (error) {
-        if (this.controller.signal.aborted) {
-          throw this.controller.signal.reason;
+        if (signal.aborted) {
+          throw signal.reason;
         }
         this.lastFailure = error;
         this.logger.warn(localize("mcp:client.processRestartFailed"), {

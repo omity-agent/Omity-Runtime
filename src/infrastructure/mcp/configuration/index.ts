@@ -117,7 +117,7 @@ function resolveProfilePaths(value: unknown, override: unknown, directory: strin
   ) {
     return value;
   }
-  const overrides = override["mcpServers"];
+  const overrides: Record<string, unknown> = override["mcpServers"];
   return {
     ...value,
     mcpServers: Object.fromEntries(
@@ -131,7 +131,7 @@ function resolveProfilePaths(value: unknown, override: unknown, directory: strin
         ) {
           return [serverName, server];
         }
-        const paths = { ...server["toolDescriptionOverrides"] };
+        const paths: Record<string, unknown> = { ...server["toolDescriptionOverrides"] };
         for (const tool of Object.keys(serverOverride["toolDescriptionOverrides"])) {
           const path = paths[tool];
           if (typeof path === "string" && path.length > 0) {

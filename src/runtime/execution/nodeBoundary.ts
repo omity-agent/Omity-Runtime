@@ -162,10 +162,10 @@ async function handleGraphEvent(
   if (!Array.isArray(event)) {
     return;
   }
-  const [mode, part] = event;
-  if (mode !== "custom") {
+  if (event[0] !== "custom") {
     return;
   }
+  const part: unknown = event[1];
   if (!isAiStreamEvent(part)) {
     throw new Error(localize("runtime:boundary.customEventInvalid"));
   }

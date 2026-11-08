@@ -12,7 +12,7 @@ export type { ToolOutputSnapshot } from "../types";
 export function textOutputSnapshot(content: string): ToolOutputSnapshot {
   return { content, images: [], outputTokens: countTokens(content) };
 }
-export function displayToolInput(value: unknown) {
+export function displayToolInput(value: unknown): unknown {
   return isRecord(value) && Object.hasOwn(value, "arguments") && Object.hasOwn(value, "call_id")
     ? value["arguments"]
     : value;

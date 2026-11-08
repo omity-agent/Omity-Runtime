@@ -50,16 +50,17 @@ function copyToolMessage(
   content: MessageContent,
   largeOutput?: { path: string; tokens: number },
 ) {
-  const copy = new ToolMessage({
-    artifact: message.artifact,
-    content,
-    id: message.id,
-    metadata: mergeMetadata(message.metadata, largeOutput),
-    name: message.name,
-    response_metadata: message.response_metadata,
-    status: message.status,
-    tool_call_id: message.tool_call_id,
-  });
+  const artifact: unknown = message.artifact,
+    copy = new ToolMessage({
+      artifact,
+      content,
+      id: message.id,
+      metadata: mergeMetadata(message.metadata, largeOutput),
+      name: message.name,
+      response_metadata: message.response_metadata,
+      status: message.status,
+      tool_call_id: message.tool_call_id,
+    });
   copy.additional_kwargs = message.additional_kwargs;
   return copy;
 }

@@ -1,8 +1,9 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import { join } from "node:path";
 
 import { z } from "zod";
 
+import { localize } from "../../../src/i18n/server";
 import { Logger } from "../../../src/infrastructure/logging/logger";
 import { RestartingStdioClient } from "../../../src/infrastructure/mcp/client/restarting";
 
@@ -39,4 +40,60 @@ test("real MCP process crash rejects the interrupted call and the next call uses
     await client.close();
   }
   await expect(client.listTools({})).rejects.toThrow("正在关闭");
+}, 10_000);
+test("closing a real MCP process immediately rejects new requests", async () => {
+  const client = await RestartingStdioClient.create(
+      "closing-client",
+      { args: [join(import.meta.dir, "crashingToolServer.ts")], command: process.execPath },
+      { delayMs: 0, maxAttempts: 1 },
+      new Logger("error", true),
+    ),
+    closing = client.close(),
+    concurrentClose = client.close();
+  try {
+    await expect(client.listTools({})).rejects.toThrow("正在关闭");
+    await Promise.all([closing, concurrentClose]);
+    expect(client.getProtocolEra()).toBeUndefined();
+  } finally {
+    await Promise.all([closing, concurrentClose]);
+  }
+}, 10_000);
+test("shutdown during restart backoff reports cancellation without a recovery error", async () => {
+  const logger = new Logger("error", true),
+    failedAttempt = Promise.withResolvers<void>(),
+    warnings = spyOn(logger, "warn").mockImplementation((message) => {
+      if (message === localize("mcp:client.processRestartFailed")) {
+        failedAttempt.resolve();
+      }
+    }),
+    errors = spyOn(logger, "error").mockReturnValue(undefined),
+    connection = {
+      args: [join(import.meta.dir, "crashingToolServer.ts")],
+      command: process.execPath,
+    },
+    client = await RestartingStdioClient.create(
+      "closing-recovery",
+      connection,
+      { delayMs: 5000, maxAttempts: 3 },
+      logger,
+    );
+  connection.args = ["--eval", 'throw new Error("initialization unavailable")'];
+  const interrupted = (async () => {
+    try {
+      return await client.callTool({ arguments: {}, name: "crash" });
+    } catch (error: unknown) {
+      return error;
+    }
+  })();
+  try {
+    await failedAttempt.promise;
+    await client.close();
+    expect(await interrupted).toHaveProperty("message", expect.stringContaining("正在关闭"));
+    expect(errors).not.toHaveBeenCalled();
+  } finally {
+    await client.close();
+    await interrupted;
+    warnings.mockRestore();
+    errors.mockRestore();
+  }
 }, 10_000);

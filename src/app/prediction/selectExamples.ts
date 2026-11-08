@@ -1,3 +1,5 @@
+import { isEqual, uniqBy } from "es-toolkit";
+
 import type { Settings } from "../../types";
 import type { loadPredictionSnapshot, PredictionSample } from "./samples";
 
@@ -9,16 +11,17 @@ interface SampleCache {
 export class PredictionExamples {
   private cache: SampleCache | undefined;
   select(snapshot: ReturnType<typeof loadPredictionSnapshot>, config: PredictionSettings) {
-    const eligible = distinctModelSamples(
+    const eligible = uniqBy(
       snapshot.samples
         .filter(
           ({ contextTokens, userTokens }) =>
             contextTokens > config.sampleContextTokens && userTokens <= config.maxUserMessageTokens,
         )
         .toSorted(
-          (left, right) => left.createdAt - right.createdAt || left.id.localeCompare(right.id),
+          (left, right) => right.createdAt - left.createdAt || right.id.localeCompare(left.id),
         ),
-    );
+      (sample) => sample.assistant,
+    ).toReversed();
     if (eligible.length < config.sampleCount) {
       return undefined;
     }
@@ -35,9 +38,7 @@ export class PredictionExamples {
     latestIds: string[],
   ) {
     const cachedIds = this.cache?.ids ?? [],
-      changed =
-        cachedIds.length !== latestIds.length ||
-        cachedIds.some((id, index) => id !== latestIds[index]),
+      changed = !isEqual(cachedIds, latestIds),
       hasCurrentSample = latestIds.some((id) => cachedIds.includes(id)),
       now = Math.floor(Date.now() / 1000),
       staleAfter = config.refreshIntervalHours * 60 * 60,
@@ -46,15 +47,4 @@ export class PredictionExamples {
         [...snapshot.sessionUpdates.values()].every((updatedAt) => now - updatedAt > staleAfter);
     return !hasCurrentSample || (allSessionsStale && changed);
   }
-}
-function distinctModelSamples(samples: PredictionSample[]) {
-  const knownModels = new Set<string>(),
-    distinct = samples.toReversed().filter((sample) => {
-      if (knownModels.has(sample.model)) {
-        return false;
-      }
-      knownModels.add(sample.model);
-      return true;
-    });
-  return distinct.toReversed();
 }
