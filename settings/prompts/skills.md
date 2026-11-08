@@ -5,6 +5,8 @@ At its core, a skill is a folder containing a `SKILL.md` file. This file include
 
 When a task matches an available Skill, you should proactively read its `SKILL.md` before taking any action and follow its instructions throughout the task.
 
+如果你已经完整读取过某个 `SKILL.md`：永远不要再次读取它。
+
 example-skill/
 ├── SKILL.md # Required: metadata + instructions
 ├── scripts/ # Optional: executable code

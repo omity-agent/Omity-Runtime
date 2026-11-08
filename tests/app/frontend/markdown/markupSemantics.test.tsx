@@ -3,9 +3,9 @@ import { beforeAll, describe, expect, test } from "bun:test";
 import { escape as escapeHtml } from "es-toolkit";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { FileLinkProvider } from "../../../src/app/frontend/components/FileLink/context";
-import { MarkdownInline, MarkdownView } from "../../../src/app/frontend/components/MarkdownView";
-import { i18nReady } from "../../../src/app/frontend/i18n";
+import { FileLinkProvider } from "../../../../src/app/frontend/components/FileLink/context";
+import { MarkdownInline, MarkdownView } from "../../../../src/app/frontend/components/MarkdownView";
+import { i18nReady } from "../../../../src/app/frontend/i18n";
 
 const renderers = [
     ["正文", MarkdownView],
@@ -71,6 +71,31 @@ describe.each(renderers)("%s Markdown rendering", (_surface, Renderer) => {
     const markup = renderToStaticMarkup(<Renderer content="前文~~**`source.ts`**~~后文" />);
     expect(markup).toMatch(/<del><strong><code\b[^>]*>source\.ts<\/code><\/strong><\/del>/u);
   });
+  test.each([
+    ["inline", String.raw`前文 $C_L = \frac{L}{qS}$ 后文`],
+    ["display", "$$\n\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}\n$$"],
+    ["math fence", "```math\n\\sqrt{x^2 + y^2}\n```"],
+  ])("renders %s LaTeX with accessible math", (_kind, content) => {
+    const markup = renderToStaticMarkup(<Renderer content={content} />);
+    expect(markup).toContain('class="katex"');
+    expect(markup).toContain("<math");
+    expect(markup).toContain('encoding="application/x-tex"');
+    expect(markup).not.toContain("language-math");
+  });
+  test("keeps math delimiters literal inside code and when escaped", () => {
+    for (const content of ["`$x^2$`", "```text\n$x^2$\n```", String.raw`\$x^2\$`]) {
+      const markup = renderToStaticMarkup(<Renderer content={content} />);
+      expect(markup).toContain("$x^2$");
+      expect(markup).not.toContain('class="katex"');
+    }
+  });
+  test("keeps rendering after an incomplete streamed formula", () => {
+    for (const content of [String.raw`前文 $\frac{`, String.raw`前文 $\frac{$ 后文`]) {
+      const markup = renderToStaticMarkup(<Renderer content={content} />);
+      expect(markup).toContain("前文");
+      expect(markup).toContain(content.endsWith("后文") ? "后文" : String.raw`$\frac{`);
+    }
+  });
 });
 test.each(linkCases)(
   "keeps file-link offsets inside emphasized %s after newline normalization",
@@ -108,4 +133,19 @@ test("keeps fenced code literal while rendering GFM tables and preserved line br
   expect(markup).toContain("<table>");
   expect(markup).toContain("<strong>（表格）</strong>");
   expect(markup).toContain("<strong>（换行）</strong>后文<br/>");
+});
+test("keeps file-link offsets and GFM formatting alongside formulas", () => {
+  const path = "src/example.ts",
+    content = `公式 $x^2$ 后查看 ${path}\n\n| 项目 | 公式 |\n| --- | --- |\n| **值** | $y_1$ |`,
+    start = content.indexOf(path),
+    matches = [{ kind: "file" as const, path, position: { end: start + path.length, start } }],
+    markup = renderToStaticMarkup(
+      <FileLinkProvider sessionId="math-rendering">
+        <MarkdownView content={content} fileLinks={matches} preserveLineBreaks />
+      </FileLinkProvider>,
+    );
+  expect(markup.match(/class="katex"/gu)).toHaveLength(2);
+  expect(markup).toContain(`title="${path}"`);
+  expect(markup).toContain("<table>");
+  expect(markup).toContain("<strong>值</strong>");
 });

@@ -1,4 +1,3 @@
-/* oxlint-disable @pandacss/no-descendant-selectors -- CodeMirror owns the nested editor DOM. */
 import { EditorView } from "@codemirror/view";
 import { css } from "styled-system/css";
 

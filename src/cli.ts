@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-// oxlint-disable-next-line import/no-unassigned-import -- Initialize Reflect metadata before loading WebAuthn dependencies.
 import "reflect-metadata";
 import { message, text } from "@optique/core/message";
 import { run } from "@optique/run";

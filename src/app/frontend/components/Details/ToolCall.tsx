@@ -1,4 +1,3 @@
-/* oxlint-disable @pandacss/no-margin-properties -- Tool input and output panels use deliberate transcript spacing. */
 import { Wrench } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";

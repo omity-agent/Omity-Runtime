@@ -1,4 +1,3 @@
-/* oxlint-disable @pandacss/no-margin-properties -- Auto margin anchors the conversation below the setup form. */
 import { css } from "styled-system/css";
 
 export const scroll = css({

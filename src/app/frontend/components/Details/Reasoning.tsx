@@ -1,4 +1,3 @@
-/* oxlint-disable @pandacss/no-margin-properties -- Reasoning content uses a deliberate inset and native reset. */
 import { useCollapsibleContext } from "@ark-ui/react/collapsible";
 import { BrainCircuit } from "lucide-react";
 import { createElement } from "react";

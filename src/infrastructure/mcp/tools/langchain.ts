@@ -26,8 +26,6 @@ export function langChainClient(client: McpOperations): LangChainClient {
     listTools: (params, options) => client.listTools(params, options),
     readResource: (params, options) => client.readResource(params, options),
   };
-  // loadMcpTools only invokes MCP operations but requires a complete SDK Client instance by type.
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return adapter as LangChainClient;
 }
 function errorMessage(error: unknown) {

@@ -1,3 +1,5 @@
+import "katex/dist/katex.min.css";
+import type { Root } from "hast";
 import {
   type ComponentProps,
   createContext,
@@ -8,8 +10,9 @@ import {
 } from "react";
 import ReactMarkdown, { type Components, type ExtraProps } from "react-markdown";
 import remarkBreaks from "remark-breaks";
+import { SKIP, visit } from "unist-util-visit";
 
-import { markdownPlugins } from "../../../../settings/rendering";
+import { markdownPlugins, markdownRehypePlugins } from "../../../../settings/rendering";
 import type { FilePathMatch } from "../../../fileLinks/types";
 import { localize } from "../i18n";
 import { normalizeCodeMatches, normalizeLineBreaks } from "./FileLink/lineBreaks";
@@ -71,7 +74,11 @@ export function MarkdownView({
     <MarkdownContext.Provider value={normalized.context}>
       <div className={region}>
         <div aria-hidden={showSource} className={rendered} data-source-visible={showSource}>
-          <ReactMarkdown components={components} remarkPlugins={normalized.remarkPlugins}>
+          <ReactMarkdown
+            components={components}
+            rehypePlugins={markdownRehypePlugins}
+            remarkPlugins={normalized.remarkPlugins}
+          >
             {normalized.content}
           </ReactMarkdown>
         </div>
@@ -92,10 +99,9 @@ export function MarkdownInline({ content }: { content: string }) {
   return (
     <MarkdownContext.Provider value={normalized.context}>
       <ReactMarkdown
-        allowedElements={inlineElements}
         components={inlineComponents}
+        rehypePlugins={inlineRehypePlugins}
         remarkPlugins={markdownPlugins}
-        unwrapDisallowed
       >
         {normalized.source}
       </ReactMarkdown>
@@ -163,7 +169,24 @@ const components = {
     table: MarkdownTable,
   } satisfies Components,
   inlineComponents = { code: MarkdownCode } satisfies Components,
-  inlineElements = ["code", "del", "em", "strong"];
+  inlineElements = new Set(["code", "del", "em", "strong"]),
+  inlineRehypePlugins = [inlineMarkdown, ...markdownRehypePlugins];
+function inlineMarkdown() {
+  return (tree: Root) => {
+    visit(tree, "element", (node, index, parent) => {
+      if (Array.isArray(node.properties.className)) {
+        node.properties.className = node.properties.className.filter(
+          (name) => name !== "math-display",
+        );
+      }
+      if (parent && index !== undefined && !inlineElements.has(node.tagName)) {
+        parent.children.splice(index, 1, ...node.children);
+        return [SKIP, index];
+      }
+      return undefined;
+    });
+  };
+}
 function useMarkdownRenderContext() {
   const context = useContext(MarkdownContext);
   if (!context) {

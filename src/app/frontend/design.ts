@@ -1,4 +1,3 @@
-/* oxlint-disable @pandacss/no-descendant-selectors -- Responsive panels hide their layout-owned child regions. */
 import { css } from "styled-system/css";
 
 export const layout = css({

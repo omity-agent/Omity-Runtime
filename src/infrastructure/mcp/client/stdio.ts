@@ -44,7 +44,6 @@ export const connectStdioClient: StdioConnector = async (serverName, connection,
         stdout.append(chunk);
       }
     });
-  // oxlint-disable-next-line unicorn/prefer-add-event-listener -- The MCP transport is not an EventTarget.
   transport.onerror = (error) => {
     evidence.record(error);
   };

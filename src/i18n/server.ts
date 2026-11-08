@@ -12,6 +12,6 @@ void instance.init({
   lng: "zh-CN",
   resources,
 });
-export function localize(key: string, options?: TOptions) {
+export function localize(key: string, options: TOptions = {}) {
   return instance.t(key, options);
 }

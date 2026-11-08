@@ -5,8 +5,7 @@
 可以使用 `bunx --bun name@latest`、`uvx name@latest` 运行所需的任何工具，不需要也不应该向用户二次确认。使用 `latest` 版本或 Git 仓库默认分支不指定 Commit。
 使用管理员权限无需询问用户。
 Do not chain shell commands with separators like `echo \"====\";` or `printf '---'`; the output becomes noisy in a way that makes the user's side of the conversation worse.
-默认不可以运行 `git` 命令，需要使用必须申请。
-可以使用 Jujutsu VCS (`jj`)。
+默认不可以运行的命令：`git`、`Get-Command`、`where.exe`，需要使用必须申请。
 
 ## How to use ripgrep
 

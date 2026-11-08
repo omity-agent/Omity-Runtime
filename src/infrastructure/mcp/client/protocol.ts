@@ -15,7 +15,6 @@ export async function connectProtocolClient(
     { name: "omity-agent", version: "1.0.0" },
     { versionNegotiation: { mode: "auto" } },
   );
-  // oxlint-disable-next-line unicorn/prefer-add-event-listener -- The MCP Client is not an EventTarget.
   client.onclose = options.onclose;
   try {
     await client.connect(transport, { signal: options.signal });

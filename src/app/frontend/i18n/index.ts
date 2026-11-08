@@ -14,6 +14,6 @@ export const i18nReady = use(LanguageDetector)
     },
     resources,
   });
-export function localize(key: string, options?: TOptions) {
+export function localize(key: string, options: TOptions = {}) {
   return t(key, options);
 }

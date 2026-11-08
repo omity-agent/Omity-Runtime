@@ -1,4 +1,3 @@
-/* oxlint-disable import/no-namespace -- spyOn 持有模块命名空间才能替换并恢复实际 ESM 导出。 */
 import { spyOn } from "bun:test";
 
 import * as aiMessages from "../../../src/agent/aiMessages";

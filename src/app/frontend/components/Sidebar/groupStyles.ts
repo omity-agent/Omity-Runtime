@@ -1,4 +1,3 @@
-/* oxlint-disable @pandacss/no-margin-properties -- Sidebar controls use deliberate external and indicator spacing. */
 import { css } from "styled-system/css";
 
 export const root = css({

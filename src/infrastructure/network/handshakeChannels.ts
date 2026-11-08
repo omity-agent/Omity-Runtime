@@ -69,7 +69,6 @@ function subscriber<Name extends keyof ChannelMessages>(
   return [
     name,
     (message: unknown) => {
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- The channel name determines Undici's published message type.
       listener(message as ChannelMessages[Name]);
     },
   ] as const;

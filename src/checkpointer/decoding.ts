@@ -1,4 +1,3 @@
-/* oxlint-disable unicorn/prefer-structured-clone -- Checkpoints preserve LangChain message prototypes. */
 import { BaseMessage } from "@langchain/core/messages";
 import type {
   Checkpoint,

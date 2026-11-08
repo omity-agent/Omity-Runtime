@@ -1,4 +1,3 @@
-/* oxlint-disable @pandacss/no-descendant-selectors -- Menu labels style arbitrary link content supplied by callers. */
 import { Menu } from "@ark-ui/react/menu";
 import { Portal } from "@ark-ui/react/portal";
 import { ExternalLink, FolderOpen } from "lucide-react";

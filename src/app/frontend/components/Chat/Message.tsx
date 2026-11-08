@@ -1,4 +1,3 @@
-/* oxlint-disable @pandacss/no-margin-properties -- Message separation is part of the transcript layout. */
 import { GitFork } from "lucide-react";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";

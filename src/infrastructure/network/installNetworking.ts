@@ -34,8 +34,6 @@ export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
       }
       const options: UndiciRequestInit = {
         ...(input instanceof Request ? requestOptions(input) : {}),
-        // Bun and Undici expose different runtime extensions; only standard Fetch options are passed.
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         ...(init as UndiciRequestInit),
         dispatcher:
           policy === "explicit"
@@ -48,7 +46,6 @@ export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
             : transport.dispatcher,
         duplex: "half",
       };
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Both implement the same WHATWG Response interface.
       return (await undiciFetch(url, options)) as unknown as Response;
     },
     fetch = Object.assign(routedFetch, {

@@ -84,7 +84,6 @@ export function usePendingFork({
           setBusy(false);
         }
       },
-      // oxlint-disable-next-line react/memo-dependencies
       [navigateRef, pageRef, queryClientRef],
     ),
     begin = useCallback(
@@ -136,7 +135,6 @@ export function usePendingFork({
           setPendingMessage(null);
         }
       },
-      // oxlint-disable-next-line react/memo-dependencies
       [activate, submit],
     );
   return { begin, busy, control, discard, pendingMessage, send };

@@ -1,4 +1,3 @@
-/* oxlint-disable @pandacss/no-margin-properties -- Auto margin pins the role control to the composer edge. */
 import { css } from "styled-system/css";
 
 export const composerFrame = css({

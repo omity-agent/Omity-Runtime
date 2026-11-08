@@ -51,7 +51,6 @@ export class McpClientPool {
         reconnectionOptions: mcpHttpReconnection,
         requestInit: { headers: connection.options.headers },
       });
-    // oxlint-disable-next-line unicorn/prefer-add-event-listener -- The MCP transport is not an EventTarget.
     transport.onerror = (error) => {
       evidence.record(error);
     };

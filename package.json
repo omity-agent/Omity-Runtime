@@ -67,6 +67,7 @@
     "ipaddr.js": "latest",
     "is-network-error": "latest",
     "json-schema-library": "latest",
+    "katex": "latest",
     "lucide-react": "latest",
     "magika": "latest",
     "mitt": "latest",
@@ -80,14 +81,17 @@
     "react-i18next": "latest",
     "react-markdown": "latest",
     "reflect-metadata": "latest",
+    "rehype-katex": "latest",
     "remark-breaks": "latest",
     "remark-cjk-friendly": "latest",
     "remark-cjk-friendly-gfm-strikethrough": "latest",
     "remark-gfm": "latest",
+    "remark-math": "latest",
     "serialize-error": "latest",
     "shiki": "latest",
     "tough-cookie": "latest",
     "undici": "latest",
+    "unist-util-visit": "latest",
     "untildify": "latest",
     "virtua": "latest",
     "yaml": "next",
@@ -102,6 +106,7 @@
     "@rolldown/plugin-babel": "latest",
     "@tanstack/eslint-plugin-query": "latest",
     "@types/bun": "latest",
+    "@types/hast": "latest",
     "@types/mdast": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
@@ -120,6 +125,9 @@
     "postcss": "latest",
     "unified": "latest",
     "vite": "latest"
+  },
+  "overrides": {
+    "katex": "latest"
   },
   "trustedDependencies": [
     "@parcel/watcher",
