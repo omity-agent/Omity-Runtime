@@ -20,7 +20,7 @@ export function useHistoryNavigation(
         messagesRef.current,
       );
       if (nextContent === undefined) {
-        return undefined;
+        return;
       }
       updateContent(nextContent);
       return nextContent;

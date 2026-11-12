@@ -3,15 +3,15 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { css, cx } from "styled-system/css";
 
-import { Button } from "../ParkUI";
+import { Button } from "../ui";
 import { type WorkspaceGroup, workspaceLabel } from "./sessions";
 
 const projects = css({ display: "grid", gap: "1", paddingBlockEnd: "2" }),
   button = css({
-    _hover: { background: "control" },
+    _hover: { background: "bg.emphasized" },
     alignItems: "center",
-    borderColor: "clear",
-    color: "mutedStrong",
+    borderColor: "transparent",
+    color: "fg.muted",
     display: "grid",
     gap: "2",
     gridTemplateColumns: "auto minmax(0, 1fr) auto",
@@ -22,16 +22,20 @@ const projects = css({ display: "grid", gap: "1", paddingBlockEnd: "2" }),
     textAlign: "left",
     width: "full",
   }),
-  selected = css({ background: "control", borderColor: "lineStrong", color: "text" }),
+  selected = css({
+    background: "bg.emphasized",
+    borderColor: "border.emphasized",
+    color: "fg.default",
+  }),
   name = css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),
   counts = css({
     alignItems: "center",
-    color: "muted",
+    color: "fg.subtle",
     display: "flex",
     fontSize: "metadata",
     gap: "1.5",
   }),
-  attention = css({ color: "statusModel" });
+  attention = css({ color: "status.model" });
 interface Props {
   groups: WorkspaceGroup[];
   selectedWorkspace?: string;
@@ -86,7 +90,7 @@ function ProjectItem({
         onClick={select}
         title={group.workspace}
         type="button"
-        variant="ghost"
+        visual="ghost"
       >
         <Icon aria-hidden size={14} />
         <span className={name}>{workspaceLabel(group.workspace)}</span>

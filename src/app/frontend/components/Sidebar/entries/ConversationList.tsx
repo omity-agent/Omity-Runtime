@@ -1,20 +1,9 @@
 import { type MouseEvent, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { cx } from "styled-system/css";
 
 import { navigateLink, pagePath } from "../../../route";
 import type { SessionInfo } from "../../../services/client";
-import { LinkButton } from "../../ParkUI";
-import {
-  caption,
-  item,
-  row,
-  selected,
-  selectedCaption,
-  sessions,
-  time,
-  unreadCaption,
-} from "./itemStyles";
+import { conversationEntry, sessions } from "./itemRecipe";
 import { OverflowCaption } from "./OverflowCaption";
 import { RelativeTime } from "./RelativeTime";
 import { Status } from "./Status";
@@ -35,6 +24,7 @@ interface SessionItemProps {
 function SessionItem({ active, language, onSelect, session, unread }: SessionItemProps) {
   const { t } = useTranslation(),
     title = session.title === session.id ? session.id.toUpperCase() : session.title,
+    classes = conversationEntry({ active, unread }),
     handleSelect = useCallback(
       (event: MouseEvent<HTMLAnchorElement>) => {
         navigateLink(event, () => onSelect(session.id));
@@ -42,23 +32,19 @@ function SessionItem({ active, language, onSelect, session, unread }: SessionIte
       [onSelect, session.id],
     );
   return (
-    <li className={cx("group", item, active && selected)}>
-      <LinkButton
+    <li className={classes.root}>
+      <a
         aria-current={active ? "page" : undefined}
         aria-label={unread ? `${title}, ${t("sessionStoppedUnread")}` : title}
-        className={row}
+        className={classes.trigger}
         href={pagePath({ id: session.id, kind: "session" })}
         onClick={handleSelect}
         title={`${title}${unread ? ` · ${t("sessionStoppedUnread")}` : ""}\n${session.workspace}`}
-        variant="ghost"
       >
-        <OverflowCaption
-          className={cx(caption, active && selectedCaption, unread && unreadCaption)}
-          text={title}
-        />
+        <OverflowCaption className={classes.caption} text={title} />
         <Status compact error={session.error} status={session.status} />
-        <RelativeTime className={time} locale={language} updatedAt={session.updatedAt} />
-      </LinkButton>
+        <RelativeTime className={classes.time} locale={language} updatedAt={session.updatedAt} />
+      </a>
     </li>
   );
 }

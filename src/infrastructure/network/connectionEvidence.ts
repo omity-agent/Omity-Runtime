@@ -106,7 +106,7 @@ export class ConnectionEvidence {
     const { socket, peerSocket } = this,
       observed = socket ?? peerSocket;
     if (!observed) {
-      return undefined;
+      return;
     }
     return {
       ...(socket ? this.state : {}),

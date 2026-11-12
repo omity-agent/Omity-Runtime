@@ -30,7 +30,7 @@ async function requestFailure(resolveProxy: ResolveOutboundProxy) {
       failure = error;
     }
     if (!(failure instanceof Error)) {
-      throw new Error("错误摘要测试没有收到连接失败");
+      throw new TypeError("错误摘要测试没有收到连接失败");
     }
     const error = captureError(failure);
     return { error, native: failure, summary: summarizeError(error) };

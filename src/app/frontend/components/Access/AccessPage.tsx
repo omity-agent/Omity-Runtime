@@ -3,12 +3,12 @@ import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
 import type { AccessStatus } from "../../services/access";
-import { Button, Code, LinkButton } from "../ParkUI";
+import { Button, Code, LinkButton } from "../ui";
 
 const page = css({
     alignItems: "center",
-    background: "canvas",
-    color: "text",
+    background: "bg.canvas",
+    color: "fg.default",
     display: "grid",
     fontFamily: "body",
     minHeight: "viewport",
@@ -16,8 +16,8 @@ const page = css({
     padding: { _short: "3", base: "4", sm: "6" },
   }),
   card = css({
-    background: "surface",
-    borderColor: "lineStrong",
+    background: "bg.default",
+    borderColor: "border.emphasized",
     borderWidth: "hairline",
     display: "grid",
     gap: "5",
@@ -26,10 +26,10 @@ const page = css({
     padding: { _short: "5", base: "5", sm: "8" },
     width: "full",
   }),
-  icon = css({ color: "mutedStrong" }),
+  icon = css({ color: "fg.muted" }),
   heading = css({ textStyle: "accessHeading" }),
-  description = css({ color: "mutedStrong", lineHeight: "markdown" }),
-  errorText = css({ color: "statusError", fontSize: "sm" }),
+  description = css({ color: "fg.muted", lineHeight: "markdown" }),
+  errorText = css({ color: "status.error", fontSize: "editor" }),
   action = css({ flexGrow: { base: 1, sm: 0 } }),
   actions = css({
     display: "flex",
@@ -108,7 +108,7 @@ export function AccessPage(props: AccessPageProps) {
                   disabled={busy}
                   onClick={onContinue}
                   type="button"
-                  variant="ghost"
+                  visual="ghost"
                 >
                   {t("accessContinueLocal")}
                 </Button>

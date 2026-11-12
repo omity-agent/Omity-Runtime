@@ -27,7 +27,7 @@ export function FlowWindow({ children, ref, style }: CustomContainerComponentPro
 export function FlowItem({ children, index, ref, style }: CustomItemComponentProps) {
   const { top, ...geometry } = style;
   if (typeof top !== "number") {
-    throw new Error(localize("frontend:transcript.virtualOffsetMissing"));
+    throw new TypeError(localize("frontend:transcript.virtualOffsetMissing"));
   }
   const placement = rowStyle(geometry, top);
   return (

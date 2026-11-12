@@ -59,7 +59,7 @@ raceIntervalMs: 1000
   const workspacePath = join(root, "workspace");
   mkdirSync(workspacePath);
   const context = createSettingsContext(root, join(root, "user-settings")),
-    mcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => undefined)),
+    mcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => {})),
     created = await createSnapshotSession({
       baseContext: context,
       mcp,
@@ -132,7 +132,7 @@ raceIntervalMs: 3500
     retryDelayMs: 2500,
     temperature: 0.75,
   });
-  const restoredMcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => undefined));
+  const restoredMcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => {}));
   mcps.push(restoredMcp);
   const restored = await restoredMcp.loadSession(
     created.sessionId,

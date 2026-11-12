@@ -48,8 +48,8 @@ export async function runHostSession(
       cancellationRequested: (callId) => db.toolCancellation(mode.sessionId, callId),
       pollMs: settings.host.pollMs,
     });
-  let lease: HostLease | undefined,
-    codexVersion: string | undefined,
+  let codexVersion: string | undefined,
+    lease: HostLease | undefined,
     ownedMcp: Awaited<ReturnType<typeof loadMcp>> | undefined,
     sessionCreated = definition !== undefined;
   const unwireSignals = wireHostSignals({

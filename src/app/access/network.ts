@@ -39,7 +39,7 @@ export class ClientNetwork {
       throw new Error(localize("access:network.forwardedForMissing"));
     }
     if (Array.isArray(forwarded)) {
-      throw new Error(localize("access:network.forwardedForDuplicate"));
+      throw new TypeError(localize("access:network.forwardedForDuplicate"));
     }
     const chain = forwarded.split(",").map((value) => parseAddress(value.trim()));
     if (chain.length === 0) {

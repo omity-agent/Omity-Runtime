@@ -48,7 +48,7 @@ test("a new state connection restores history while reconnection only synchroniz
     expect(JSON.parse(snapshot.data)).toEqual({ sessions: [storedFailure] });
     cursor = snapshot.lastEventId;
   } finally {
-    await initial.return(undefined);
+    await initial.return();
   }
   const reconnected = readStateWire(
     await app.request("/events", { headers: { "Last-Event-ID": cursor } }),
@@ -58,14 +58,14 @@ test("a new state connection restores history while reconnection only synchroniz
     expect(snapshot.type).toBe("sessions");
     expect(JSON.parse(snapshot.data)).toEqual({ sessions: [storedFailure] });
   } finally {
-    await reconnected.return(undefined);
+    await reconnected.return();
   }
   const refreshed = readStateWire(await app.request("/events"));
   try {
     const snapshot = await nextStateEvent(refreshed);
     expect(snapshot.type).toBe("restore");
   } finally {
-    await refreshed.return(undefined);
+    await refreshed.return();
   }
 });
 test("a persisted run failure emits an occurrence independently of subsequent state changes", async () => {
@@ -82,7 +82,7 @@ test("a persisted run failure emits an occurrence independently of subsequent st
     failure: (sessionId, error) => {
       failures.push({ error, sessionId });
     },
-    token: () => undefined,
+    token: () => {},
   };
   try {
     db.resetSession("target", workspace);
@@ -115,15 +115,15 @@ test("console restoration and live failures are independent from ordinary state 
       events.streamState(context, () => [storedFailure]),
     ),
     wire = readStateWire(await app.request("/events")),
-    source = Object.assign(new EventTarget(), { close: mock(() => undefined) }),
+    source = Object.assign(new EventTarget(), { close: mock(() => {}) }),
     handlers = {
-      deleted: mock(() => undefined),
-      session: mock(() => undefined),
-      sessions: mock(() => undefined),
+      deleted: mock(() => {}),
+      session: mock(() => {}),
+      sessions: mock(() => {}),
     },
     close = subscribeStateEvents(source, handlers),
-    info = spyOn(console, "info").mockReturnValue(undefined),
-    error = spyOn(console, "error").mockReturnValue(undefined);
+    info = spyOn(console, "info").mockReturnValue(),
+    error = spyOn(console, "error").mockReturnValue();
   try {
     const restored = await nextStateEvent(wire);
     source.dispatchEvent(restored);
@@ -164,12 +164,12 @@ test("console restoration and live failures are independent from ordinary state 
       expect(info).toHaveBeenCalledTimes(1);
       expect(error).toHaveBeenCalledTimes(2);
     } finally {
-      await reconnected.return(undefined);
+      await reconnected.return();
     }
   } finally {
     close();
     expect(source.close).toHaveBeenCalledTimes(1);
-    await wire.return(undefined);
+    await wire.return();
     info.mockRestore();
     error.mockRestore();
   }

@@ -8,7 +8,7 @@ import { useToolAccessory } from "../../../src/app/frontend/components/Details/T
 import { DisclosureProvider } from "../../../src/app/frontend/components/Transcript/disclosures";
 import { i18nReady } from "../../../src/app/frontend/i18n";
 
-const releaseDetail = () => undefined,
+const releaseDetail = () => {},
   registerDetail = () => releaseDetail;
 beforeAll(async () => {
   await i18nReady;
@@ -17,7 +17,7 @@ function RunningTool({ open }: { open: boolean }) {
   const accessory = useToolAccessory({
     callId: "running-tool",
     cancellable: true,
-    onCancel: async () => undefined,
+    onCancel: async () => {},
     phase: "running",
   });
   return (

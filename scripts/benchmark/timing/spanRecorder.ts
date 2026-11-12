@@ -27,7 +27,7 @@ export class SpanRecorder {
     return this.boundaries.received !== undefined && this.boundaries.sent === undefined;
   }
   mark(name: keyof Boundaries, time = performance.now()) {
-    assert(this.boundaries[name] === undefined, `计时边界重复：${name}`);
+    assert.ok(this.boundaries[name] === undefined, `计时边界重复：${name}`);
     this.boundaries[name] = time;
   }
   measure<Result>(label: string, operation: () => Result, after?: (end: number) => void): Result;
@@ -71,10 +71,10 @@ export class SpanRecorder {
         boundaries.sent,
       ];
     for (let index = 1; index < order.length; index += 1) {
-      assert(order[index]! >= order[index - 1]!, "计时边界顺序错误");
+      assert.ok(order[index]! >= order[index - 1]!, "计时边界顺序错误");
     }
     for (const span of this.spans) {
-      assert(span.end !== undefined && span.end >= span.start, `计时操作未完成：${span.label}`);
+      assert.ok(span.end !== undefined && span.end >= span.start, `计时操作未完成：${span.label}`);
     }
     return boundaries;
   }

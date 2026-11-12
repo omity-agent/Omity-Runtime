@@ -116,7 +116,7 @@ test("HTTP session preferences list disabled servers without resolving secrets a
       app.root,
       "error",
       createSettingsContext(app.root),
-      new AskUserRuntime(() => undefined),
+      new AskUserRuntime(() => {}),
     );
     const restored = await restoredMcp.loadSession(
       session.id,

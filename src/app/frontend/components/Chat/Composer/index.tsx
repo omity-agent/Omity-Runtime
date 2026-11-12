@@ -10,6 +10,7 @@ import {
 import { reportError, reportPromiseErrors } from "../../../services/errors";
 import { DraftSaver } from "../../../services/scheduling/draftSaver";
 import { MarkdownEditor } from "../MarkdownEditor";
+import { composerFrame } from "./arrangement";
 import { AskUserPrompt } from "./AskUser/Prompt";
 import { useQuestionAnswerState } from "./AskUser/state";
 import { Actions } from "./controls";
@@ -18,7 +19,6 @@ import { usePendingAttachments } from "./hooks/attachments";
 import { useComposerEvents } from "./hooks/events";
 import { useComposerSubmit } from "./hooks/submission";
 import { useSuggestionNavigation } from "./hooks/suggestionNavigation";
-import { composerFrame } from "./layout";
 import { UserInputPrediction } from "./prediction";
 import type { ComposerProps } from "./props";
 
@@ -86,7 +86,7 @@ export function Composer({
   }, [draft, stableDraftTarget]);
   useEffect(() => {
     if (draftSaveDelayMs === undefined) {
-      return undefined;
+      return;
     }
     const saver = new DraftSaver(stableDraftTarget, draftSaveDelayMs, reportError);
     saverRef.current = saver;

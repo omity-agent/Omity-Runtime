@@ -69,3 +69,45 @@ test("linked code preserves punctuation through streaming and syntax retokenizat
     await page.close();
   }
 }, 30_000);
+
+test("file path underlines follow each syntax fragment's text color", async () => {
+  const page = await session.open("append"),
+    path = "src/feature.ts",
+    html =
+      '<span style="color: var(--colors-syntax-string)">src/</span>' +
+      '<span style="color: var(--colors-syntax-keyword)">feature.ts</span>';
+  try {
+    await page.addScriptTag({
+      type: "module",
+      url: "/tests/app/frontend/scrolling/punctuationHarness.tsx",
+    });
+    await page.waitForFunction(() => Object.hasOwn(globalThis, "renderLinkedFrame"));
+    await page.evaluate((frame) => globalThis.renderLinkedFrame(frame), {
+      code: path,
+      html,
+      language: "plaintext",
+      matches: [{ kind: "file" as const, path, position: { end: path.length, start: 0 } }],
+    });
+    await settleLayout(page);
+    const fragments = await page.locator("[data-controlled-line] button").evaluate((button) =>
+      [...button.querySelectorAll("span")]
+        .filter((element) => element.children.length === 0 && element.textContent)
+        .map((element) => {
+          const style = getComputedStyle(element);
+          return {
+            color: style.color,
+            decoration: style.textDecorationLine,
+            underline: style.textDecorationColor,
+          };
+        }),
+    );
+    expect(fragments).toHaveLength(2);
+    expect(new Set(fragments.map(({ color }) => color)).size).toBe(2);
+    for (const fragment of fragments) {
+      expect(fragment.decoration).toContain("underline");
+      expect(fragment.underline).toBe(fragment.color);
+    }
+  } finally {
+    await page.close();
+  }
+}, 30_000);

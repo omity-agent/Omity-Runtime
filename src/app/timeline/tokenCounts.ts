@@ -18,7 +18,7 @@ export function toolInputTokens(call: Record<string, unknown>, input: unknown) {
   }
   const serialized: unknown = JSON.stringify(input);
   if (typeof serialized !== "string") {
-    throw new Error(localize("application:timeline.toolInputNotSerializable"));
+    throw new TypeError(localize("application:timeline.toolInputNotSerializable"));
   }
   return countTokens(serialized);
 }

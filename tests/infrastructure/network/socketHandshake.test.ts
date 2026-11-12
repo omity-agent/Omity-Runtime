@@ -112,7 +112,7 @@ test("rejected WebSocket handshakes expose HTTP status and request ID", async ()
         }),
       port: 0,
     }),
-    runtime = createNetworkRuntime(async () => undefined),
+    runtime = createNetworkRuntime(async () => {}),
     previousFetch = globalThis.fetch;
   globalThis.fetch = runtime.fetch;
   try {
@@ -130,7 +130,7 @@ test("rejected WebSocket handshakes expose HTTP status and request ID", async ()
     }
     expect(failure).toBeInstanceOf(Error);
     if (!(failure instanceof Error)) {
-      throw new Error("WebSocket 握手失败没有抛出 Error");
+      throw new TypeError("WebSocket 握手失败没有抛出 Error");
     }
     expect(failure.message).toBe("Responses WebSocket 连接失败");
     expect(captureError(failure).details).toMatchObject({

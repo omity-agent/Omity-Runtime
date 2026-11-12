@@ -38,7 +38,7 @@ export function createHostObserver(
     failure: (sessionId, error) => {
       events.failure(sessionId, error);
     },
-    token: () => undefined,
+    token: () => {},
     transcript: (sessionId, event) => {
       events.transcript(sessionId, event);
     },

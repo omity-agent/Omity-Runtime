@@ -55,9 +55,7 @@ export function createHookNode(
           return finishAgent(plan, clearPending, outputs);
         }
         const rule = hooks.matching("agent", plan.when)[plan.hookIndex];
-        if (!rule) {
-          plan = { ...plan, hookIndex: 0, sourceIndex: plan.sourceIndex + 1 };
-        } else {
+        if (rule) {
           const result = await executeRule(
             rule,
             sourceId,
@@ -71,6 +69,8 @@ export function createHookNode(
           if (result) {
             return hookCommand(plan, rule, result, clearPending, outputs);
           }
+        } else {
+          plan = { ...plan, hookIndex: 0, sourceIndex: plan.sourceIndex + 1 };
         }
       } else {
         const original = restoreOriginal(plan.original),
@@ -83,9 +83,7 @@ export function createHookNode(
           return originalToolsCommand(plan, original, calls, outputs);
         }
         const rule = hooks.matching(call.name, plan.stage)[plan.hookIndex];
-        if (!rule) {
-          plan = nextToolStage(plan, original.tool_calls?.length ?? 0, options.parallelToolCalls);
-        } else {
+        if (rule) {
           const result = await executeRule(
             rule,
             requireCallId(call),
@@ -99,6 +97,8 @@ export function createHookNode(
           if (result) {
             return hookCommand(plan, rule, result, clearPending, outputs);
           }
+        } else {
+          plan = nextToolStage(plan, original.tool_calls?.length ?? 0, options.parallelToolCalls);
         }
       }
     }

@@ -3,7 +3,7 @@ import { css } from "styled-system/css";
 import type { VirtualizerHandle } from "virtua";
 
 import { localize } from "../../../i18n";
-import { CopyButton } from "../../Chat/CopyButton";
+import { CopyButton } from "../../Chat/messages/CopyButton";
 import type { segmentTranscript } from "../segments";
 import { type MessageSpan, messageSpans, visibleCopies } from "./messageSpans";
 
@@ -14,15 +14,15 @@ interface MountedCopy {
 const boundary = css({
     '&[data-first="true"]': { paddingBlockStart: { _short: "3", base: "4", md: "6" } },
     '&[data-last="true"]': { paddingBlockEnd: { _short: "3", base: "4", md: "6" } },
-    insetBlockStart: "zero",
-    insetInlineStart: "zero",
+    insetBlockStart: "0",
+    insetInlineStart: "0",
     pointerEvents: "none",
     position: "absolute",
     width: "full",
     zIndex: "pinned",
   }),
   inset = css({
-    borderColor: "clear",
+    borderColor: "transparent",
     borderWidth: "hairline",
     height: "full",
     maxWidth: { base: "full", sm: "twoThirds" },
@@ -33,12 +33,12 @@ const boundary = css({
   }),
   toolbar = css({
     display: "flex",
-    insetBlockStart: "zero",
+    insetBlockStart: "0",
     justifyContent: "flex-end",
-    minHeight: "8",
+    minHeight: "controlTarget",
     position: "sticky",
   }),
-  button = css({ background: "surface", color: "statusModel", pointerEvents: "auto" });
+  button = css({ background: "bg.default", color: "status.model", pointerEvents: "auto" });
 function placeCopy(instance: VirtualizerHandle, { element, span }: MountedCopy) {
   const first = instance.getItemOffset(span.first),
     end = instance.getItemOffset(span.last) + instance.getItemSize(span.last),

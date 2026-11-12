@@ -51,7 +51,7 @@ test("a paused run resumes from the model boundary without repeating the model c
         stopping.abort();
       }
     },
-    token: () => undefined,
+    token: () => {},
   };
   await processInput(pausedContext, required(db.nextInput("session")));
   expect(db.nextInput("session")?.status).toBe("paused");
@@ -152,7 +152,7 @@ function stepContext(
         stopping.abort();
       }
     },
-    token: () => undefined,
+    token: () => {},
   };
   return ctx;
 }

@@ -5,23 +5,12 @@ import { EditorView } from "@codemirror/view";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import CodeMirror from "@uiw/react-codemirror";
 import { useLayoutEffect, useMemo, useReducer } from "react";
-import { cx } from "styled-system/css";
+import { token } from "styled-system/tokens";
 
 import { markdownSyntax } from "../../Markdown/syntax";
 import type { HistoryDirection } from "../Composer/history";
 import { EditorHandlerStore, editorInteractions } from "./interactions";
-import {
-  bareRoot,
-  codeMirror,
-  disabledRoot,
-  editorTheme,
-  fillRoot,
-  fixedCodeMirror,
-  fixedRoot,
-  fixedTheme,
-  fluidTheme,
-  root,
-} from "./theme";
+import { editorFrame, editorTheme, editorWrapper, fixedTheme, fluidTheme } from "./presentation";
 
 const basicSetup = {
   autocompletion: false,
@@ -86,8 +75,8 @@ export function MarkdownEditor({
       EditorView.lineWrapping,
       indentationMarkers({
         colors: {
-          activeDark: "var(--colors-muted-strong)",
-          dark: "var(--colors-line-strong)",
+          activeDark: token.var("colors.fg.muted"),
+          dark: token.var("colors.border.emphasized"),
         },
         hideFirstIndent: false,
         markerType: "fullScope",
@@ -101,18 +90,16 @@ export function MarkdownEditor({
   );
   return (
     <div
-      className={cx(
-        root,
-        !fluid && !fill && fixedRoot,
-        bare && bareRoot,
-        fill && fillRoot,
-        disabled && disabledRoot,
-      )}
+      className={editorFrame({
+        disabled,
+        mode: fill ? "fill" : fluid ? "fluid" : "fixed",
+        visual: bare ? "bare" : "outline",
+      })}
     >
       <CodeMirror
         aria-label={label ?? placeholder}
         basicSetup={basicSetup}
-        className={cx(codeMirror, !fluid && fixedCodeMirror)}
+        className={editorWrapper({ fill: !fluid || fill })}
         editable={!disabled}
         extensions={extensions}
         height={fluid && !fill ? "auto" : "100%"}

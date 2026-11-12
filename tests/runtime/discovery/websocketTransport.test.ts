@@ -39,7 +39,7 @@ test("Responses WebSocket adapter bridges response events to SSE", async () => {
         },
       },
     }),
-    runtime = createNetworkRuntime(async () => undefined),
+    runtime = createNetworkRuntime(async () => {}),
     previousFetch = globalThis.fetch;
   globalThis.fetch = runtime.fetch;
   try {

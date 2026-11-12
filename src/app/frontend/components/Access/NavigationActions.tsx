@@ -4,15 +4,15 @@ import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
 import type { AccessStatus } from "../../services/access";
-import { Button, LinkButton } from "../ParkUI";
+import { Button, LinkButton } from "../ui";
 
 const footer = css({
     borderBlockStartWidth: "hairline",
-    borderTopColor: "line",
+    borderTopColor: "border.default",
     padding: "2",
   }),
   action = css({
-    color: "mutedStrong",
+    color: "fg.muted",
     height: "controlTarget",
     width: "controlTarget",
   });
@@ -39,7 +39,7 @@ export function NavigationActions() {
           href="?setup=manage#/new"
           iconOnly
           title={t("accessManageCredentials")}
-          variant="ghost"
+          visual="ghost"
         >
           <KeyRound aria-hidden size={14} />
         </LinkButton>
@@ -52,7 +52,7 @@ export function NavigationActions() {
           onClick={access.handleLogout}
           title={t("accessLogout")}
           type="button"
-          variant="ghost"
+          visual="ghost"
         >
           <LogOut aria-hidden size={14} />
         </Button>

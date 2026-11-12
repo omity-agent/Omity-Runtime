@@ -6,7 +6,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 
 const [path] = process.argv.slice(2);
-assert(path, "缺少性能测试工具定义文件");
+assert.ok(path, "缺少性能测试工具定义文件");
 const tools = z
     .array(
       z.object({

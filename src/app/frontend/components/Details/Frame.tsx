@@ -1,97 +1,99 @@
 import { Collapsible } from "@ark-ui/react/collapsible";
 import { ChevronUp, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { css, cx, sva } from "styled-system/css";
+import { sva } from "styled-system/css";
 
 import { useDisclosure } from "../Transcript/disclosures";
 
-const openDisclosure = css({ transform: "rotate(180deg)" }),
-  frame = sva({
-    base: {
-      accessory: { alignItems: "center", display: "flex", flexShrink: 0 },
-      content: {
-        _closed: {
-          _motionReduce: { animation: "disabled" },
-          animation: "detailCollapse",
-        },
-        _open: {
-          _motionReduce: { animation: "disabled" },
-          animation: "detailExpand",
-        },
-        overflow: "hidden",
+const frame = sva({
+  base: {
+    accessory: { alignItems: "center", display: "flex", flexShrink: 0 },
+    content: {
+      _closed: {
+        _motionReduce: { animation: "disabled" },
+        animation: "detailCollapse",
       },
-      disclosure: {
-        color: "muted",
-        flexShrink: 0,
-        height: "smallIcon",
-        transition: "[transform 120ms ease]",
-        width: "smallIcon",
+      _open: {
+        _motionReduce: { animation: "disabled" },
+        animation: "detailExpand",
       },
-      header: {
-        _hover: { background: "controlHover" },
-        alignItems: "center",
-        display: "flex",
-        height: "detailHeader",
-        maxWidth: "full",
-        minHeight: "controlTarget",
-        paddingInline: "2",
-        position: "relative",
-        zIndex: "base",
+      overflow: "hidden",
+    },
+    disclosure: {
+      _groupExpanded: { transform: "rotate(180deg)" },
+      _motionReduce: { transitionProperty: "none" },
+      color: "fg.subtle",
+      flexShrink: 0,
+      height: "smallIcon",
+      transitionDuration: "fast",
+      transitionProperty: "transform",
+      width: "smallIcon",
+    },
+    header: {
+      _hover: { background: "bg.hover" },
+      alignItems: "center",
+      display: "flex",
+      height: "detailHeader",
+      maxWidth: "full",
+      minHeight: "controlTarget",
+      paddingInline: "2",
+      position: "relative",
+      zIndex: "base",
+    },
+    icon: { flexShrink: 0, height: "smallIcon", width: "smallIcon" },
+    root: {
+      color: "fg.subtle",
+      fontSize: "interface",
+      maxWidth: "full",
+      minWidth: "0",
+      padding: "0",
+      width: "full",
+    },
+    title: {
+      color: "fg.muted",
+      flexBasis: "0",
+      flexGrow: 1,
+      flexShrink: 1,
+      lineHeight: "normal",
+      minWidth: "0",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+    },
+    trigger: {
+      _focusVisible: { layerStyle: "focusRing", outlineOffset: "focusInset" },
+      alignItems: "center",
+      appearance: "none",
+      background: "transparent",
+      borderWidth: "0",
+      color: "fg.subtle",
+      cursor: "pointer",
+      display: "flex",
+      flexBasis: "0",
+      flexGrow: 1,
+      flexShrink: 1,
+      font: "inherit",
+      gap: "2",
+      height: "full",
+      maxWidth: "full",
+      minWidth: "0",
+      padding: "0",
+      textAlign: "left",
+    },
+  },
+  defaultVariants: { tone: "model" },
+  slots: ["root", "header", "trigger", "disclosure", "icon", "title", "accessory", "content"],
+  variants: {
+    tone: {
+      model: {
+        icon: { color: "status.model" },
       },
-      icon: { flexShrink: 0, height: "smallIcon", width: "smallIcon" },
-      root: {
-        "& pre": { maxWidth: "full" },
-        color: "muted",
-        fontSize: "interface",
-        marginBlockStart: "detailOverlap",
-        maxWidth: "full",
-        minWidth: "zero",
-        padding: "zero",
-        width: "full",
-      },
-      title: {
-        color: "mutedStrong",
-        flexBasis: "zero",
-        flexGrow: 1,
-        flexShrink: 1,
-        lineHeight: "normal",
-        minWidth: "zero",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-      },
-      trigger: {
-        alignItems: "center",
-        appearance: "none",
-        background: "clear",
-        borderWidth: "zero",
-        color: "muted",
-        cursor: "pointer",
-        display: "flex",
-        flexBasis: "zero",
-        flexGrow: 1,
-        flexShrink: 1,
-        font: "inherit",
-        gap: "2",
-        height: "full",
-        maxWidth: "full",
-        minWidth: "zero",
-        padding: "zero",
-        textAlign: "left",
+      tool: {
+        icon: { color: "status.tool" },
       },
     },
-    slots: ["root", "header", "trigger", "disclosure", "icon", "title", "accessory", "content"],
-    variants: {
-      tone: {
-        model: {
-          icon: { color: "statusModel" },
-        },
-        tool: {
-          icon: { color: "statusTool" },
-        },
-      },
-    },
-  });
+  },
+});
 export function Frame({
   accessory,
   children,
@@ -124,12 +126,12 @@ export function Frame({
     >
       <Collapsible.Content className={classes.content}>{children}</Collapsible.Content>
       <div className={classes.header}>
-        <Collapsible.Trigger aria-label={label} className={classes.trigger} type="button">
-          <ChevronUp
-            aria-hidden
-            className={cx(classes.disclosure, open && openDisclosure)}
-            size={12}
-          />
+        <Collapsible.Trigger
+          aria-label={label}
+          className={`group ${classes.trigger}`}
+          type="button"
+        >
+          <ChevronUp aria-hidden className={classes.disclosure} size={12} />
           <Icon className={classes.icon} size={13} />
           {title ? <span className={classes.title}>{title}</span> : null}
         </Collapsible.Trigger>

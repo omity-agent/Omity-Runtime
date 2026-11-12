@@ -90,7 +90,7 @@ function partitionCallRecord(
 }
 function itemCallId(item: unknown, allCallIds: Set<string>) {
   if (!isRecord(item)) {
-    return undefined;
+    return;
   }
   const callId: unknown = item["call_id"];
   if (typeof callId === "string" && allCallIds.has(callId)) {

@@ -10,7 +10,7 @@ interface HostSignalOptions {
 }
 export function wireHostSignals(options: HostSignalOptions) {
   if (!options.enabled) {
-    return () => undefined;
+    return () => {};
   }
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const stop = (signal: NodeJS.Signals) => {

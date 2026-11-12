@@ -20,14 +20,14 @@ import {
 afterEach(cleanupDatabaseDirs);
 test("stream links survive reconstruction and yield to sparse canonical message links", async () => {
   const connections = makeDatabases(2);
-  using db = required(connections[0]);
-  using resumed = required(connections[1]);
+  using db = required(connections[0]),
+    resumed = required(connections[1]);
   db.createSession("session", workspace);
   const inputId = db.appendUser("session", "run"),
     firstPath = "src/fileLinks/types.ts",
-    secondPath = "src/fileLinks/messageSources.ts",
-    prefix = "plain\nsrc/fileLi",
     middle = "nks/types.ts\r",
+    prefix = "plain\nsrc/fileLi",
+    secondPath = "src/fileLinks/messageSources.ts",
     suffix = `\nplain\n${secondPath}\n`,
     text = prefix + middle + suffix;
   db.consumeInput("session", required(db.nextInput("session")));

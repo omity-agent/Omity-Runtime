@@ -10,7 +10,6 @@ function objectParameters(
 const text = { type: "string" } as const,
   closed = objectParameters({ text }),
   recursive = objectParameters({ child: { anyOf: [{ $ref: "#" }, { type: "null" }] } });
-
 export const parameterCases: {
   eligible: [boolean, boolean, boolean];
   name: string;
@@ -96,7 +95,6 @@ export const parameterCases: {
     schema: objectParameters({ text: { pattern: String.raw`\(?=`, type: "string" } }),
   },
 ];
-
 function nestedParameters(depth: number) {
   let schema = closed;
   for (let i = 1; i < depth; i += 1) {

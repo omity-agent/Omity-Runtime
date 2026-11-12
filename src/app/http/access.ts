@@ -1,5 +1,5 @@
 import type { HttpBindings } from "@hono/node-server";
-import { type Context, type Hono } from "hono";
+import type { Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 
 import { localize } from "../../i18n/server";

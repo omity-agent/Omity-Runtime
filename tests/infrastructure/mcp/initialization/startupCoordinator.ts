@@ -85,7 +85,7 @@ export async function coordinateStartup(
     ),
   });
   const context = createSettingsContext(root, join(root, "user-settings")),
-    mcp = createAppMcp(root, "error", context, new AskUserRuntime(() => undefined));
+    mcp = createAppMcp(root, "error", context, new AskUserRuntime(() => {}));
   function releaseAll() {
     for (const checkpoint of checkpoints.values()) {
       checkpoint.response.resolve({});

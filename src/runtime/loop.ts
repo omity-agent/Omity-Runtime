@@ -13,7 +13,10 @@ export async function hostLoop(ctx: HostContext) {
       }
       return;
     }
-    if (!item) {
+    if (item) {
+      ctx.observer?.activity?.(ctx.sessionId, "waiting");
+      await processInput(ctx, item);
+    } else {
       ctx.observer?.activity?.(ctx.sessionId, "idle");
       if (!ctx.db.reclaimStorageIfPending()) {
         ctx.logger.debug(localize("runtime:loop.storageReclaimDelayed"));
@@ -40,9 +43,6 @@ export async function hostLoop(ctx: HostContext) {
         lastIdle = now;
       }
       await waitForWake(ctx, ctx.settings.host.pollMs);
-    } else {
-      ctx.observer?.activity?.(ctx.sessionId, "waiting");
-      await processInput(ctx, item);
     }
   }
 }

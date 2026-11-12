@@ -83,7 +83,7 @@ function resolveDescription(
     source: localize("mcp:freeform.descriptionLabel", { value0: name }),
   });
   if (typeof resolved !== "string") {
-    throw new Error(localize("mcp:freeform.descriptionNotString", { value0: name }));
+    throw new TypeError(localize("mcp:freeform.descriptionNotString", { value0: name }));
   }
   return resolved;
 }

@@ -1,4 +1,4 @@
-import type { TimelineMessage, TimelinePart } from "../../../timeline";
+import type { TimelineMessage, TimelinePart } from "../../../../timeline";
 
 interface DetailFocus {
   messageKey: string;

@@ -67,7 +67,7 @@ export async function measureApplication(
     ]);
     const sample = capture.result(),
       transcript = controller.transcript(sessionId);
-    assert(
+    assert.ok(
       transcript.queue.every((item) => item.status === "done"),
       "测试队列未正常完成",
     );

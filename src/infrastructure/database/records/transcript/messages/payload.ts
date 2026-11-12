@@ -99,7 +99,7 @@ function storedReasoning(message: AIMessage) {
       ? output.find((item) => isRecord(item) && item["type"] === "reasoning")
       : undefined;
   if (!direct && !isRecord(raw)) {
-    return undefined;
+    return;
   }
   return {
     ...direct,

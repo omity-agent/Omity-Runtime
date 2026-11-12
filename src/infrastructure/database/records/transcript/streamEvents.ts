@@ -15,7 +15,7 @@ export function streamEventCursor(db: Database) {
       .where(eq(streamClock.id, 1))
       .get()?.value ?? 0;
   if (!Number.isSafeInteger(cursor)) {
-    throw new Error(
+    throw new TypeError(
       localize("database:transcript.streamCursorUnsafe", {
         value0: String(cursor),
       }),

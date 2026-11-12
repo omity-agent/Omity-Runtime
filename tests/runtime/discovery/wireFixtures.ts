@@ -131,7 +131,7 @@ export function messagesSearchEvents(pause = false) {
       tool_use_id: "search-1",
       type: "tool_search_tool_result",
     },
-    ...(!pause ? [{ id: "call-1", input: {}, name: "find_file", type: "tool_use" }] : []),
+    ...(pause ? [] : [{ id: "call-1", input: {}, name: "find_file", type: "tool_use" }]),
   ];
   return [
     {

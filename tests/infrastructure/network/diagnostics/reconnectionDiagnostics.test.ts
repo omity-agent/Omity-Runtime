@@ -12,7 +12,7 @@ import { type RetryOriginMode, startRetryOrigin } from "./retryOrigin";
 
 async function runRetriedRequest(mode: RetryOriginMode) {
   const origin = await startRetryOrigin(mode),
-    runtime = createNetworkRuntime(async () => undefined),
+    runtime = createNetworkRuntime(async () => {}),
     transport = createSocketTransport(origin.dispatcher),
     previousFetch = globalThis.fetch;
   registerSocketTransport(runtime.fetch, transport.connect);
@@ -36,7 +36,7 @@ async function runRetriedRequest(mode: RetryOriginMode) {
     }
     expect(failure).toBeInstanceOf(Error);
     if (!(failure instanceof Error)) {
-      throw new Error("重连测试没有收到 Error");
+      throw new TypeError("重连测试没有收到 Error");
     }
     return {
       error: captureError(failure),

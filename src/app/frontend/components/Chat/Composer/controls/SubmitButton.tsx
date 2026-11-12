@@ -1,24 +1,15 @@
 import { Send } from "lucide-react";
-import { css } from "styled-system/css";
 
-import { IconButton } from "../../../ParkUI";
+import { IconButton } from "../../../ui";
 
-const primary = css({
-  _enabled: {
-    _hover: { background: "mutedStrong", borderColor: "mutedStrong" },
-    background: "text",
-    borderColor: "text",
-    color: "canvas",
-  },
-});
 export function SubmitButton({ disabled, label }: { disabled: boolean; label: string }) {
   return (
     <IconButton
       aria-label={label}
-      className={disabled ? undefined : primary}
       disabled={disabled}
       title={label}
       type="submit"
+      visual={disabled ? "outline" : "solid"}
     >
       <Send aria-hidden size={16} />
     </IconButton>

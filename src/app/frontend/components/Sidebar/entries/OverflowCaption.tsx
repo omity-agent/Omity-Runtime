@@ -4,10 +4,10 @@ import { css } from "styled-system/css";
 import { localize } from "../../../i18n";
 
 const viewport = css({
-    flexBasis: "zero",
+    flexBasis: "0",
     flexGrow: 1,
     flexShrink: 1,
-    minWidth: "zero",
+    minWidth: "0",
     overflow: "hidden",
   }),
   content = css({
@@ -23,7 +23,7 @@ export function OverflowCaption({ text, className }: { text: string; className: 
     leave = useCallback(() => setHovered(false), [setHovered]);
   useEffect(() => {
     if (!hovered || text.length === 0) {
-      return undefined;
+      return;
     }
     const element = ref.current;
     if (!element) {

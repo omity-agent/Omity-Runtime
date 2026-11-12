@@ -1,0 +1,65 @@
+import { defineRecipe } from "@pandacss/dev";
+
+export const input = defineRecipe({
+  base: {
+    _disabled: {
+      background: "bg.disabled",
+      borderColor: "border.disabled",
+      color: "fg.disabled",
+      cursor: "not-allowed",
+    },
+    _focusVisible: { layerStyle: "focusRing" },
+    _invalid: { borderColor: "border.error" },
+    _placeholder: { color: "fg.subtle" },
+    background: "bg.emphasized",
+    borderColor: "border.emphasized",
+    borderRadius: "l1",
+    borderWidth: "hairline",
+    color: "fg.default",
+    fontSize: "editor",
+    minHeight: "controlTarget",
+    minWidth: "0",
+    paddingBlock: "1",
+    paddingInline: "3",
+    textStyle: "control",
+    width: "full",
+  },
+  className: "input",
+  jsx: ["Input", "Select"],
+});
+export const badge = defineRecipe({
+  base: {
+    alignItems: "center",
+    background: "bg.muted",
+    borderColor: "border.emphasized",
+    borderRadius: "l1",
+    borderWidth: "hairline",
+    color: "fg.muted",
+    display: "inline-flex",
+    gap: "1",
+    paddingBlock: "0.5",
+    paddingInline: "1.5",
+    textStyle: "badge",
+    whiteSpace: "nowrap",
+    width: "fit",
+  },
+  className: "badge",
+  jsx: ["Badge"],
+});
+export const code = defineRecipe({
+  base: {
+    background: "bg.subtle",
+    borderColor: "border.default",
+    borderRadius: "l1",
+    borderWidth: "hairline",
+    color: "fg.default",
+    display: "inline",
+    overflowWrap: "anywhere",
+    paddingBlock: "0.5",
+    paddingInline: "1.5",
+    textStyle: "inlineCode",
+    verticalAlign: "baseline",
+  },
+  className: "code",
+  jsx: ["Code"],
+});

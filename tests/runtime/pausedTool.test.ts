@@ -43,7 +43,7 @@ test("paused cancellation is visible immediately and survives host reconstructio
           stopping.abort();
         }
       },
-      token: () => undefined,
+      token: () => {},
     };
     await processInput(first.context, required(db.nextInput("target")));
     expect(called).toBe(0);
@@ -115,7 +115,7 @@ test("responses reusing provider block ids keep separate tool streams", async ()
           stopping.abort();
         }
       },
-      token: () => undefined,
+      token: () => {},
     };
     await processInput(fixture.context, required(db.nextInput("target")));
     expect(db.nextInput("target")?.status).toBe("paused");

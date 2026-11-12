@@ -2,9 +2,9 @@ import { type ChangeEvent, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
-import { Field, Input } from "../../ParkUI";
+import { Field, Input } from "../../ui";
 
-const error = css({ color: "statusError", fontSize: "xs" });
+const error = css({ color: "status.error", fontSize: "metadata" });
 export function ModelInput({
   disabled,
   model,

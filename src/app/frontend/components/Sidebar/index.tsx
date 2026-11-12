@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { navigateLink, pagePath } from "../../route";
 import type { SessionInfo } from "../../services/client";
-import { LinkButton } from "../ParkUI";
+import { LinkButton } from "../ui";
 import { ConversationList } from "./entries/ConversationList";
 import {
   brand,

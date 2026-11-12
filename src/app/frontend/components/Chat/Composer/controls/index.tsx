@@ -59,9 +59,9 @@ export function Actions({
     }, [sessionId, t]),
     footer = useMemo(
       () =>
-        usage !== undefined ? (
+        usage === undefined ? undefined : (
           <ContextUsage cacheHitWarningRatio={cacheHitWarningRatio} usage={usage} />
-        ) : undefined,
+        ),
       [cacheHitWarningRatio, usage],
     );
   return (

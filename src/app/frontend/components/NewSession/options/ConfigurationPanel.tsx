@@ -2,8 +2,8 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 import { reportPromiseErrors } from "../../../services/errors";
-import { Button } from "../../ParkUI";
-import { configuration, setupFirst } from "../layout";
+import { Button } from "../../ui";
+import { configuration, setupFirst } from "../preparationGrid";
 import { ProfilePicker } from "../ProfilePicker";
 import { CapabilityGroup } from "./CapabilityGroup";
 import { ModelInput } from "./ModelInput";
@@ -44,9 +44,7 @@ export function ConfigurationPanel({
             {t("retry")}
           </Button>
         </div>
-      ) : !selection.ready ? (
-        <output className={setupFirst}>{t("loadingOptions")}</output>
-      ) : (
+      ) : selection.ready ? (
         <>
           <CapabilityGroup
             disabled={disabled}
@@ -63,6 +61,8 @@ export function ConfigurationPanel({
             options={selection.mcpServers}
           />
         </>
+      ) : (
+        <output className={setupFirst}>{t("loadingOptions")}</output>
       )}
     </div>
   );

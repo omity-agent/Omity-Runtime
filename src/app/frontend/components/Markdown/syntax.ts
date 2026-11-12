@@ -6,17 +6,17 @@ import { css } from "styled-system/css";
 
 import type { HighlightedCodeResult } from "../HighlightedCode/background/dispatch";
 
-const title = css({ color: "syntaxTitle", fontWeight: "bold" }),
-  strong = css({ color: "syntaxNumber", fontWeight: "bold" }),
-  emphasis = css({ color: "syntaxKeyword", fontStyle: "italic" }),
-  link = css({ color: "syntaxMeta", textDecoration: "underline" }),
-  url = css({ color: "syntaxString" }),
-  monospace = css({ color: "syntaxAddition" }),
-  quote = css({ color: "mutedStrong" }),
-  list = css({ color: "syntaxNumber" }),
-  strikethrough = css({ color: "muted", textDecoration: "line-through" }),
-  meta = css({ color: "syntaxComment" }),
-  separator = css({ color: "syntaxComment" }),
+const title = css({ color: "syntax.title", fontWeight: "bold" }),
+  strong = css({ color: "syntax.number", fontWeight: "bold" }),
+  emphasis = css({ color: "syntax.keyword", fontStyle: "italic" }),
+  link = css({ color: "syntax.meta", textDecoration: "underline" }),
+  url = css({ color: "syntax.string" }),
+  monospace = css({ color: "syntax.addition" }),
+  quote = css({ color: "fg.muted" }),
+  list = css({ color: "syntax.number" }),
+  strikethrough = css({ color: "fg.subtle", textDecoration: "line-through" }),
+  meta = css({ color: "syntax.comment" }),
+  separator = css({ color: "syntax.comment" }),
   markdownHighlight = HighlightStyle.define([
     { class: title, tag: tags.heading },
     { class: strong, tag: tags.strong },

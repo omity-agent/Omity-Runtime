@@ -8,8 +8,8 @@ import { formatTokens } from "../../tokenUnits";
 const panel = css({
     alignItems: "end",
     borderBlockStartWidth: "hairline",
-    borderTopColor: "line",
-    color: "muted",
+    borderTopColor: "border.default",
+    color: "fg.subtle",
     display: { base: "flex", md: "grid" },
     flexWrap: "wrap",
     gap: "2",
@@ -26,9 +26,9 @@ const panel = css({
     gap: "1.5",
     justifyContent: "space-between",
   }),
-  value = css({ color: "mutedStrong" }),
-  cacheNormal = css({ color: "statusTool" }),
-  cacheWarning = css({ color: "statusError" });
+  value = css({ color: "fg.muted" }),
+  cacheNormal = css({ color: "status.tool" }),
+  cacheWarning = css({ color: "status.error" });
 export function ContextUsage({
   cacheHitWarningRatio,
   usage,
@@ -59,7 +59,7 @@ export function ContextUsage({
           <DatabaseZap aria-hidden="true" size={12} />
           <span>{t("kvCache")}</span>
         </span>
-        <span className={!usage ? value : belowExpectation ? cacheWarning : cacheNormal}>
+        <span className={usage ? (belowExpectation ? cacheWarning : cacheNormal) : value}>
           {cacheRate}
         </span>
       </span>

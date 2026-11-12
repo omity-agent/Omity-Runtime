@@ -178,7 +178,7 @@ function nonErrorValue(value: unknown, serialized: unknown): unknown {
   if (typeof value === "bigint" || typeof value === "symbol") {
     return String(value);
   }
-  if (typeof value === "undefined") {
+  if (value === undefined) {
     return "[undefined]";
   }
   if (typeof value === "function") {

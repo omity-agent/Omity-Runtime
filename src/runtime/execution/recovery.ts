@@ -25,7 +25,7 @@ function confirmedDeadLease(
   abandonedOwner?: ProcessOwner,
 ) {
   if (!lease || lease.expiresAt <= now) {
-    return undefined;
+    return;
   }
   const owner = parseHostOwner(lease.ownerId),
     abandoned =

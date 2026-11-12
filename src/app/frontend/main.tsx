@@ -9,7 +9,7 @@ import { reportError } from "./services/errors";
 import { createQueryClient } from "./services/remoteStore";
 
 await i18nReady;
-const root = document.getElementById("root");
+const root = document.querySelector("#root");
 if (!root) {
   throw new Error(localize("frontend:runtime.rootMissing"));
 }

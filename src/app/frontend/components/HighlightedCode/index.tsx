@@ -5,17 +5,10 @@ import { type CustomContainerComponentProps, Virtualizer } from "virtua";
 
 import { codeWindow } from "../../../../../settings/rendering";
 import type { FilePathMatch } from "../../../../fileLinks/types";
-import { CopyButton } from "../Chat/CopyButton";
-import {
-  block,
-  codeElement,
-  container,
-  copyButton,
-  sourceLine,
-  widthSizer,
-} from "../CodeBlock/styles";
+import { CopyButton } from "../Chat/messages/CopyButton";
 import { normalizeCodeMatches } from "../FileLink/lineBreaks";
 import { useFollowBottom } from "../Transcript/useFollowBottom";
+import { block, codeElement, container, copyButton, sourceLine, widthSizer } from "./codeSurface";
 import { codeLines, HighlightedLine } from "./lines";
 import { useHighlight } from "./useHighlight";
 

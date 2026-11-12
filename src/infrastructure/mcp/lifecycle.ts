@@ -52,7 +52,7 @@ export class AsyncResourceCache<Resource extends Closeable> {
     ];
     this.loading.clear();
     try {
-      await pMap(pending, () => undefined, { stopOnError: false });
+      await pMap(pending, () => {}, { stopOnError: false });
     } catch (error) {
       if (error instanceof AggregateError) {
         error.message = localize("mcp:lifecycle.cleanupFailed", {

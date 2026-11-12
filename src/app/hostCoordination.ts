@@ -51,7 +51,7 @@ export function createControllerHosts(options: {
     context,
     events,
     owner,
-    prediction = () => undefined,
+    prediction = () => {},
     root,
     sessionInfo,
     settings,

@@ -5,12 +5,12 @@ import { css } from "styled-system/css";
 
 import type { Control } from "../../../../../../types";
 import { reportPromiseErrors } from "../../../../services/errors";
-import { IconButton } from "../../../ParkUI";
+import { IconButton } from "../../../ui";
 import type { ChatControlState } from "../../actionState";
-import { runtimeControls } from "../layout";
+import { runtimeControls } from "../arrangement";
 
 type RequestedControl = Extract<Control, "running" | "step" | "pause">;
-const activeIcon = css({ animation: "progressPulse" });
+const activeIcon = css({ animationStyle: "activity" });
 export function RuntimeControl({
   controlDisabled,
   controlState,

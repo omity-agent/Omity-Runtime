@@ -68,7 +68,7 @@ test.each([true, false])(
         app.root,
         "error",
         createSettingsContext(app.root),
-        new AskUserRuntime(() => undefined),
+        new AskUserRuntime(() => {}),
       );
     try {
       const deadline = Date.now() + 5000;

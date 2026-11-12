@@ -38,11 +38,11 @@ export function useTranslatedTranscript(
     coordinator.current?.close();
     coordinator.current = undefined;
     if (!settings?.enabled) {
-      return undefined;
+      return;
     }
     if (!browserTranslationSupported()) {
       warnUnsupportedBrowser(t("reasoningTranslationUnsupported"));
-      return undefined;
+      return;
     }
     const targetLanguage = preferredTranslationLanguage(),
       translation = new ReasoningTranslationCoordinator({

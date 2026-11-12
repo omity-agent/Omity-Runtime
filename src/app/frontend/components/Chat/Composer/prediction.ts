@@ -2,7 +2,7 @@ export class UserInputPrediction {
   private index: number | undefined;
   navigate(current: string, predictions: readonly string[]) {
     if (predictions.length === 0) {
-      return undefined;
+      return;
     }
     if (this.index === undefined) {
       this.index = 0;

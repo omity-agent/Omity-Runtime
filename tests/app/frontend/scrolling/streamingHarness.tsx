@@ -59,7 +59,7 @@ const mode = new URL(location.href).searchParams.get("mode"),
       role: index % 2 ? "assistant" : "user",
     };
   }),
-  completeAction = async () => undefined;
+  completeAction = async () => {};
 function liveMessage(revision: number): TimelineMessage {
   const remeasure = mode !== "append" && revision % 7 === 0,
     code = Array.from(
@@ -144,7 +144,7 @@ function StreamingHarness() {
   );
 }
 await i18nReady;
-const root = document.getElementById("root");
+const root = document.querySelector("#root");
 if (!root) {
   throw new Error("Scrolling fixture root is missing");
 }

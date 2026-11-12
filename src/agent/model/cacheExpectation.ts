@@ -26,7 +26,7 @@ export function estimateCacheHitRate(messages: BaseMessage[], modelMessages: Mod
   const suffixTokens = countTokens(JSON.stringify(modelMessages.slice(previousIndex))),
     estimatedInputTokens = previousTokens + suffixTokens;
   if (!Number.isSafeInteger(estimatedInputTokens)) {
-    throw new Error(localize("agent:model.cacheInputTokensUnsafe"));
+    throw new TypeError(localize("agent:model.cacheInputTokensUnsafe"));
   }
   return previousTokens / estimatedInputTokens;
 }

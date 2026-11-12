@@ -16,7 +16,7 @@ export function retainedLineMarkup({
   const source = highlight?.sourceLines[index],
     markup = highlight?.lines[index];
   if (source === undefined || markup === undefined) {
-    return undefined;
+    return;
   }
   if (source === current) {
     return markup;
@@ -24,5 +24,5 @@ export function retainedLineMarkup({
   if (appendOnly && current.startsWith(source)) {
     return markup + escapeHtml(current.slice(source.length));
   }
-  return undefined;
+  return;
 }

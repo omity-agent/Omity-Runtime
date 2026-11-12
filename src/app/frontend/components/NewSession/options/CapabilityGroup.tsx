@@ -3,16 +3,16 @@ import { useCallback, useId } from "react";
 import { css, cx } from "styled-system/css";
 import { switchRecipe } from "styled-system/recipes";
 
-import { Badge, Field } from "../../ParkUI";
+import { Badge, Field } from "../../ui";
 import type { CapabilityOption } from "./preferences";
 
 const classes = switchRecipe({ size: "sm" }),
   group = css({
-    background: "surface",
-    borderColor: "line",
+    background: "bg.default",
+    borderColor: "border.default",
     borderRadius: "l2",
     borderWidth: "hairline",
-    minWidth: "zero",
+    minWidth: "0",
     padding: "4",
   }),
   legend = css({
@@ -27,11 +27,11 @@ const classes = switchRecipe({ size: "sm" }),
     colorPalette: "neutral",
     cursor: "pointer",
     gap: "3",
-    minWidth: "zero",
+    minWidth: "0",
     width: "full",
   }),
-  details = css({ display: "grid", gap: "1", minWidth: "zero", overflowWrap: "anywhere" }),
-  description = css({ color: "mutedStrong", fontSize: "sm", whiteSpace: "pre-wrap" });
+  details = css({ display: "grid", gap: "1", minWidth: "0", overflowWrap: "anywhere" }),
+  description = css({ color: "fg.muted", fontSize: "editor", whiteSpace: "pre-wrap" });
 export function CapabilityGroup({
   disabled,
   emptyLabel,

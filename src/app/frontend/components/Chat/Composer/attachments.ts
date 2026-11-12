@@ -19,12 +19,12 @@ export class PendingAttachments {
       return this.add(files, content);
     } catch (error) {
       reportError(error);
-      return undefined;
+      return;
     }
   }
   private add(files: File[], content: string) {
     if (!this.settings) {
-      return undefined;
+      return;
     }
     const retained = this.values(content).map(({ file }) => file);
     validateAttachmentBatch([...retained, ...files], this.settings);

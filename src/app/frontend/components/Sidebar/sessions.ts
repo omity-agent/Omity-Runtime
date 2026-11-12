@@ -3,9 +3,9 @@ import { maxBy } from "es-toolkit";
 import { isRunningStatus, type SessionStatus } from "../../../../types";
 import type { SessionInfo } from "../../services/client";
 
-const minuteMs = 60_000,
+const dayMs = 86_400_000,
   hourMs = 3_600_000,
-  dayMs = 86_400_000,
+  minuteMs = 60_000,
   weekMs = 604_800_000;
 export interface WorkspaceGroup {
   workspace: string;
@@ -71,7 +71,7 @@ export function updatedAtRefreshDelay(updatedAt: number, now = Date.now()) {
   if (elapsedMs < weekMs) {
     return dayMs - (elapsedMs % dayMs);
   }
-  return undefined;
+  return;
 }
 function toGroup([workspace, source]: [string, SessionInfo[]]): WorkspaceGroup {
   const sessions = [...source].toSorted(compareSessions);

@@ -28,7 +28,7 @@ const pending: PendingTranslation[] = [],
   reversions: string[] = [],
   empty: never[] = [],
   client = new QueryClient(),
-  noop = async () => undefined,
+  noop = async () => {},
   pickWorkspace = async () => null;
 Object.defineProperty(navigator, "languages", { configurable: true, value: ["zh-CN"] });
 Object.defineProperty(globalThis, "LanguageDetector", {
@@ -99,7 +99,7 @@ function ControlledChat() {
             reversions.push(source);
           }
         });
-        observer.observe(document.getElementById("root")!, {
+        observer.observe(document.querySelector("#root")!, {
           characterData: true,
           characterDataOldValue: true,
           childList: true,
@@ -136,7 +136,7 @@ function ControlledChat() {
   );
 }
 await i18nReady;
-createRoot(document.getElementById("root")!).render(
+createRoot(document.querySelector("#root")!).render(
   <QueryClientProvider client={client}>
     <ControlledChat />
   </QueryClientProvider>,

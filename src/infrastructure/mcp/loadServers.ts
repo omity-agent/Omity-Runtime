@@ -47,8 +47,8 @@ async function loadServerCatalog(
   options: ServerLoadOptions,
 ): Promise<ServerCatalog> {
   const started = performance.now();
-  let stage: McpFailure["stage"] = "initialize",
-    connection: McpConnection | undefined;
+  let connection: McpConnection | undefined,
+    stage: McpFailure["stage"] = "initialize";
   try {
     const serverClient = await client.getClient(name);
     connection = parseMcpConnection(configuration);

@@ -1,13 +1,10 @@
-import { type IncomingMessage } from "node:http";
+import type { IncomingMessage } from "node:http";
 
-import {
-  type AuthenticationResponseJSON,
-  type RegistrationResponseJSON,
-} from "@simplewebauthn/server";
+import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/server";
 import { RateLimiterMemory, RateLimiterRes } from "rate-limiter-flexible";
 
 import { localize } from "../../i18n/server";
-import { type Settings } from "../../types";
+import type { Settings } from "../../types";
 import type { AccessStatus } from "../contracts/authentication";
 import { HttpError } from "../http/errors";
 import { WebAuthnCeremony } from "./ceremony";

@@ -5,13 +5,13 @@ import { css } from "styled-system/css";
 import { visuallyHidden } from "styled-system/patterns";
 
 import { reportPromiseErrors } from "../../../../services/errors";
-import { Field, IconButton, Select } from "../../../ParkUI";
+import { Field, IconButton, Select } from "../../../ui";
 
 const action = css({
     alignItems: "center",
     display: "flex",
     gap: "1",
-    minWidth: "zero",
+    minWidth: "0",
   }),
   field = css({
     alignItems: "center",
@@ -19,14 +19,14 @@ const action = css({
     flexDirection: "row",
     flexGrow: 1,
     gap: "1",
-    minWidth: "zero",
+    minWidth: "0",
   }),
   select = css({
     flexGrow: 1,
-    minWidth: "zero",
+    minWidth: "0",
     width: "full",
   }),
-  busyIcon = css({ animation: "spin" }),
+  busyIcon = css({ animationStyle: "busy" }),
   hiddenLabel = visuallyHidden();
 export function ProfileAction({
   availableProfiles,

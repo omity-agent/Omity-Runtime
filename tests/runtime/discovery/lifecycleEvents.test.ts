@@ -17,7 +17,7 @@ test("a policy close retains its reason and stream progress without being retrie
         },
       },
     }),
-    runtime = createNetworkRuntime(async () => undefined),
+    runtime = createNetworkRuntime(async () => {}),
     previousFetch = globalThis.fetch;
   globalThis.fetch = runtime.fetch;
   try {
@@ -60,7 +60,7 @@ test("Responses request cancellation closes the active WebSocket", async () => {
         message: () => controller.abort(new Error("request cancelled")),
       },
     }),
-    runtime = createNetworkRuntime(async () => undefined),
+    runtime = createNetworkRuntime(async () => {}),
     previousFetch = globalThis.fetch;
   globalThis.fetch = runtime.fetch;
   try {
@@ -84,7 +84,7 @@ test("an already cancelled Responses request never starts a WebSocket handshake"
   let connections = 0;
   const runtime = createNetworkRuntime(async () => {
       connections += 1;
-      return undefined;
+      return;
     }),
     previousFetch = globalThis.fetch;
   globalThis.fetch = runtime.fetch;

@@ -6,34 +6,34 @@ import type { AskUserQuestion } from "../../toolActions";
 import { ChoiceOptions } from "./Options";
 
 const choiceLayout = css({
-    borderColor: "lineStrong",
+    borderColor: "border.emphasized",
     borderWidth: "hairline",
     display: "grid",
     gridTemplateColumns: { base: "minmax(0, 1fr)", md: "repeat(2, minmax(0, 1fr))" },
     minHeight: "composerEditor",
-    minWidth: "zero",
+    minWidth: "0",
   }),
   choicePane = css({
     alignContent: "start",
     display: "grid",
     gap: "3",
-    minWidth: "zero",
+    minWidth: "0",
     padding: "3",
   }),
   promptLabel = css({
-    color: "text",
+    color: "fg.default",
     textStyle: "formPrompt",
     whiteSpace: "pre-wrap",
   }),
-  noteLabel = css({ color: "mutedStrong", fontSize: "xs" }),
+  noteLabel = css({ color: "fg.muted", fontSize: "metadata" }),
   notePane = css({
     alignContent: "stretch",
-    borderBlockStartWidth: { base: "hairline", md: "zero" },
+    borderBlockStartWidth: { base: "hairline", md: "0" },
     borderInlineStartWidth: { md: "hairline" },
-    borderLeftColor: { md: "lineStrong" },
-    borderTopColor: { base: "lineStrong", md: "clear" },
+    borderLeftColor: { md: "border.emphasized" },
+    borderTopColor: { base: "border.emphasized", md: "transparent" },
     gridTemplateRows: "auto minmax(0, 1fr)",
-    minHeight: "zero",
+    minHeight: "0",
   });
 export function AskUserPrompt({
   note,

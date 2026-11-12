@@ -26,13 +26,13 @@ test.each(modelFailures)("handles $name through the model graph", async (failure
   const model = recoveringModel(failure.response),
     { context, db, executions } = agentFixture({ model }),
     warnings: BrowserWarning[] = [],
-    loggedError = spyOn(context.logger, "error").mockReturnValue(undefined);
+    loggedError = spyOn(context.logger, "error").mockReturnValue();
   context.settings.model.maxConcurrentRequests = 1;
   context.settings.model.reasoning_effort = "high";
   context.settings.model.retryDelayMs = 1;
   context.settings.model.temperature = undefined;
   context.observer = {
-    token: () => undefined,
+    token: () => {},
     warning: (_sessionId, warning) => warnings.push(warning),
   };
   try {
@@ -88,7 +88,7 @@ test.each(websocketFailures)("handles $name through the model graph", async (fai
         },
       },
     }),
-    runtime = createNetworkRuntime(async () => undefined),
+    runtime = createNetworkRuntime(async () => {}),
     previousFetch = globalThis.fetch,
     model = recoveringModel(() =>
       createResponsesWebsocketFetch({ apiKey: "test-key" })(new URL("/responses", target.url), {
@@ -99,14 +99,14 @@ test.each(websocketFailures)("handles $name through the model graph", async (fai
     { context, db, executions } = agentFixture({ model }),
     warnings: BrowserWarning[] = [],
     reportedFailures: ErrorDetails[] = [],
-    loggedError = spyOn(context.logger, "error").mockReturnValue(undefined),
-    loggedWarning = spyOn(console, "warn").mockReturnValue(undefined);
+    loggedError = spyOn(context.logger, "error").mockReturnValue(),
+    loggedWarning = spyOn(console, "warn").mockReturnValue();
   globalThis.fetch = runtime.fetch;
   context.settings.model.maxConcurrentRequests = 1;
   context.settings.model.retryDelayMs = 1;
   context.observer = {
     failure: (_sessionId, error) => reportedFailures.push(error),
-    token: () => undefined,
+    token: () => {},
     warning: (_sessionId, warning) => warnings.push(warning),
   };
   try {

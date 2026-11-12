@@ -6,13 +6,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { Reasoning } from "../../../src/app/frontend/components/Details/Reasoning";
 import { createCodeHighlighter } from "../../../src/app/frontend/components/HighlightedCode/background/tokenization";
-import { MarkdownView } from "../../../src/app/frontend/components/MarkdownView";
+import { MarkdownView } from "../../../src/app/frontend/components/Markdown";
 import { DisclosureProvider } from "../../../src/app/frontend/components/Transcript/disclosures";
 import { i18nReady } from "../../../src/app/frontend/i18n";
 
 const paletteClass = "layerStyle_reasoningText",
   languageDescriptor = Object.getOwnPropertyDescriptor(navigator, "languages"),
-  registerDetail = () => () => undefined,
+  registerDetail = () => () => {},
   reasoningPart = {
     content: [
       "## 思考标题",
@@ -87,23 +87,23 @@ test.each([true, false])(
 );
 test("reasoning inherits its text shade and dims syntax hues without fading surfaces", () => {
   const scoped = declarations(`.${paletteClass}`);
-  expect(scoped["--colors-text"]).toBe("currentColor");
-  expect(scoped["--colors-muted-strong"]).toBe("currentColor");
+  expect(scoped["--colors-fg-default"]).toBe("currentColor");
+  expect(scoped["--colors-fg-muted"]).toBe("currentColor");
   expect(scoped["--reasoning-syntax-strength"]).toBe("65%");
   for (const [role, hue] of syntaxColors) {
     expect(scoped[`--colors-syntax-${role}`]).toBe(
-      `color-mix(in srgb, var(--colors-accent-${hue}) var(--reasoning-syntax-strength), var(--colors-canvas))`,
+      `color-mix(in srgb, var(--colors-accent-${hue}) var(--reasoning-syntax-strength), var(--colors-bg-canvas))`,
     );
   }
   expect(scoped).not.toHaveProperty("opacity");
   expect(scoped).not.toHaveProperty("filter");
-  expect(scoped).not.toHaveProperty("--colors-surface-inset");
-  expect(scoped).not.toHaveProperty("--colors-line");
+  expect(scoped).not.toHaveProperty("--colors-bg-subtle");
+  expect(scoped).not.toHaveProperty("--colors-border-default");
 });
 test("ordinary Markdown keeps the original palette outside reasoning", () => {
   const markup = renderToStaticMarkup(<MarkdownView content={reasoningPart.content} />);
   expect(markup).not.toContain(paletteClass);
-  expect(stylesheet.toString()).toContain("--colors-text: var(--colors-ink-50)");
+  expect(stylesheet.toString()).toContain("--colors-fg-default: var(--colors-ink-50)");
   expect(stylesheet.toString()).toContain("--colors-syntax-meta: var(--colors-accent-blue)");
 });
 test("streamed code highlights resolve the same scoped syntax palette", async () => {

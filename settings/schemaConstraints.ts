@@ -12,7 +12,6 @@ const annotations = ["$schema", "$id", "title", "description", "default"],
     "definitions",
   ],
   formats = ["date-time", "time", "date", "duration", "email", "hostname", "ipv4", "ipv6", "uuid"];
-
 export const schemaConstraints = {
   anthropic: {
     allRequired: false,

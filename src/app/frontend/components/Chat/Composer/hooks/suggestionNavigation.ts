@@ -43,7 +43,7 @@ export function useSuggestionNavigation({
         predictionsRef.current,
       );
       if (nextContent === undefined) {
-        return undefined;
+        return;
       }
       updateContent(nextContent);
       return nextContent;

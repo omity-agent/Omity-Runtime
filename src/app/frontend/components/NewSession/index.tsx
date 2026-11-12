@@ -6,10 +6,10 @@ import { PendingAttachments } from "../Chat/Composer/attachments";
 import { LatestMessage } from "./editor/LatestMessage";
 import { useNewSessionDraft } from "./editor/preparationState";
 import { useSessionCreation } from "./editor/submission";
-import { conversation, scroll, scrollContent, setup } from "./layout";
 import { MessageStack } from "./MessageStack";
 import { ConfigurationPanel } from "./options/ConfigurationPanel";
 import { useSessionPreferences } from "./options/preferences";
+import { scroll, scrollContent, setup } from "./preparationGrid";
 import { WorkspacePicker } from "./WorkspacePicker";
 
 export function NewSessionPage({
@@ -61,7 +61,7 @@ export function NewSessionPage({
     const pairAdded = pairs.length > previousPairCountRef.current;
     previousPairCountRef.current = pairs.length;
     if (!pairAdded) {
-      return undefined;
+      return;
     }
     const keepLastMessageInPlace = () => {
       const node = scrollRef.current;
@@ -117,7 +117,7 @@ export function NewSessionPage({
               selection={selection}
             />
           </div>
-          <div className={conversation}>
+          <div>
             <MessageStack
               disabled={draftLoading || submitting}
               pairs={pairs}

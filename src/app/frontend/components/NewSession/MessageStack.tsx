@@ -5,10 +5,10 @@ import { css } from "styled-system/css";
 
 import type { EditablePair } from "../../../composition/preparation";
 import type { InitialMessagePair } from "../../../initialState";
+import { composerFrame, composerRole } from "../Chat/Composer/arrangement";
 import { ActionPanel } from "../Chat/Composer/controls/ActionPanel";
-import { composerFrame, composerRole } from "../Chat/Composer/layout";
 import { MarkdownEditor } from "../Chat/MarkdownEditor";
-import { IconButton } from "../ParkUI";
+import { IconButton } from "../ui";
 
 const stack = css({ alignSelf: "stretch" });
 export function MessageStack({

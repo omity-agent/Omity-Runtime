@@ -7,8 +7,8 @@ interface HookCallDetails {
   sourceId: string;
   hookId: string;
 }
-const hookCallPrefix = "omity-hook_",
-  hookCallPattern = /^omity-hook_[A-Za-z0-9_-]{43}$/;
+const hookCallPattern = /^omity-hook_[A-Za-z0-9_-]{43}$/,
+  hookCallPrefix = "omity-hook_";
 function hookTrigger(target: string, when: HookWhen): HookTrigger {
   return `${target}:${when}`;
 }

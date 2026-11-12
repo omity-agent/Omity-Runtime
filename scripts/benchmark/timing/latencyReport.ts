@@ -6,13 +6,13 @@ import type { PhaseTiming } from "./phaseBreakdown";
 import type { RoundtripSample } from "./roundtripCapture";
 
 export function printLatencyReport(samples: RoundtripSample[]) {
-  assert(samples.length > 0, "没有可统计的性能样本");
+  assert.ok(samples.length > 0, "没有可统计的性能样本");
   console.log("\n本机耗时（单位 ms）");
   const first = samples[0]!;
   for (const [index, phase] of first.phases.entries()) {
     const phases = samples.map((sample) => {
       const current = sample.phases[index];
-      assert(current?.label === phase.label, "性能样本的阶段不一致");
+      assert.ok(current?.label === phase.label, "性能样本的阶段不一致");
       return current;
     });
     console.log(

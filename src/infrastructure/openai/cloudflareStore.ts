@@ -36,14 +36,14 @@ export class CloudflareCookieStore {
       const name = value.split("=", 1)[0]!.trim();
       if (allowedName(name)) {
         const cookie = Cookie.parse(value);
-        if (!cookie) {
-          console.warn(localize("network:cloudflareCookieInvalid"));
-        } else {
+        if (cookie) {
           try {
             this.jar.setCookieSync(cookie, url);
           } catch {
             console.warn(localize("network:cloudflareCookieScopeInvalid"));
           }
+        } else {
+          console.warn(localize("network:cloudflareCookieInvalid"));
         }
       }
     }

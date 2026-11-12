@@ -2,43 +2,17 @@ import { Checkbox, RadioGroup } from "@ark-ui/react";
 import { Check } from "lucide-react";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { css, cx } from "styled-system/css";
-import { checkbox, radioGroup } from "styled-system/recipes";
+import { css } from "styled-system/css";
+import { stack } from "styled-system/patterns";
 
 import type { AskUserQuestion } from "../../toolActions";
+import { choiceOption } from "./choiceOption";
 
-const checkboxClasses = checkbox(),
-  radioClasses = radioGroup(),
-  optionList = css({ display: "grid", gap: "2" }),
-  optionRoot = css({
-    _hover: { background: "controlHover" },
-    alignItems: "center",
-    cursor: "pointer",
-    display: "flex",
-    gap: "2",
-    minHeight: "10",
-    padding: "2",
-  }),
-  optionControl = css({
-    alignItems: "center",
-    borderColor: "lineStrong",
-    borderWidth: "hairline",
-    color: "text",
-    display: "inline-flex",
-    flex: "none",
-    height: "5",
-    justifyContent: "center",
-    width: "5",
-  }),
-  optionIndicator = css({ display: "inline-flex" }),
-  optionLabel = css({ color: "mutedStrong", fontSize: "xs" }),
-  radioControl = cx(optionControl, css({ borderRadius: "circle" })),
-  radioIndicator = css({
-    background: "text",
-    borderRadius: "circle",
-    height: "2.5",
-    width: "2.5",
-  });
+const checkboxClasses = choiceOption({ kind: "checkbox" }),
+  radioClasses = choiceOption({ kind: "radio" }),
+  optionList = stack({ gap: "2" }),
+  optionLabel = css({ color: "fg.muted", fontSize: "metadata" }),
+  radioRoot = stack({ gap: "2" });
 type ChoiceQuestion = Extract<AskUserQuestion, { kind: "choice" }>;
 export function ChoiceOptions({
   question,
@@ -70,25 +44,17 @@ export function ChoiceOptions({
   }
   return (
     <RadioGroup.Root
-      className={radioClasses.root}
+      className={radioRoot}
       onValueChange={handleRadioChange}
       value={selectedOptions[0] ?? ""}
     >
-      <RadioGroup.Label className={cx(radioClasses.label, optionLabel)}>
-        {t("selectOne")}
-      </RadioGroup.Label>
+      <RadioGroup.Label className={optionLabel}>{t("selectOne")}</RadioGroup.Label>
       <div className={optionList}>
         {question.options.map((option) => (
-          <RadioGroup.Item
-            className={cx(radioClasses.item, optionRoot)}
-            key={option}
-            value={option}
-          >
+          <RadioGroup.Item className={radioClasses.root} key={option} value={option}>
             <RadioGroup.ItemHiddenInput />
-            <RadioGroup.ItemControl className={cx(radioClasses.itemControl, radioControl)}>
-              <span aria-hidden="true" className={radioIndicator} />
-            </RadioGroup.ItemControl>
-            <RadioGroup.ItemText className={radioClasses.itemText}>{option}</RadioGroup.ItemText>
+            <RadioGroup.ItemControl className={radioClasses.control} />
+            <RadioGroup.ItemText className={radioClasses.label}>{option}</RadioGroup.ItemText>
           </RadioGroup.Item>
         ))}
       </div>
@@ -119,12 +85,12 @@ function MultipleOption({
   return (
     <Checkbox.Root
       checked={selectedOptions.includes(option)}
-      className={cx(checkboxClasses.root, optionRoot)}
+      className={checkboxClasses.root}
       onCheckedChange={handleCheckedChange}
     >
       <Checkbox.HiddenInput />
-      <Checkbox.Control className={cx(checkboxClasses.control, optionControl)}>
-        <Checkbox.Indicator className={cx(checkboxClasses.indicator, optionIndicator)}>
+      <Checkbox.Control className={checkboxClasses.control}>
+        <Checkbox.Indicator className={checkboxClasses.indicator}>
           <Check size={14} />
         </Checkbox.Indicator>
       </Checkbox.Control>

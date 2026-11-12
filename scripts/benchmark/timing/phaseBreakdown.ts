@@ -30,7 +30,7 @@ export function summarizePhases(boundaries: Boundaries, spans: TimingSpan[]): Ph
   const result = phases.map(({ from, to, label }) =>
     summarizePhase(label, { end: boundaries[to], start: boundaries[from] }, spans),
   );
-  assert(
+  assert.ok(
     Math.abs(
       result.reduce((total, phase) => total + phase.milliseconds, 0) -
         (boundaries.sent - boundaries.received),
@@ -51,7 +51,7 @@ function summarizePhase(label: string, phase: Interval, spans: TimingSpan[]): Ph
     >(),
     covered: Interval[] = [];
   for (const span of spans) {
-    assert(span.end !== undefined, `计时操作未完成：${span.label}`);
+    assert.ok(span.end !== undefined, `计时操作未完成：${span.label}`);
     const interval = {
       end: Math.min(span.end, phase.end),
       start: Math.max(span.start, phase.start),
@@ -67,7 +67,7 @@ function summarizePhase(label: string, phase: Interval, spans: TimingSpan[]): Ph
         group = groups.get(key) ?? { calls: 0, children: [], intervals: [], path };
       group.intervals.push(interval);
       for (const child of spans.filter((candidate) => candidate.parent === span)) {
-        assert(child.end !== undefined, `计时子项未完成：${child.label}`);
+        assert.ok(child.end !== undefined, `计时子项未完成：${child.label}`);
         const start = Math.max(interval.start, child.start),
           end = Math.min(interval.end, child.end);
         if (end > start) {
@@ -81,7 +81,7 @@ function summarizePhase(label: string, phase: Interval, spans: TimingSpan[]): Ph
   }
   const milliseconds = phase.end - phase.start,
     union = intervalUnion(covered);
-  assert(union <= milliseconds + 0.001, "内部计时超出阶段范围");
+  assert.ok(union <= milliseconds + 0.001, "内部计时超出阶段范围");
   return {
     details: [...groups.values()].map((group) => ({
       calls: group.calls,

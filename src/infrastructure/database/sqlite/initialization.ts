@@ -8,7 +8,7 @@ import { applicationAssetPath } from "../../applicationAssets";
 export function initializeDatabase(db: Database, root = process.cwd()) {
   const execute = Reflect.get(db, "exec");
   if (typeof execute !== "function") {
-    throw new Error(localize("database:sqlite.initializationScriptUnsupported"));
+    throw new TypeError(localize("database:sqlite.initializationScriptUnsupported"));
   }
   execute.call(db, readFileSync(schemaAssetPath(root), "utf8"));
 }

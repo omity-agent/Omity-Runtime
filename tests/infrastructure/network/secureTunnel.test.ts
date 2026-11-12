@@ -45,7 +45,7 @@ test("wss:// retains the HTTP proxy's default CONNECT route", async () => {
       failure: unknown = await response.text().catch((error: unknown) => error);
     expect(failure).toBeInstanceOf(Error);
     if (!(failure instanceof Error)) {
-      throw new Error("CONNECT 拒绝测试没有收到 WebSocket 错误");
+      throw new TypeError("CONNECT 拒绝测试没有收到 WebSocket 错误");
     }
     expect(failure.message).toBe("Responses WebSocket 连接失败");
     const attempts = captureError(failure).details?.["attempts"];

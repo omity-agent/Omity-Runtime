@@ -5,15 +5,15 @@ import { css } from "styled-system/css";
 
 import type { ToolCallPhase } from "../../../timeline";
 import { reportPromiseErrors } from "../../services/errors";
-import { Badge, IconButton } from "../ParkUI";
+import { Badge, IconButton } from "../ui";
 
 const accessory = css({ alignItems: "center", display: "flex", gap: "2" }),
   stopButton = css({
-    borderWidth: "zero",
-    color: "statusTool",
+    borderWidth: "0",
+    color: "status.tool",
     height: "6",
     minWidth: "6",
-    padding: "zero",
+    padding: "0",
   });
 export function useToolAccessory({
   callId,
@@ -43,7 +43,7 @@ export function useToolAccessory({
           onClick={handleCancel}
           title={t("stopTool")}
           type="button"
-          variant="ghost"
+          visual="ghost"
         >
           {cancelling ? (
             <LoaderCircle aria-hidden size={14} />

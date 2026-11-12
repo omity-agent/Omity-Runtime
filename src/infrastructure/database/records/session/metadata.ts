@@ -82,7 +82,7 @@ export function touchInputSessionRecord(db: Database, inputId: number) {
 export function readTranscriptRevisionRecord(db: Database, sessionId: string) {
   const revision = readSessionField(sessionId, queries(db).revision);
   if (!Number.isSafeInteger(revision)) {
-    throw new Error(
+    throw new TypeError(
       localize("database:session.revisionInvalid", {
         value0: sessionId,
       }),

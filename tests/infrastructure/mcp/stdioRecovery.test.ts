@@ -66,7 +66,7 @@ test("shutdown during restart backoff reports cancellation without a recovery er
         failedAttempt.resolve();
       }
     }),
-    errors = spyOn(logger, "error").mockReturnValue(undefined),
+    errors = spyOn(logger, "error").mockReturnValue(),
     connection = {
       args: [join(import.meta.dir, "crashingToolServer.ts")],
       command: process.execPath,

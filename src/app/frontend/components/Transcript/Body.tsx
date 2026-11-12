@@ -1,7 +1,7 @@
 import type { TimelineMessage } from "../../../timeline";
 import { Reasoning } from "../Details/Reasoning";
 import { ToolCall } from "../Details/ToolCall";
-import { MarkdownView } from "../MarkdownView";
+import { MarkdownView } from "../Markdown";
 
 export function Body({
   item,

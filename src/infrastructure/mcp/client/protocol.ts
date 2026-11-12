@@ -26,7 +26,7 @@ export async function connectProtocolClient(
 }
 const setupTimeoutMethod = "_setupTimeout";
 function skipRequestTimeout() {
-  return undefined;
+  return;
 }
 function disableClientRequestTimeout(client: Client) {
   const setupTimeout: unknown = Reflect.get(client, setupTimeoutMethod);
@@ -34,7 +34,7 @@ function disableClientRequestTimeout(client: Client) {
     return;
   }
   if (typeof setupTimeout !== "function") {
-    throw new Error(localize("network:mcp.requestTimeoutCloseUnsupported"));
+    throw new TypeError(localize("network:mcp.requestTimeoutCloseUnsupported"));
   }
   Object.defineProperty(client, setupTimeoutMethod, {
     configurable: true,

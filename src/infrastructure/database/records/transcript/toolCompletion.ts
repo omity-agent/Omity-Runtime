@@ -76,7 +76,7 @@ function loadTrackedTools(db: Database, sessionId: string) {
         ? isRecord(row.payload) && "callId" in row.payload && row.payload.callId
         : row.payload;
     if (typeof callId !== "string") {
-      throw new Error(
+      throw new TypeError(
         localize("database:transcript.toolEventCallIdMissing", {
           value0: row.kind,
         }),

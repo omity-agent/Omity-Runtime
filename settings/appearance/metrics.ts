@@ -1,0 +1,77 @@
+import { defineSemanticTokens, defineTokens } from "@pandacss/dev";
+
+export const dimensions = defineTokens({
+  animations: {
+    detailCollapse: { value: "detailCollapse 140ms ease-in" },
+    detailExpand: { value: "detailExpand 140ms ease-out" },
+    progressPulse: { value: "pulse 1.8s ease-in-out infinite" },
+  },
+  borderWidths: {
+    0: { value: "0" },
+    accent: { value: "4px" },
+    hairline: { value: "1px" },
+    medium: { value: "3px" },
+  },
+  durations: {
+    fast: { value: "120ms" },
+    medium: { value: "150ms" },
+  },
+  letterSpacings: {
+    caption: { value: "0.04em" },
+    selected: { value: "0.08em" },
+  },
+  lineHeights: {
+    code: { value: "1.65" },
+    editor: { value: "1.6" },
+    markdown: { value: "1.7" },
+    markdownHeading: { value: "1.35" },
+  },
+  sizes: {
+    accessCard: { value: "32rem" },
+    appSidebar: { value: "clamp(15rem, 22vw, 20rem)" },
+    chatCanvas: { value: "120rem" },
+    composerEditor: { value: "clamp(5rem, 24dvh, 12rem)" },
+    content: { value: "52rem" },
+    detailHeader: { value: "2.25rem" },
+    editorCompact: { value: "8rem" },
+    editorShort: { value: "24dvh" },
+    messageLimit: { value: "66.666667cqh" },
+    sourceLine: { value: "1lh" },
+    toolOutput: { value: "16rem" },
+    toolOutputMinimum: { value: "3rem" },
+    twoThirds: { value: "66.666667%" },
+    viewport: { value: "100dvh" },
+  },
+  spacing: {
+    focusInset: { value: "-1px" },
+    safeAreaBlockEnd: { value: "env(safe-area-inset-bottom)" },
+    safeAreaBlockStart: { value: "env(safe-area-inset-top)" },
+    safeAreaInlineEnd: { value: "env(safe-area-inset-right)" },
+    safeAreaInlineStart: { value: "env(safe-area-inset-left)" },
+    sidebarInset: { value: "2px" },
+  },
+  zIndex: {
+    base: { value: 1 },
+    pinned: { value: 2 },
+  },
+});
+export const adaptiveMetrics = defineSemanticTokens({
+  animations: { disabled: { value: "none" } },
+  fontSizes: {
+    editor: {
+      value: { _coarse: "{fontSizes.md}", _compact: "{fontSizes.md}", base: "{fontSizes.sm}" },
+    },
+    interface: { value: { _compact: "0.9375rem", base: "0.8125rem" } },
+    metadata: { value: { _compact: "0.8125rem", base: "{fontSizes.xs}" } },
+    source: { value: { _compact: "0.9375rem", base: "{fontSizes.sm}" } },
+  },
+  sizes: {
+    composerActions: { value: "calc(5 * {sizes.controlTarget} + 4 * {spacing.1})" },
+    controlTarget: { value: { _coarse: "{sizes.11}", _compact: "{sizes.11}", base: "{sizes.8}" } },
+    interfaceIcon: {
+      value: { _coarse: "{sizes.4.5}", _compact: "{sizes.4.5}", base: "{sizes.4}" },
+    },
+    runtimeControls: { value: "calc(2 * {sizes.controlTarget} + {spacing.1})" },
+    smallIcon: { value: { _compact: "{sizes.4}", base: "{sizes.3.5}" } },
+  },
+});

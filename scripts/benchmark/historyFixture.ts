@@ -9,15 +9,15 @@ import { countTokens } from "../../src/runtime/tokenizer";
 import type { TypicalContext } from "./typicalProfile";
 
 function syntheticText(tokens: number) {
-  assert(Number.isSafeInteger(tokens) && tokens >= 0, "合成文本的 token 数无效");
+  assert.ok(Number.isSafeInteger(tokens) && tokens >= 0, "合成文本的 token 数无效");
   const text = " log".repeat(tokens);
   assert.equal(countTokens(text), tokens, "合成文本与当前 tokenizer 不匹配");
   return text;
 }
 function allocateTokens(total: number, weights: number[]) {
-  assert(Number.isSafeInteger(total) && total >= 0, "上下文 token 预算不足");
+  assert.ok(Number.isSafeInteger(total) && total >= 0, "上下文 token 预算不足");
   const scale = sum(weights);
-  assert(Number.isSafeInteger(scale) && scale > 0, "上下文长度权重之和无效");
+  assert.ok(Number.isSafeInteger(scale) && scale > 0, "上下文长度权重之和无效");
   let accumulated = 0;
   return weights.map((weight, index) => {
     const before = Math.round(total * (accumulated / scale));
@@ -68,8 +68,8 @@ export function createTypicalHistory(context: TypicalContext) {
     encrypted = distribute(context.encryptedReasoningCharacters, context.reasoningMessages),
     messages: BaseMessage[] = [];
   let assistantIndex = 0,
-    reasoningIndex = 0,
-    humanIndex = 0;
+    humanIndex = 0,
+    reasoningIndex = 0;
   for (let index = 0; index < rounds; index += 1) {
     if (humanIndex < humans.length - 1 && index >= (humanIndex * rounds) / (humans.length - 1)) {
       messages.push(

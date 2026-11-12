@@ -4,16 +4,16 @@ import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
 import { reportPromiseErrors } from "../../../../services/errors";
-import { IconButton } from "../../../ParkUI";
+import { IconButton } from "../../../ui";
 
 const armed = css({
     _enabled: {
-      _hover: { background: "statusError", color: "canvas" },
-      background: "statusError",
-      color: "canvas",
+      _hover: { background: "status.error", color: "bg.canvas" },
+      background: "status.error",
+      color: "bg.canvas",
     },
   }),
-  busyIcon = css({ animation: "spin" });
+  busyIcon = css({ animationStyle: "busy" });
 export function ConfirmAction({
   children,
   disabled = false,
@@ -34,7 +34,7 @@ export function ConfirmAction({
     [busy, setBusy] = useState(false);
   useEffect(() => {
     if (!confirming) {
-      return undefined;
+      return;
     }
     const timeout = globalThis.setTimeout(() => {
       setConfirming(false);

@@ -6,23 +6,20 @@ import { css } from "styled-system/css";
 
 import type { FilePathMatch } from "../../../../fileLinks/types";
 import type { ReasoningTranslation, TimelinePart } from "../../../timeline";
-import { MarkdownInline, MarkdownView } from "../MarkdownView";
+import { MarkdownInline, MarkdownView } from "../Markdown";
 import { Frame } from "./Frame";
 
 const content = css({
     borderBlockStartWidth: "hairline",
-    borderTopColor: "line",
+    borderTopColor: "border.default",
     layerStyle: "reasoningText",
-    marginBlockEnd: "3",
-    marginBlockStart: "zero",
-    marginInline: "3",
-    minWidth: "zero",
-    paddingBlockStart: "3",
+    minWidth: "0",
+    padding: "3",
   }),
   summary = css({
     display: "flex",
     justifyContent: "flex-end",
-    minWidth: "zero",
+    minWidth: "0",
     overflow: "hidden",
   }),
   summaryText = css({
@@ -31,7 +28,7 @@ const content = css({
     layerStyle: "reasoningText",
     minWidth: "full",
     whiteSpace: "nowrap",
-    width: "intrinsicContent",
+    width: "max",
   });
 export function Reasoning({
   part,
@@ -75,7 +72,7 @@ function ReasoningTitle({ label, reasoning }: { label: string; reasoning: string
   );
 }
 function singleLineReasoning(text: string) {
-  return text.replace(/\r\n|[\r\n\u2028\u2029]/g, " ");
+  return text.replaceAll(/\r\n|[\r\n\u2028\u2029]/g, " ");
 }
 function preferredTranslation(
   part: Extract<TimelinePart, { type: "reasoning" }>,
@@ -98,7 +95,7 @@ function preferredTranslation(
       return match;
     }
   }
-  return undefined;
+  return;
 }
 function translatedReasoning(
   part: Extract<TimelinePart, { type: "reasoning" }>,

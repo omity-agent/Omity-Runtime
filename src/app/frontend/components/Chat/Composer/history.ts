@@ -3,7 +3,7 @@ export class UserMessageHistory {
   private index: number | undefined;
   navigate(direction: HistoryDirection, current: string, messages: readonly string[]) {
     if (this.index === undefined && current !== "") {
-      return undefined;
+      return;
     }
     if (direction === "previous") {
       return this.previous(current, messages);

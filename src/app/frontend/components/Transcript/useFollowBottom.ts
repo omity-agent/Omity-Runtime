@@ -17,7 +17,7 @@ export function useFollowBottom<T extends HTMLElement>({
     const element = ref.current,
       content = contentRef?.current ?? element?.firstElementChild;
     if (!enabled || !element || !content) {
-      return undefined;
+      return;
     }
     const controller = new BottomFollower(),
       stopObserving = controller.observe(element);
@@ -59,13 +59,13 @@ export function useFollowBottom<T extends HTMLElement>({
     };
   }, [contentRef, enabled, ref]);
   const onScroll = useCallback<UIEventHandler<T>>((event) => {
-    if (event.target !== event.currentTarget) {
-      return;
-    }
-    controllerRef.current?.update(event.currentTarget);
-    controllerRef.current?.align(event.currentTarget);
-    scheduleRef.current?.();
-  }, []);
-  const onResize = useCallback(() => scheduleRef.current?.(), []);
+      if (event.target !== event.currentTarget) {
+        return;
+      }
+      controllerRef.current?.update(event.currentTarget);
+      controllerRef.current?.align(event.currentTarget);
+      scheduleRef.current?.();
+    }, []),
+    onResize = useCallback(() => scheduleRef.current?.(), []);
   return { onResize, onScroll };
 }

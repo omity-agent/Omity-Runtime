@@ -4,7 +4,7 @@ import { escape as escapeHtml } from "es-toolkit";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { FileLinkProvider } from "../../../../src/app/frontend/components/FileLink/context";
-import { MarkdownInline, MarkdownView } from "../../../../src/app/frontend/components/MarkdownView";
+import { MarkdownInline, MarkdownView } from "../../../../src/app/frontend/components/Markdown";
 import { i18nReady } from "../../../../src/app/frontend/i18n";
 
 const renderers = [
@@ -130,7 +130,7 @@ test("keeps fenced code literal while rendering GFM tables and preserved line br
     ].join("\n"),
     markup = renderToStaticMarkup(<MarkdownView content={content} preserveLineBreaks />);
   expect(markup).toContain("前文**（代码）**后文");
-  expect(markup).toContain("<table>");
+  expect(markup).toMatch(/<table\b/u);
   expect(markup).toContain("<strong>（表格）</strong>");
   expect(markup).toContain("<strong>（换行）</strong>后文<br/>");
 });
@@ -146,6 +146,6 @@ test("keeps file-link offsets and GFM formatting alongside formulas", () => {
     );
   expect(markup.match(/class="katex"/gu)).toHaveLength(2);
   expect(markup).toContain(`title="${path}"`);
-  expect(markup).toContain("<table>");
+  expect(markup).toMatch(/<table\b/u);
   expect(markup).toContain("<strong>值</strong>");
 });

@@ -8,7 +8,7 @@ import { ProfilePicker } from "../../../../src/app/frontend/components/NewSessio
 import { WorkspacePicker } from "../../../../src/app/frontend/components/NewSession/WorkspacePicker";
 import { i18nReady } from "../../../../src/app/frontend/i18n";
 
-const ignoreChange = () => undefined,
+const ignoreChange = () => {},
   pickWorkspace = () => Promise.resolve(null),
   recentWorkspaces: string[] = [],
   availableProfiles = ["local"],

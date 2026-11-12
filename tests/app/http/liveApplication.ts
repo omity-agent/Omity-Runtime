@@ -1,7 +1,7 @@
 import { once } from "node:events";
 import { rmSync } from "node:fs";
 import { createServer } from "node:http";
-import { type Socket } from "node:net";
+import type { Socket } from "node:net";
 import { join } from "node:path";
 
 import { getRequestListener } from "@hono/node-server";
@@ -94,10 +94,10 @@ retryDelayMs: 1000
           {
             access,
             controller,
-            releaseLock: () => undefined,
+            releaseLock: () => {},
             server: { connections, instance: server },
           },
-          { error: console.error, info: () => undefined },
+          { error: console.error, info: () => {} },
           "SIGTERM",
         );
       } finally {

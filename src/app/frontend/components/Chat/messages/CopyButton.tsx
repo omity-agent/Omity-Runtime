@@ -3,11 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { css, cx } from "styled-system/css";
 
-import { reportPromiseErrors } from "../../services/errors";
-import { IconButton } from "../ParkUI";
+import { reportPromiseErrors } from "../../../services/errors";
+import { IconButton } from "../../ui";
 
 const button = css({
-    borderWidth: "zero",
+    borderWidth: "0",
     flexShrink: 0,
   }),
   copiedDurationMs = 1600;
@@ -45,7 +45,7 @@ export function CopyButton({ className, value }: { className?: string; value: st
       onClick={handleCopy}
       title={label}
       type="button"
-      variant="ghost"
+      visual="ghost"
     >
       {copied ? <Check size={14} /> : <Copy size={14} />}
     </IconButton>

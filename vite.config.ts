@@ -1,5 +1,4 @@
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 
 import babel from "@rolldown/plugin-babel";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
@@ -7,7 +6,7 @@ import { defineConfig } from "vite";
 
 import { frontendBuild, frontendPlugins, highlightWorker } from "./settings/bundling.ts";
 
-const root = dirname(fileURLToPath(import.meta.url));
+const root = import.meta.dirname;
 export default defineConfig({
   base: "./",
   build: frontendBuild,

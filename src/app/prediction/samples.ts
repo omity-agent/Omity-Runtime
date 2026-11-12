@@ -88,7 +88,7 @@ export function loadPredictionSnapshot(db: Database) {
 function addTokens(left: number, right: number) {
   const result = left + right;
   if (!Number.isSafeInteger(result)) {
-    throw new Error(localize("application:prediction.contextTokenCountUnsafe"));
+    throw new TypeError(localize("application:prediction.contextTokenCountUnsafe"));
   }
   return result;
 }

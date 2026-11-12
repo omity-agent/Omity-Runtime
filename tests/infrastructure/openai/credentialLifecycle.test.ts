@@ -47,7 +47,7 @@ test.each([
         hostname: "127.0.0.1",
         port: 0,
       }),
-      runtime = createNetworkRuntime(async () => undefined),
+      runtime = createNetworkRuntime(async () => {}),
       previousFetch = globalThis.fetch,
       connection = createCodexConnection({
         codexVersion: "0.154.4",
@@ -120,7 +120,7 @@ test("refresh failures propagate without overwriting credentials and permit anot
       hostname: "127.0.0.1",
       port: 0,
     }),
-    runtime = createNetworkRuntime(async () => undefined),
+    runtime = createNetworkRuntime(async () => {}),
     previousFetch = globalThis.fetch,
     connection = createCodexConnection({
       codexVersion: "0.154.4",

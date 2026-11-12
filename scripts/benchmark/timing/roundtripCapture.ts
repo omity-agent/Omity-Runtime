@@ -28,7 +28,7 @@ export class RoundtripCapture {
   constructor(model: string, inputTokens: number) {
     const first = responseFrames(true, model, inputTokens),
       final = responseFrames(false, model, inputTokens);
-    assert(typeof this.originalCall === "function", "MCP 客户端缺少 callTool 方法");
+    assert.ok(typeof this.originalCall === "function", "MCP 客户端缺少 callTool 方法");
     this.tracing = new MethodTracing(this.trace, model);
     globalThis.fetch = Object.assign(
       async (url: string | URL | Request, init?: RequestInit) => {
@@ -38,7 +38,7 @@ export class RoundtripCapture {
           "https://benchmark.invalid/v1/responses",
           "性能测试拒绝未预期的网络请求",
         );
-        assert(typeof init?.body === "string", "模型请求必须为 JSON 文本");
+        assert.ok(typeof init?.body === "string", "模型请求必须为 JSON 文本");
         this.requests += 1;
         if (this.requests === 1) {
           await raceSignal(this.release.promise, init.signal);

@@ -80,8 +80,11 @@ export class MethodTracing {
   ) {
     const original: unknown = Reflect.get(target, method),
       descriptor = Object.getOwnPropertyDescriptor(target, method);
-    assert(typeof original === "function", `性能计时挂接点不存在：${method}`);
-    assert(descriptor === undefined || "value" in descriptor, `计时挂接点不是数据属性：${method}`);
+    assert.ok(typeof original === "function", `性能计时挂接点不存在：${method}`);
+    assert.ok(
+      descriptor === undefined || "value" in descriptor,
+      `计时挂接点不是数据属性：${method}`,
+    );
     Object.defineProperty(target, method, {
       ...(descriptor ?? { configurable: true, writable: true }),
       value: new Proxy(original, {
@@ -100,12 +103,12 @@ export class MethodTracing {
       if (descriptor) {
         Object.defineProperty(target, method, descriptor);
       } else {
-        assert(Reflect.deleteProperty(target, method), `无法恢复计时挂接点：${method}`);
+        assert.ok(Reflect.deleteProperty(target, method), `无法恢复计时挂接点：${method}`);
       }
     });
   }
   private wrapStatement(statement: unknown): object {
-    assert(statement !== null && typeof statement === "object", "SQLite 未返回 Statement");
+    assert.ok(statement !== null && typeof statement === "object", "SQLite 未返回 Statement");
     const existing = this.statements.get(statement);
     if (existing) {
       return existing;
@@ -132,6 +135,6 @@ export class MethodTracing {
 }
 function requirePrototype(value: object): object {
   const prototype: unknown = Object.getPrototypeOf(value);
-  assert(prototype !== null && typeof prototype === "object", "性能计时目标缺少原型");
+  assert.ok(prototype !== null && typeof prototype === "object", "性能计时目标缺少原型");
   return prototype;
 }

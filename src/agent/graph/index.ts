@@ -1,6 +1,6 @@
 import type { Database } from "bun:sqlite";
 
-import { type BaseMessage, type ToolCall } from "@langchain/core/messages";
+import type { BaseMessage, ToolCall } from "@langchain/core/messages";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import {
   Annotation,

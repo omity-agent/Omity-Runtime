@@ -78,7 +78,7 @@ export async function streamAiModel(options: ModelRequestOptions) {
         maxRetries: 0,
         messages: modelMessages,
         model,
-        onError: () => undefined,
+        onError: () => {},
         temperature: options.settings.model.temperature,
         tools: options.tools,
       });
@@ -94,13 +94,13 @@ export async function streamAiModel(options: ModelRequestOptions) {
         };
         if (winnerId === id) {
           options.write?.(event);
-        } else if (winnerId !== undefined) {
-          return undefined;
-        } else {
+        } else if (winnerId === undefined) {
           buffered.push(event);
           if (hasModelContent(part) && !selectWinner(id, buffered)) {
             return undefined;
           }
+        } else {
+          return undefined;
         }
       }
       if (winnerId !== id) {

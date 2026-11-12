@@ -96,7 +96,7 @@ export function forkPage(sourceSessionId: string, beforeMessageId: number): Fork
 }
 function pageSessionId(page: Page) {
   if (page.kind === "new") {
-    return undefined;
+    return;
   }
   return page.kind === "session" ? page.id : page.sourceSessionId;
 }

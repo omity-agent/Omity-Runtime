@@ -9,12 +9,12 @@ export function groupAssistantMessages(messages: TimelineMessage[]) {
     if (item.role !== "assistant") {
       currentAssistant = undefined;
       result.push(item);
-    } else if (!currentAssistant) {
-      currentAssistant = item;
-      result.push(item);
-    } else {
+    } else if (currentAssistant) {
       mergeAssistant(currentAssistant, item);
       currentAssistant.id = item.id;
+    } else {
+      currentAssistant = item;
+      result.push(item);
     }
   }
   return result;

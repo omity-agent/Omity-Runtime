@@ -85,7 +85,7 @@ function customToolInput(call: NonNullable<AIMessage["tool_calls"]>[number]) {
   }
   const input: unknown = isPlainObject(call.args) ? call.args["input"] : undefined;
   if (typeof input !== "string") {
-    throw new Error(localize("agent:messages.freeformInputNotString", { value0: call.name }));
+    throw new TypeError(localize("agent:messages.freeformInputNotString", { value0: call.name }));
   }
   return input;
 }

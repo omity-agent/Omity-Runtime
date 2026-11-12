@@ -24,7 +24,7 @@ test("MCP startup diagnostics survive the API and are reported as one summary an
       { preconnect: originalFetch.preconnect },
     ),
     fetcher = spyOn(globalThis, "fetch").mockImplementation(replacement),
-    logged = spyOn(console, "error").mockReturnValue(undefined);
+    logged = spyOn(console, "error").mockReturnValue();
   try {
     let failure: unknown;
     try {

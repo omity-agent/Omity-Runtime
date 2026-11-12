@@ -1,7 +1,7 @@
 import { css } from "styled-system/css";
 
 export const scroll = css({
-  minHeight: "zero",
+  minHeight: "0",
   overflowY: "auto",
   overscrollBehavior: "contain",
   scrollbarGutter: "stable",
@@ -9,9 +9,9 @@ export const scroll = css({
 export const scrollContent = css({
   display: "flex",
   flexDirection: "column",
+  justifyContent: "space-between",
   minHeight: "full",
 });
-export const conversation = css({ marginBlockStart: "auto" });
 export const setup = css({
   alignContent: "start",
   alignItems: "start",
@@ -32,6 +32,6 @@ export const configuration = css({
   display: "grid",
   gap: "4",
   gridTemplateColumns: { base: "minmax(0, 1fr)", sm: "repeat(2, minmax(0, 1fr))" },
-  minWidth: "zero",
+  minWidth: "0",
 });
 export const setupFirst = css({ gridColumn: { sm: "1 / -1" } });

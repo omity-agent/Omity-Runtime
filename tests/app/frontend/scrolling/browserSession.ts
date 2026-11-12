@@ -77,7 +77,7 @@ export async function readScrollPositions(page: Page, expectedCount?: number) {
   const snapshot = await page.waitForFunction((count) => {
     const elements = [...document.querySelectorAll("#root > section, pre")];
     if (count !== undefined && elements.length !== count) {
-      return undefined;
+      return;
     }
     return elements.map((element) => ({
       gap: element.scrollHeight - element.clientHeight - element.scrollTop,

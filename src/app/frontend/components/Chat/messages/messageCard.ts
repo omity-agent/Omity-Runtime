@@ -1,0 +1,71 @@
+import { sva } from "styled-system/css";
+
+export const messageCard = sva({
+  base: {
+    action: { borderWidth: "0", flexShrink: 0 },
+    actions: {
+      alignItems: "center",
+      background: "bg.default",
+      display: "flex",
+      gap: "1",
+      pointerEvents: "auto",
+    },
+    body: {
+      '&[data-first="false"]': { borderBlockStartWidth: "0", paddingBlockStart: "3" },
+      '&[data-last="false"]': { borderBlockEndWidth: "0", paddingBlockEnd: "0" },
+      background: "bg.default",
+      borderColor: "border.default",
+      borderWidth: "hairline",
+      display: "grid",
+      gap: "3",
+      justifyItems: "start",
+      maxWidth: { base: "full", lg: "twoThirds" },
+      minWidth: "0",
+      padding: { base: "3", md: "4" },
+      textAlign: "left",
+      width: "full",
+    },
+    header: {
+      alignItems: "center",
+      display: "flex",
+      insetBlockStart: "0",
+      justifyContent: "flex-end",
+      minHeight: "controlTarget",
+      pointerEvents: "none",
+      position: "sticky",
+      width: "full",
+      zIndex: "base",
+    },
+    root: {
+      '&[data-last="true"]': { paddingBlockEnd: "4" },
+      alignItems: "start",
+      display: "flex",
+      gap: "2",
+      minWidth: "0",
+      width: "full",
+    },
+  },
+  defaultVariants: { pending: false, role: "assistant" },
+  slots: ["root", "body", "header", "actions", "action"],
+  variants: {
+    pending: { true: { body: { opacity: 0.55 } } },
+    role: {
+      assistant: { action: { color: "status.model" } },
+      tool: { action: { color: "status.tool" } },
+      user: {
+        action: { color: "status.paused" },
+        actions: { background: "bg.muted" },
+        body: {
+          background: "bg.muted",
+          borderColor: "border.emphasized",
+          maxHeight: "messageLimit",
+          overflowY: "auto",
+          overscrollBehaviorY: "contain",
+          scrollbarGutter: "stable",
+          width: "fit",
+        },
+        root: { justifyContent: "flex-end" },
+      },
+    },
+  },
+});

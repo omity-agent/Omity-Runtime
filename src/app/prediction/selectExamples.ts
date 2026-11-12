@@ -23,7 +23,7 @@ export class PredictionExamples {
       (sample) => sample.assistant,
     ).toReversed();
     if (eligible.length < config.sampleCount) {
-      return undefined;
+      return;
     }
     const latest = eligible.slice(-config.sampleCount),
       ids = latest.map(({ id }) => id);

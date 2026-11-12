@@ -105,7 +105,7 @@ function toolCalls(content: Extract<ModelMessage, { role: "assistant" }>["conten
 }
 function toolProviderOptions(content: Extract<ModelMessage, { role: "assistant" }>["content"]) {
   if (typeof content === "string") {
-    return undefined;
+    return;
   }
   const entries = content.flatMap((part) => {
     if (part.type !== "tool-call" || part.providerExecuted || !part.providerOptions) {

@@ -1,7 +1,7 @@
 import { captureError } from "../failures/details";
 import { localize } from "../i18n/server";
 import type { QueuedInput } from "../types";
-import { type HostContext } from "./context";
+import type { HostContext } from "./context";
 import { HostLeaseLostError } from "./execution/lease";
 import { runGraphUntilBoundary } from "./execution/nodeBoundary";
 import { pauseForMcpUnavailable, pauseForStop, waitIfPaused } from "./execution/pause";

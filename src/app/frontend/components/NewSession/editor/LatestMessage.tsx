@@ -2,11 +2,11 @@ import { Plus, UserRound } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
+import { composerFrame, composerRole } from "../../Chat/Composer/arrangement";
 import { ActionPanel } from "../../Chat/Composer/controls/ActionPanel";
 import { SubmitButton } from "../../Chat/Composer/controls/SubmitButton";
-import { composerFrame, composerRole } from "../../Chat/Composer/layout";
 import { MarkdownEditor } from "../../Chat/MarkdownEditor";
-import { IconButton } from "../../ParkUI";
+import { IconButton } from "../../ui";
 import { useInputNavigation } from "./inputNavigation";
 
 export function LatestMessage({

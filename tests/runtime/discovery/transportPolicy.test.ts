@@ -28,7 +28,7 @@ test("Codex OAuth preserves explicit tool restrictions and hosted discovery", as
         },
       },
     }),
-    runtime = createNetworkRuntime(async () => undefined),
+    runtime = createNetworkRuntime(async () => {}),
     previousFetch = globalThis.fetch,
     connection = createCodexConnection({ authFilePath: auth.path, codexVersion: "0.154.4" }),
     fetch = restrictedModelFetch("responses", createResponsesWebsocketFetch(connection.websocket)),

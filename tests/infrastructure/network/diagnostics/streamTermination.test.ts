@@ -46,7 +46,7 @@ async function streamFailure(mode: FramedOriginMode, proxied = false) {
       failure = error;
     }
     if (!(failure instanceof Error)) {
-      throw new Error("诊断测试没有收到 WebSocket 错误");
+      throw new TypeError("诊断测试没有收到 WebSocket 错误");
     }
     return {
       error: captureError(failure),

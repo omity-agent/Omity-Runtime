@@ -11,7 +11,7 @@ test("an HTTP failure is logged by its action boundary and not by the transport"
         { status: 404 },
       ),
     ),
-    logged = spyOn(console, "error").mockReturnValue(undefined);
+    logged = spyOn(console, "error").mockReturnValue();
   try {
     const action = async () => {
       try {
@@ -33,7 +33,7 @@ test("response validation is reported by its action boundary without suppressing
   const fetcher = spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(Response.json({ wrong: true }))
       .mockResolvedValueOnce(Response.json({ wrong: true })),
-    logged = spyOn(console, "error").mockReturnValue(undefined);
+    logged = spyOn(console, "error").mockReturnValue();
   try {
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const before = logged.mock.calls.length,
@@ -57,7 +57,7 @@ test("response validation is reported by its action boundary without suppressing
 test("query execution logs each failed occurrence once even when the thrown object is reused", async () => {
   const failure = new Error("network failure"),
     fetcher = spyOn(globalThis, "fetch").mockRejectedValue(failure),
-    logged = spyOn(console, "error").mockReturnValue(undefined),
+    logged = spyOn(console, "error").mockReturnValue(),
     client = createQueryClient();
   try {
     for (let attempt = 0; attempt < 2; attempt += 1) {

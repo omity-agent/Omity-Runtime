@@ -53,12 +53,11 @@ export function isStrictSchema(schema: JSONSchema7, api: ModelApi): boolean {
     }
   }
   return nodes.every(eligible) && visit(root, 0);
-
   function eligible(node: SchemaNode) {
     const value = node.schema as JSONSchema7,
       types = Array.isArray(value.type) ? value.type : [value.type],
-      required = new Set(value.required);
-    const unsupported = new Set<string>();
+      required = new Set(value.required),
+      unsupported = new Set<string>();
     if (node.pattern) {
       visitRegExpAST(patterns.parseLiteral(node.pattern.toString()), {
         onAssertionEnter({ kind }) {

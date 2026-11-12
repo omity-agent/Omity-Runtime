@@ -82,7 +82,7 @@ export class AppHosts {
         onReady: (controls) => {
           cancelTool = (callId) => controls.cancelTool(callId);
           initialized = true;
-          ready.resolve(undefined);
+          ready.resolve();
         },
         owner: this.owner,
         quiet: true,

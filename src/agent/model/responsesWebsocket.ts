@@ -39,8 +39,8 @@ export function createResponsesWebsocketFetch(
     const progress = new StreamEvidence(),
       { socket, handshake } = openOutboundSocket(url, headers),
       encoder = new TextEncoder();
-    let done = false,
-      connected = false,
+    let connected = false,
+      done = false,
       cleanup = () => socket.close();
     return new Response(
       new ReadableStream({

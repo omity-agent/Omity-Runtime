@@ -52,7 +52,6 @@ export function aiModelTools(tools: ModelToolDefinition[], api: ModelApi): ToolS
   }
   return result;
 }
-
 function selectStrictTools(tools: ModelToolDefinition[], api: ModelApi) {
   const candidates = tools.filter(
     (tool) => !tool.freeform && isStrictSchema(tool.inputSchema, api),

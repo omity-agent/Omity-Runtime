@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
 import { reportPromiseErrors } from "../../services/errors";
-import { Button, Field, Input } from "../ParkUI";
+import { Button, Field, Input } from "../ui";
 
 const row = css({
     display: "grid",
@@ -13,30 +13,30 @@ const row = css({
       base: "minmax(0, 1fr)",
       sm: "minmax(0, 1fr) auto",
     },
-    minWidth: "zero",
+    minWidth: "0",
   }),
-  pathInput = css({ minWidth: "zero", textOverflow: "ellipsis" }),
+  pathInput = css({ minWidth: "0", textOverflow: "ellipsis" }),
   recent = css({
     display: "grid",
     gap: "2",
     gridTemplateColumns: "minmax(0, 1fr)",
-    minWidth: "zero",
+    minWidth: "0",
   }),
-  recentLabel = css({ color: "muted", fontSize: "xs" }),
+  recentLabel = css({ color: "fg.subtle", fontSize: "metadata" }),
   recentList = css({
     display: "grid",
     gap: "2",
     gridTemplateColumns: "minmax(0, 1fr)",
-    minWidth: "zero",
+    minWidth: "0",
   }),
   recentButton = css({
     justifyContent: "flex-start",
     maxWidth: "full",
-    minWidth: "zero",
+    minWidth: "0",
     width: "full",
   }),
   recentPath = css({
-    minWidth: "zero",
+    minWidth: "0",
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",

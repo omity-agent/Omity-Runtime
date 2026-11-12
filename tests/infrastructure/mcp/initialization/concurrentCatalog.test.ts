@@ -79,7 +79,7 @@ test.each([false, true])(
       }
       const failure: unknown = result.reason;
       if (!(failure instanceof Error)) {
-        throw new Error("MCP 初始化未返回 Error", { cause: failure });
+        throw new TypeError("MCP 初始化未返回 Error", { cause: failure });
       }
       const details = mcpLoadDetailsSchema.parse(Reflect.get(failure, "details"));
       expect(details.failures).toHaveLength(multipleErrors ? 2 : 1);

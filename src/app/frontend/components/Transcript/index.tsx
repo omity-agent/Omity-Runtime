@@ -1,21 +1,28 @@
 import { type ComponentProps, useDeferredValue, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { css, cx } from "styled-system/css";
+import { css } from "styled-system/css";
 import { Virtualizer, type VirtualizerHandle } from "virtua";
 
 import { transcriptWindow } from "../../../../../settings/rendering";
 import type { TimelineMessage } from "../../../timeline";
-import { scroll } from "../../design";
-import { findLatestDetails } from "../Chat/detailFocus";
-import { Message } from "../Chat/Message";
+import { findLatestDetails } from "../Chat/messages/detailFocus";
+import { Message } from "../Chat/messages/Message";
 import { MessageCopies, useMessageCopies } from "./actions/PinnedCopy";
 import { DisclosureProvider } from "./disclosures";
 import { FlowItem, FlowWindow } from "./scrolling/FlowWindow";
 import { useTranscriptScroll } from "./scrolling/viewportTracking";
 import { segmentTranscript } from "./segments";
 
-const viewport = css({ containerType: "size", overflowAnchor: "none" }),
-  content = css({ minWidth: "zero", position: "relative", width: "full" }),
+const viewport = css({
+    containerType: "size",
+    minHeight: "0",
+    overflowAnchor: "none",
+    overflowY: "auto",
+    overscrollBehavior: "contain",
+    paddingInline: { _short: "3", base: "4", md: "6" },
+    scrollbarGutter: "stable",
+  }),
+  content = css({ minWidth: "0", position: "relative", width: "full" }),
   segment = css({
     '&[data-first="true"]': { paddingBlockStart: { _short: "3", base: "4", md: "6" } },
     '&[data-last="true"]': { paddingBlockEnd: { _short: "3", base: "4", md: "6" } },
@@ -52,12 +59,7 @@ export function Transcript({
     });
   return (
     <DisclosureProvider registerDetail={registerDetail}>
-      <section
-        aria-label={t("conversation")}
-        className={cx(scroll, viewport)}
-        ref={scrollRef}
-        tabIndex={0}
-      >
+      <section aria-label={t("conversation")} className={viewport} ref={scrollRef} tabIndex={0}>
         <div className={content} ref={contentRef}>
           <Virtualizer
             as={FlowWindow}

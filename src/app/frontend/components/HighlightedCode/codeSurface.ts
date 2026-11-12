@@ -2,7 +2,7 @@ import { css, cva } from "styled-system/css";
 
 export const container = css({
   maxWidth: "full",
-  minWidth: "zero",
+  minWidth: "0",
   position: "relative",
 });
 export const copyButton = css({
@@ -13,13 +13,13 @@ export const copyButton = css({
 });
 export const block = cva({
   base: {
-    background: "surfaceInset",
-    borderColor: "line",
+    background: "bg.subtle",
+    borderColor: "border.default",
     borderWidth: "hairline",
-    color: "text",
+    color: "fg.default",
     display: "block",
     maxWidth: "full",
-    minWidth: "zero",
+    minWidth: "0",
     overflowAnchor: "none",
     paddingBlock: "3",
     paddingInlineEnd: "12",
@@ -31,7 +31,7 @@ export const block = cva({
     layout: {
       contained: { maxHeight: "toolOutput", overflow: "auto", whiteSpace: "pre" },
       flow: {
-        maxHeight: "unbounded",
+        maxHeight: "none",
         overflow: "visible",
         overflowWrap: "anywhere",
         whiteSpace: "pre-wrap",
@@ -41,8 +41,8 @@ export const block = cva({
 });
 export const codeElement = cva({
   base: {
-    background: "clear",
-    color: "text",
+    background: "transparent",
+    color: "fg.default",
     display: "block",
     position: "relative",
     textStyle: "codeElement",
@@ -51,8 +51,8 @@ export const codeElement = cva({
   defaultVariants: { layout: "contained" },
   variants: {
     layout: {
-      contained: { minWidth: "fitContent" },
-      flow: { minWidth: "zero" },
+      contained: { minWidth: "fit" },
+      flow: { minWidth: "0" },
     },
   },
 });
@@ -63,7 +63,7 @@ export const sourceLine = css({
 });
 export const widthSizer = css({
   display: "block",
-  height: "zero",
+  height: "0",
   overflow: "hidden",
   visibility: "hidden",
   whiteSpace: "inherit",

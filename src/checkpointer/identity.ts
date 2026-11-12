@@ -9,16 +9,16 @@ export function checkpointRunId(value: unknown) {
   }
   const id = Number(value);
   if (!Number.isSafeInteger(id)) {
-    throw new Error(localize("checkpoint:identity.runIdUnsafe"));
+    throw new TypeError(localize("checkpoint:identity.runIdUnsafe"));
   }
   return id;
 }
 function optionalString(value: unknown, name: string) {
   if (value == null) {
-    return undefined;
+    return;
   }
   if (typeof value !== "string") {
-    throw new Error(localize("checkpoint:identity.fieldMustBeString", { value0: name }));
+    throw new TypeError(localize("checkpoint:identity.fieldMustBeString", { value0: name }));
   }
   return value;
 }

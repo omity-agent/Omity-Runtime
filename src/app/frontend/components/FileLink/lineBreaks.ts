@@ -13,7 +13,7 @@ export function normalizeCodeMatches(code: string, matches: FilePathMatch[]) {
   };
 }
 export function normalizeLineBreaks(code: string) {
-  return code.replace(/\r\n?|\u2028|\u2029/gu, "\n");
+  return code.replaceAll(/\r\n?|\u2028|\u2029/gu, "\n");
 }
 function normalizedOffset(code: string, offset: number) {
   return normalizeLineBreaks(code.slice(0, offset)).length;

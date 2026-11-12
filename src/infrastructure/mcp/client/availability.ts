@@ -1,7 +1,7 @@
 import { localize } from "../../../i18n/server";
 
-const unavailableCode = "MCP_STDIO_UNAVAILABLE",
-  processExitedCode = "MCP_STDIO_PROCESS_EXITED";
+const processExitedCode = "MCP_STDIO_PROCESS_EXITED",
+  unavailableCode = "MCP_STDIO_UNAVAILABLE";
 export interface StdioRestartPolicy {
   delayMs: number;
   maxAttempts: number;

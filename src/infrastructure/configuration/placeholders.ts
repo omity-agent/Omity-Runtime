@@ -7,9 +7,9 @@ import { parseAllDocuments } from "yaml";
 
 import { localize } from "../../i18n/server";
 
-const exactPlaceholder = /^\$\{(?<name>[^}]+)\}$/,
-  embeddedPlaceholder = /\$\{(?<name>[^}]+)\}/g,
-  environmentName = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const embeddedPlaceholder = /\$\{(?<name>[^}]+)\}/g,
+  environmentName = /^[A-Za-z_][A-Za-z0-9_]*$/,
+  exactPlaceholder = /^\$\{(?<name>[^}]+)\}$/;
 export interface SessionPlaceholders {
   cwd?: string;
   session?: string;
@@ -28,7 +28,7 @@ export interface PlaceholderOptions {
 export function readSettingsText(path: string, options: Omit<PlaceholderOptions, "source">) {
   const value = resolveString(readFileSync(path, "utf8"), { ...options, source: path });
   if (typeof value !== "string") {
-    throw new Error(localize("configuration:placeholders.textMustBeString", { value0: path }));
+    throw new TypeError(localize("configuration:placeholders.textMustBeString", { value0: path }));
   }
   return value;
 }
@@ -102,7 +102,7 @@ function resolveString(value: string, options: PlaceholderOptions) {
       resolved = resolveVariable(name, options);
     return resolved.matched ? resolved.value : value;
   }
-  return value.replace(embeddedPlaceholder, (placeholder, name: string) => {
+  return value.replaceAll(embeddedPlaceholder, (placeholder, name: string) => {
     const resolved = resolveVariable(name, options);
     if (!resolved.matched) {
       return placeholder;

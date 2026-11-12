@@ -70,10 +70,10 @@ export class PredictionService {
         previous = this.pending.get(sessionId);
       if (!context) {
         previous?.controller.abort();
-        return undefined;
+        return;
       }
       if (readPredictionRecord(db, sessionId, context.revision)) {
-        return undefined;
+        return;
       }
       if (previous?.revision === context.revision && !previous.controller.signal.aborted) {
         return previous;
@@ -81,7 +81,7 @@ export class PredictionService {
       previous?.controller.abort();
       const samples = this.examples.select(loadPredictionSnapshot(db), config);
       if (!samples) {
-        return undefined;
+        return;
       }
       const controller = new AbortController(),
         task = {

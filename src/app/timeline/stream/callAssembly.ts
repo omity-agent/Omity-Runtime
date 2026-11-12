@@ -31,14 +31,14 @@ export function extendToolPart(part: ToolPart, delta: ToolDelta) {
   if (part.index !== delta.index) {
     throw new Error(localize("application:timeline.streamPartIndexChanged"));
   }
-  if (delta.argumentsText !== undefined) {
-    part.args = delta.argumentsText;
-    part.argumentEnds = part.args ? [part.args.length] : [];
-  } else {
+  if (delta.argumentsText === undefined) {
     part.args += delta.argumentsDelta ?? "";
     if (delta.argumentsDelta) {
       part.argumentEnds.push(part.args.length);
     }
+  } else {
+    part.args = delta.argumentsText;
+    part.argumentEnds = part.args ? [part.args.length] : [];
   }
   part.freeform ??= delta.freeform;
   part.providerExecuted ??= delta.providerExecuted;
@@ -49,7 +49,7 @@ export function extendToolPart(part: ToolPart, delta: ToolDelta) {
 }
 export function latestParsedInput(part: ToolPart) {
   if (part.freeform) {
-    return undefined;
+    return;
   }
   for (let index = part.argumentEnds.length - 1; index >= 0; index -= 1) {
     const input = parseToolInput(part.args.slice(0, part.argumentEnds[index]));
@@ -57,5 +57,5 @@ export function latestParsedInput(part: ToolPart) {
       return input;
     }
   }
-  return undefined;
+  return;
 }

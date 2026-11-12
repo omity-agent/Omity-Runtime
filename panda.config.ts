@@ -1,166 +1,25 @@
 import { defineConfig } from "@pandacss/dev";
-import { createPreset } from "@park-ui/panda-preset";
-import neutral from "@park-ui/panda-preset/colors/neutral";
 
-import {
-  compactViewport,
-  interfaceLayerStyles,
-  interfaceMetrics,
-  interfaceTextStyles,
-} from "./settings/appearance";
+import { globalCss } from "./settings/appearance/composites";
+import { conditions } from "./settings/appearance/conditions";
+import { interfacePreset } from "./settings/appearance/preset";
 
 export default defineConfig({
-  conditions: {
-    extend: {
-      coarse: "@media (pointer: coarse)",
-      compact: `@media ${compactViewport}`,
-      hover: {
-        "@media (hover: hover) and (pointer: fine)": {
-          "&:is(:hover, [data-hover])": "@slot",
-        },
-      },
-      largeCanvas: "@media (min-width: 160rem) and (min-height: 90rem)",
-      short: "@media (max-height: 40rem)",
-      topNav: "@media (max-aspect-ratio: 1 / 1)",
-    },
-  },
-  exclude: [],
-  globalCss: {
-    "*": {
-      boxSizing: "border-box",
-    },
-    ".lucide": { flexShrink: 0, height: "interfaceIcon", width: "interfaceIcon" },
-    body: {
-      color: "text",
-      colorScheme: "dark",
-      overflow: "hidden",
-    },
-    html: {
-      fontSize: {
-        _largeCanvas: "125%",
-        base: "100%",
-      },
-    },
-    "html, body, #root": {
-      margin: "0",
-      minHeight: "100%",
-    },
-  },
-  include: ["./src/app/frontend/**/*.{js,jsx,ts,tsx}"],
+  conditions,
+  globalCss,
+  include: ["./src/app/frontend/**/*.{ts,tsx}"],
   logLevel: "warn",
   outdir: "styled-system",
   preflight: true,
-  presets: [
-    createPreset({
-      accentColor: neutral,
-      grayColor: neutral,
-      radius: "none",
-    }),
-  ],
-  strictPropertyValues: true,
-  strictTokens: true,
-  theme: {
-    extend: {
-      keyframes: {
-        detailCollapse: {
-          from: { opacity: "1", transform: "translate3d(0, 0, 0)" },
-          to: { opacity: "0", transform: "translate3d(0, 0.375rem, 0)" },
-        },
-        detailExpand: {
-          from: { opacity: "0", transform: "translate3d(0, 0.375rem, 0)" },
-          to: { opacity: "1", transform: "translate3d(0, 0, 0)" },
-        },
-      },
-      layerStyles: interfaceLayerStyles,
-      semanticTokens: {
-        ...interfaceMetrics,
-        colors: {
-          activeLine: {
-            value: "color-mix(in srgb, {colors.ink.900} 20%, transparent)",
-          },
-          canvas: { value: "{colors.ink.1000}" },
-          clear: { value: "{colors.transparent}" },
-          control: { value: "{colors.ink.900}" },
-          controlHover: { value: "{colors.ink.875}" },
-          currentText: { value: "{colors.current}" },
-          line: { value: "{colors.ink.850}" },
-          lineStrong: { value: "{colors.ink.800}" },
-          muted: { value: "{colors.ink.500}" },
-          mutedStrong: { value: "{colors.ink.300}" },
-          selection: { value: "{colors.accent.selection}" },
-          sidebar: { value: "{colors.ink.975}" },
-          statusError: { value: "{colors.accent.red}" },
-          statusIdle: { value: "{colors.ink.600}" },
-          statusModel: { value: "{colors.accent.blue}" },
-          statusPaused: { value: "{colors.accent.orange}" },
-          statusTool: { value: "{colors.accent.green}" },
-          surface: { value: "{colors.ink.950}" },
-          surfaceInset: { value: "{colors.ink.990}" },
-          surfaceRaised: { value: "{colors.ink.925}" },
-          syntaxAddition: { value: "{colors.accent.green}" },
-          syntaxComment: { value: "{colors.accent.indigo}" },
-          syntaxDeletion: { value: "{colors.accent.red}" },
-          syntaxKeyword: { value: "{colors.accent.purple}" },
-          syntaxMeta: { value: "{colors.accent.blue}" },
-          syntaxNumber: { value: "{colors.accent.orange}" },
-          syntaxProperty: { value: "{colors.accent.blue}" },
-          syntaxString: { value: "{colors.accent.green}" },
-          syntaxTitle: { value: "{colors.accent.cyan}" },
-          text: { value: "{colors.ink.50}" },
-        },
-        radii: {
-          circle: { value: "{radii.full}" },
-        },
-      },
-      textStyles: interfaceTextStyles,
-      tokens: {
-        animations: {
-          detailCollapse: { value: "detailCollapse 140ms ease-in" },
-          detailExpand: { value: "detailExpand 140ms ease-out" },
-        },
-        colors: {
-          accent: {
-            blue: { value: "#7dcfff" },
-            cyan: { value: "#2ac3de" },
-            green: { value: "#9ece6a" },
-            indigo: { value: "#565f89" },
-            orange: { value: "#ff9e64" },
-            purple: { value: "#bb9af7" },
-            red: { value: "#f7768e" },
-            selection: { value: "#405d9e" },
-          },
-          ink: {
-            1000: { value: "#000000" },
-            300: { value: "#b5b5b5" },
-            50: { value: "#eeeeee" },
-            500: { value: "#808080" },
-            600: { value: "#686868" },
-            800: { value: "#343434" },
-            850: { value: "#242424" },
-            875: { value: "#1c1c1c" },
-            900: { value: "#151515" },
-            925: { value: "#111111" },
-            950: { value: "#0c0c0c" },
-            975: { value: "#080808" },
-            990: { value: "#050505" },
-          },
-        },
-        fonts: {
-          body: {
-            value: "ui-monospace, SFMono-Regular, Consolas, monospace",
-          },
-          mono: { value: "ui-monospace, SFMono-Regular, Consolas, monospace" },
-        },
-        sizes: {
-          appSidebar: { value: "clamp(15rem, 22vw, 20rem)" },
-          chatCanvas: { value: "120rem" },
-          composerEditor: { value: "clamp(5rem, 24dvh, 12rem)" },
-          content: { value: "52rem" },
-          controlColumn: { value: "11rem" },
-          detailHeader: { value: "2.25rem" },
-          toolOutput: { value: "16rem" },
-        },
-      },
+  presets: [interfacePreset],
+  staticCss: {
+    recipes: {
+      badge: [{}],
+      button: [{ iconOnly: ["*"], visual: ["*"] }],
+      code: [{}],
+      input: [{}],
     },
   },
+  strictPropertyValues: true,
+  strictTokens: true,
 });

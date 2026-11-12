@@ -66,7 +66,7 @@ export function useSessionTranscript(
     );
   useEffect(() => {
     if (!sessionId || snapshotThrottleMs === undefined) {
-      return undefined;
+      return;
     }
     const close = subscribeEvents(contentEvents(sessionId), {
       delta(event) {

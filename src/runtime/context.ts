@@ -54,7 +54,7 @@ export async function streamGraph(
 ) {
   const stream: unknown = Reflect.get(graph, "stream");
   if (typeof stream !== "function") {
-    throw new Error(localize("runtime:graph.streamMethodMissing"));
+    throw new TypeError(localize("runtime:graph.streamMethodMissing"));
   }
   const result: unknown = await Reflect.apply(stream, graph, [input, options]);
   if (!isIterable(result)) {

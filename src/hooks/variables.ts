@@ -17,9 +17,9 @@ interface ToolOutputReference {
   ordinal: number;
   path: string[];
 }
-const outputVariablePrefix = "toolOutputs.",
-  outputVariablePattern =
-    /^toolOutputs\.(?<order>fromEnd|fromStart)\.(?<ordinalText>[1-9]\d*)\.(?<field>output|structuredOutput)(?:\.(?<path>[^.]+(?:\.[^.]+)*))?$/;
+const outputVariablePattern =
+    /^toolOutputs\.(?<order>fromEnd|fromStart)\.(?<ordinalText>[1-9]\d*)\.(?<field>output|structuredOutput)(?:\.(?<path>[^.]+(?:\.[^.]+)*))?$/,
+  outputVariablePrefix = "toolOutputs.";
 export function resolveHookArgs(args: Record<string, unknown>, variables: HookVariables) {
   const resolved = resolvePlaceholders(args, {
     dynamic: (name) => hookVariableValue(name, variables),

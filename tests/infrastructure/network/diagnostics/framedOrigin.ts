@@ -51,7 +51,7 @@ export async function startFramedOrigin(mode: FramedOriginMode) {
           await Bun.sleep(60);
           if (mode === "reset") {
             if (!(socket instanceof Socket)) {
-              throw new Error("诊断测试升级连接不是 TCP socket");
+              throw new TypeError("诊断测试升级连接不是 TCP socket");
             }
             socket.resetAndDestroy();
           } else if (mode === "close") {

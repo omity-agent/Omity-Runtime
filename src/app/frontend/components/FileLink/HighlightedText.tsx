@@ -1,8 +1,11 @@
 import { chunkBy } from "es-toolkit";
 import { type CSSProperties, Fragment, useMemo } from "react";
+import { css, cx } from "styled-system/css";
 
 import type { FilePathMatch } from "../../../../fileLinks/types";
 import { FileLinkMenu } from "./Menu";
+
+const pathText = css({ textStyle: "pathUnderline" });
 
 interface HighlightToken {
   className?: string;
@@ -106,7 +109,12 @@ function groupPieces(pieces: HighlightPiece[]) {
     const { link } = group[0]!,
       children = group.map(tokenNode);
     return link ? (
-      <FileLinkMenu key={`path-${index.toString()}`} kind={link.kind} path={link.path}>
+      <FileLinkMenu
+        decoration="tokens"
+        key={`path-${index.toString()}`}
+        kind={link.kind}
+        path={link.path}
+      >
         {children}
       </FileLinkMenu>
     ) : (
@@ -116,7 +124,7 @@ function groupPieces(pieces: HighlightPiece[]) {
 }
 function tokenNode(token: HighlightPiece, index: number) {
   return (
-    <span className={token.className} key={index} style={token.style}>
+    <span className={cx(token.className, token.link && pathText)} key={index} style={token.style}>
       {token.text}
     </span>
   );

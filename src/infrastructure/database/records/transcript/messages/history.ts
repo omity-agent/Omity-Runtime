@@ -29,11 +29,11 @@ export function inputMessageId(sessionId: string, inputId: number) {
 }
 export function messageInputId(sessionId: string, message: BaseMessage) {
   if (message.type !== "human" || !message.id) {
-    return undefined;
+    return;
   }
   const prefix = `input:${sessionId}:`;
   if (!message.id.startsWith("input:")) {
-    return undefined;
+    return;
   }
   if (!message.id.startsWith(prefix)) {
     throw new Error(

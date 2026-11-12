@@ -2,14 +2,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, PanelsTopLeft } from "lucide-react";
 import { type ComponentProps, type ReactNode, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
-import { cx } from "styled-system/css";
 
-import { layout, main, panelCaption, panelToolbar, sidebar } from "../../design";
 import { useSessionAttention } from "../../services/events/attention";
 import { NavigationActions } from "../Access/NavigationActions";
-import { IconButton } from "../ParkUI";
 import { Sidebar } from "../Sidebar";
+import { IconButton } from "../ui";
 import { usePanelNavigation } from "./navigation";
+import { applicationShell } from "./shell";
 
 type Props = Omit<ComponentProps<typeof Sidebar>, "unreadIds"> & {
   children: ReactNode;
@@ -29,6 +28,7 @@ export function ApplicationFrame({
   const { t } = useTranslation(),
     queryClient = useQueryClient(),
     { buttonRef, showMain, showSessions, toggle } = usePanelNavigation(pageKey),
+    classes = applicationShell({ panel: showSessions ? "sessions" : "main" }),
     sidebarId = useId(),
     unreadIds = useSessionAttention(queryClient, showSessions ? undefined : activeId),
     toggleLabel = t(showSessions ? "returnToMain" : "sessions"),
@@ -44,8 +44,8 @@ export function ApplicationFrame({
       [onSelect, showMain],
     );
   return (
-    <div className={cx("dark", layout)} data-panel={showSessions ? "sessions" : "main"}>
-      <header className={panelToolbar}>
+    <div className={classes.root} data-panel={showSessions ? "sessions" : "main"}>
+      <header className={classes.toolbar}>
         <IconButton
           aria-controls={sidebarId}
           aria-expanded={showSessions}
@@ -57,11 +57,11 @@ export function ApplicationFrame({
         >
           {showSessions ? <ArrowLeft aria-hidden /> : <PanelsTopLeft aria-hidden />}
         </IconButton>
-        <span className={panelCaption} title={title}>
+        <span className={classes.caption} title={title}>
           {showSessions ? t("sessions") : (title ?? t("newSession"))}
         </span>
       </header>
-      <aside className={sidebar} id={sidebarId}>
+      <aside className={classes.sidebar} id={sidebarId}>
         <Sidebar
           activeId={activeId}
           showCreate={showCreate}
@@ -72,7 +72,7 @@ export function ApplicationFrame({
         />
         <NavigationActions />
       </aside>
-      <main className={main}>{children}</main>
+      <main className={classes.main}>{children}</main>
     </div>
   );
 }
