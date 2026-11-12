@@ -51,7 +51,7 @@ export async function startAppServer(options: AppServerOptions) {
       },
       settingsContext,
     });
-    const staticRoot = applicationAssetPath(options.root, "dist/frontend", "frontend");
+    const staticRoot = applicationAssetPath(options.root, "dist/frontend");
     server = createServer();
     server.on("connection", (socket) => {
       connections.add(socket);

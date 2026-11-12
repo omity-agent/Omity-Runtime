@@ -3,7 +3,7 @@ import { join, resolve } from "node:path";
 
 import { build } from "vite";
 
-import { backendPlugins, frontendOutput } from "../settings/bundling";
+import { executableBuild, frontendOutput } from "../settings/bundling";
 import { localize } from "../src/i18n/server";
 import { prepareMagikaAssets } from "./magikaModel";
 
@@ -13,8 +13,7 @@ const database = {
   } as const,
   root = resolve(import.meta.dir, ".."),
   databaseRoot = resolve(root, "dist/database"),
-  frontendPublicCache = resolve(root, "dist/frontend-public"),
-  executableOutput = resolve(root, "dist/omity.exe");
+  frontendPublicCache = resolve(root, "dist/frontend-public");
 try {
   await generateDatabaseSchema();
   const [, , command] = process.argv;
@@ -40,20 +39,7 @@ async function buildApplication() {
     publicDir: frontendPublicDirectory,
   });
   await mkdir(resolve(root, "dist"), { recursive: true });
-  const compile = {
-      assets: ["./settings", frontendOutput, databaseRoot],
-      outfile: executableOutput,
-    } satisfies Bun.CompileBuildOptions & { assets: string[] },
-    executable = await Bun.build({
-      bytecode: true,
-      compile,
-      entrypoints: ["./src/cli.ts"],
-      format: "esm",
-      minify: true,
-      plugins: backendPlugins,
-      root,
-      sourcemap: "linked",
-    });
+  const executable = await Bun.build(executableBuild);
   if (!executable.success) {
     throw new AggregateError(executable.logs, localize("build:executableBuildFailed"));
   }

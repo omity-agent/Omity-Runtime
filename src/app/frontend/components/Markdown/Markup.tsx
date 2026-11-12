@@ -78,9 +78,9 @@ export const markupComponents = {
   h1: element("h1", cx(classes.heading, css({ fontSize: "xl" }))),
   h2: element("h2", cx(classes.heading, css({ fontSize: "lg" }))),
   h3: element("h3", cx(classes.heading, css({ fontSize: "md" }))),
-  h4: element("h4", cx(classes.heading, css({ fontSize: "sm" }))),
-  h5: element("h5", cx(classes.heading, css({ fontSize: "sm" }))),
-  h6: element("h6", cx(classes.heading, css({ fontSize: "sm" }))),
+  h4: element("h4", cx(classes.heading, css({ fontSize: "editor" }))),
+  h5: element("h5", cx(classes.heading, css({ fontSize: "editor" }))),
+  h6: element("h6", cx(classes.heading, css({ fontSize: "editor" }))),
   hr: element("hr", classes.rule),
   img: element("img", classes.image),
   input: ({ node: _node, ...props }) =>

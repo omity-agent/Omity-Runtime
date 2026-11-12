@@ -7,7 +7,19 @@ import { vocabularyChunks, vocabularyModulePrefix } from "../scripts/vocabularyC
 
 const root = resolve(import.meta.dirname, "..");
 export const frontendOutput = resolve(root, "dist/frontend");
-export const backendPlugins = [proxyAddon];
+const compilation = {
+  aot: true,
+  assets: [resolve(root, "settings"), frontendOutput, resolve(root, "dist/database")],
+  outfile: resolve(root, "dist/omity.exe"),
+} satisfies Bun.CompileBuildOptions & { aot: true };
+export const executableBuild = {
+  compile: compilation,
+  entrypoints: [resolve(root, "src/cli.ts")],
+  minify: true,
+  plugins: [proxyAddon],
+  root,
+  sourcemap: "linked",
+} satisfies Bun.BuildConfig;
 export const frontendBuild = {
   emptyOutDir: true,
   outDir: frontendOutput,

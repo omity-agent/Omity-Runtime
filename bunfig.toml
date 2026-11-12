@@ -41,10 +41,7 @@ suspicious = "warn"
 "@pandacss/no-physical-properties" = "warn"
 "@pandacss/no-descendant-selectors" = "warn"
 "@pandacss/no-margin-properties" = "warn"
-"@pandacss/no-primitive-token" = [
-  "warn",
-  { categories = ["colors"], allow = ["current", "transparent"] },
-]
+"@pandacss/no-primitive-token" = "warn"
 "@pandacss/no-shorthand-longhand-mix" = "warn"
 "@pandacss/prefer-text-style" = "warn"
 "@pandacss/extraction-diagnostics" = "warn"

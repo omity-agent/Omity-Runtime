@@ -13,5 +13,5 @@ export function initializeDatabase(db: Database, root = process.cwd()) {
   execute.call(db, readFileSync(schemaAssetPath(root), "utf8"));
 }
 function schemaAssetPath(root: string) {
-  return applicationAssetPath(root, join("dist", "database", "schema.sql"), "database/schema.sql");
+  return applicationAssetPath(root, join("dist", "database", "schema.sql"));
 }

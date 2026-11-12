@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 
+import { executableBuild } from "../../../settings/bundling";
 import { pickWorkspaceDirectory } from "../../../src/app/workspaceDialog/bridge";
 import { createTestDirectory } from "../../support/artifacts";
 
@@ -38,12 +39,12 @@ test("native process failures remain visible and reject the folder selection", a
 test("invalid folder results are rejected instead of being treated as cancellation", async () => {
   await expect(launch("invalid", [])).rejects.toThrow();
 });
-test("compiled applications reopen their executable to isolate native diagnostics", async () => {
+test("AOT applications reopen their executable to isolate native diagnostics", async () => {
   const executable = join(createTestDirectory("folder-dialog"), "selection-probe.exe"),
     build = await Bun.build({
-      compile: { outfile: executable },
+      ...executableBuild,
+      compile: { ...executableBuild.compile, assets: [], outfile: executable },
       entrypoints: [`${import.meta.dir}/emittedDiagnostics.ts`],
-      minify: true,
     });
   expect(build.success).toBe(true);
   const diagnostics: string[] = [],
