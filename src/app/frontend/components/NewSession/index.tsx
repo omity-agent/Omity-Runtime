@@ -6,7 +6,7 @@ import { PendingAttachments } from "../Chat/Composer/attachments";
 import { LatestMessage } from "./editor/LatestMessage";
 import { useNewSessionDraft } from "./editor/preparationState";
 import { useSessionCreation } from "./editor/submission";
-import { conversation, scroll, scrollContent, setup, setupFirst } from "./layout";
+import { conversation, scroll, scrollContent, setup } from "./layout";
 import { MessageStack } from "./MessageStack";
 import { ConfigurationPanel } from "./options/ConfigurationPanel";
 import { useSessionPreferences } from "./options/preferences";
@@ -103,7 +103,6 @@ export function NewSessionPage({
         <div className={scrollContent}>
           <div className={setup}>
             <WorkspacePicker
-              className={setupFirst}
               disabled={submitting}
               recentWorkspaces={recentWorkspaces}
               workspace={workspace}

@@ -1,7 +1,7 @@
 import { Check, FolderOpen, History } from "lucide-react";
 import { type ChangeEvent, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { css, cx } from "styled-system/css";
+import { css } from "styled-system/css";
 
 import { reportPromiseErrors } from "../../services/errors";
 import { Button, Field, Input } from "../ParkUI";
@@ -23,14 +23,18 @@ const row = css({
     minWidth: "zero",
   }),
   recentLabel = css({ color: "muted", fontSize: "xs" }),
-  recentItem = css({ flexGrow: { base: 1, sm: 0 } }),
   recentList = css({
-    display: "flex",
-    flexWrap: "wrap",
+    display: "grid",
     gap: "2",
+    gridTemplateColumns: "minmax(0, 1fr)",
     minWidth: "zero",
   }),
-  recentButton = css({ maxWidth: "full", minWidth: "zero" }),
+  recentButton = css({
+    justifyContent: "flex-start",
+    maxWidth: "full",
+    minWidth: "zero",
+    width: "full",
+  }),
   recentPath = css({
     minWidth: "zero",
     overflow: "hidden",
@@ -128,7 +132,7 @@ function RecentWorkspaceButton({
   return (
     <Button
       aria-pressed={selected}
-      className={cx(recentButton, recentItem)}
+      className={recentButton}
       disabled={disabled}
       onClick={select}
       title={item}

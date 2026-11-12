@@ -2,19 +2,19 @@
 
 为确保可靠性，在使用命令行或写命令脚本时，必须使用命令和参数的全称，避免使用简写或兼容性写法。
 `bun run --bun <file>` 可以直接解释 TypeScript 代码，所以不要写 `.mjs`/`.cjs`/`.js`。
-可以使用 `bunx --bun name@latest`、`uvx name@latest` 运行所需的任何工具，不需要也不应该向用户二次确认。使用 `latest` 版本或 Git 仓库默认分支不指定 Commit。
+可以使用 `uvx name@latest`、`bunx --bun name@latest` 运行所需的任何工具，不需要也不应该向用户二次确认。使用 `latest` 版本或 Git 仓库默认分支不指定 Commit。
 使用管理员权限无需询问用户。
 Do not chain shell commands with separators like `echo \"====\";` or `printf '---'`; the output becomes noisy in a way that makes the user's side of the conversation worse.
-默认不可以运行的命令：`git`、`Get-Command`、`where.exe`，需要使用必须申请。
 
-## How to use ripgrep
+以下命令默认不可以运行，需要使用必须申请：
+
+- `git`
+- `Get-Command`
+- `where.exe`
+
+你不需要知道你使用的工具的具体位置。
 
 Prefer using ripgrep over grep / Select-String / Get-ChildItem.
-
-- `--no-ignore`：不再遵守 `.gitignore`、`.ignore`、`.rgignore`、Git 全局 ignore 等忽略规则。
-- `--hidden`：搜索隐藏文件和隐藏目录。
-- `--text`：关闭二进制检测，把所有文件都当作文本搜索。
-
 If `rg` is unavailable, you use the next best tool.
 
 ## Proxy

@@ -5,28 +5,26 @@ import { type CapabilityOption, sessionOptionsSchema } from "../../../../contrac
 import { api, request } from "../../../services/httpTransport";
 
 export type { CapabilityOption } from "../../../../contracts/results";
-interface ProfilePreferences {
+interface SessionPreferences {
   hooks?: ReadonlyMap<string, boolean>;
   mcpServers?: ReadonlyMap<string, boolean>;
-  model?: string;
+  models?: ReadonlyMap<string | undefined, string>;
 }
-type PreferenceUpdate = { profile?: string } & (
-  { kind: "model"; value: string } | { enable: boolean; id: string; kind: "hooks" | "mcpServers" }
-);
+type PreferenceUpdate =
+  | { kind: "model"; profile?: string; value: string }
+  | { enable: boolean; id: string; kind: "hooks" | "mcpServers" };
 function updatePreferences(
-  current: Map<string | undefined, ProfilePreferences>,
+  current: SessionPreferences,
   update: PreferenceUpdate,
-) {
-  const next = new Map(current),
-    preferences = next.get(update.profile);
+): SessionPreferences {
   if (update.kind === "model") {
-    next.set(update.profile, { ...preferences, model: update.value });
-  } else {
-    const values = new Map(preferences?.[update.kind]);
-    values.set(update.id, update.enable);
-    next.set(update.profile, { ...preferences, [update.kind]: values });
+    const models = new Map(current.models);
+    models.set(update.profile, update.value);
+    return { ...current, models };
   }
-  return next;
+  const values = new Map(current[update.kind]);
+  values.set(update.id, update.enable);
+  return { ...current, [update.kind]: values };
 }
 async function readSessionOptions(profile?: string, signal?: AbortSignal) {
   return request(
@@ -44,24 +42,18 @@ function resolveCapabilities(
   }));
 }
 export function useSessionPreferences(profile?: string) {
-  const [selections, dispatch] = useReducer(
-      updatePreferences,
-      undefined,
-      () => new Map<string | undefined, ProfilePreferences>(),
-    ),
+  const [selections, dispatch] = useReducer(updatePreferences, {}),
     query = useQuery({
       queryFn: ({ signal }) => readSessionOptions(profile, signal),
       queryKey: ["sessionOptions", profile ?? null],
     }),
-    selected = selections.get(profile),
-    hooks = resolveCapabilities(query.data?.hooks ?? [], selected?.hooks),
-    mcpServers = resolveCapabilities(query.data?.mcpServers ?? [], selected?.mcpServers),
-    model = selected?.model ?? query.data?.model ?? "",
+    hooks = resolveCapabilities(query.data?.hooks ?? [], selections.hooks),
+    mcpServers = resolveCapabilities(query.data?.mcpServers ?? [], selections.mcpServers),
+    model = selections.models?.get(profile) ?? query.data?.model ?? "",
     ready = query.isSuccess && !query.isFetching,
-    handleHookChange = (id: string, enable: boolean) =>
-      dispatch({ enable, id, kind: "hooks", profile }),
+    handleHookChange = (id: string, enable: boolean) => dispatch({ enable, id, kind: "hooks" }),
     handleServerChange = (id: string, enable: boolean) =>
-      dispatch({ enable, id, kind: "mcpServers", profile }),
+      dispatch({ enable, id, kind: "mcpServers" }),
     handleModelChange = (value: string) => dispatch({ kind: "model", profile, value });
   return {
     error: query.error,

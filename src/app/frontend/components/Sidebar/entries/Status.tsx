@@ -11,9 +11,9 @@ import {
 import { useTranslation } from "react-i18next";
 import { css, cva, cx } from "styled-system/css";
 
-import type { ErrorDetails } from "../../../../failures/details";
-import type { SessionStatus } from "../../../../types";
-import { statusLabelKey } from "./sessions";
+import type { ErrorDetails } from "../../../../../failures/details";
+import type { SessionStatus } from "../../../../../types";
+import { statusLabelKey } from "../sessions";
 
 const indicator = cva({
     base: {

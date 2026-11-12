@@ -8,6 +8,7 @@ export const fixtureServer = { host: "127.0.0.1", port: 0, strictPort: true };
 export const fixtureProxyBypass = ["localhost", "127.0.0.1", "::1"];
 export const fixtureDependencies = {
   entries: [
+    "tests/app/frontend/composition/applicationShell.html",
     "tests/app/frontend/scrolling/streamingPage.html",
     "tests/app/frontend/translation/reasoningPage.html",
   ],

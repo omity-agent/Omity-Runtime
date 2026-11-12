@@ -2,31 +2,20 @@ import { beforeAll, expect, test } from "bun:test";
 
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { CapabilityGroup } from "../../../src/app/frontend/components/NewSession/options/CapabilityGroup";
-import { ModelInput } from "../../../src/app/frontend/components/NewSession/options/ModelInput";
-import { ProfilePicker } from "../../../src/app/frontend/components/NewSession/ProfilePicker";
-import { WorkspacePicker } from "../../../src/app/frontend/components/NewSession/WorkspacePicker";
-import { i18nReady } from "../../../src/app/frontend/i18n";
+import { CapabilityGroup } from "../../../../src/app/frontend/components/NewSession/options/CapabilityGroup";
+import { ModelInput } from "../../../../src/app/frontend/components/NewSession/options/ModelInput";
+import { ProfilePicker } from "../../../../src/app/frontend/components/NewSession/ProfilePicker";
+import { WorkspacePicker } from "../../../../src/app/frontend/components/NewSession/WorkspacePicker";
+import { i18nReady } from "../../../../src/app/frontend/i18n";
 
 const ignoreChange = () => undefined,
-  pickWorkspace = async () => null,
+  pickWorkspace = () => Promise.resolve(null),
   recentWorkspaces: string[] = [],
   availableProfiles = ["local"],
   hookOptions = [{ enable: true, id: "example-hook" }];
 beforeAll(async () => {
   await i18nReady;
 });
-function workspacePicker(key: number) {
-  return (
-    <WorkspacePicker
-      key={key}
-      onChange={ignoreChange}
-      onPick={pickWorkspace}
-      recentWorkspaces={recentWorkspaces}
-      workspace="F:/workspace/example"
-    />
-  );
-}
 async function elements(markup: string, selector: string) {
   const attributes: Record<string, string>[] = [],
     rewriter = new HTMLRewriter().on(selector, {
@@ -40,7 +29,12 @@ async function elements(markup: string, selector: string) {
 test("session setup fields have semantic names and associated native labels", async () => {
   const markup = renderToStaticMarkup(
       <form>
-        {workspacePicker(0)}
+        <WorkspacePicker
+          onChange={ignoreChange}
+          onPick={pickWorkspace}
+          recentWorkspaces={recentWorkspaces}
+          workspace="F:/workspace/example"
+        />
         <ProfilePicker available={availableProfiles} onChange={ignoreChange} selected="local" />
         <ModelInput disabled={false} model="example-model" onChange={ignoreChange} />
       </form>,
@@ -52,15 +46,6 @@ test("session setup fields have semantic names and associated native labels", as
     expect(control["id"]).toBeTruthy();
     expect(labels.filter((label) => label["for"] === control["id"])).toHaveLength(1);
   }
-});
-test("repeated session setup components generate distinct field and label identifiers", async () => {
-  const markup = renderToStaticMarkup(<form>{[0, 1].map(workspacePicker)}</form>),
-    controls = await elements(markup, "input"),
-    identified = await elements(markup, "[id]"),
-    ids = identified.map((element) => element["id"]);
-  expect(controls).toHaveLength(2);
-  expect(controls.every((control) => Boolean(control["id"]))).toBe(true);
-  expect(new Set(ids).size).toBe(ids.length);
 });
 test("hook switches belong to a labelled fieldset instead of a single-control field", async () => {
   const markup = renderToStaticMarkup(

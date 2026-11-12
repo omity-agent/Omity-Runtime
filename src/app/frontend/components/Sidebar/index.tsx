@@ -1,50 +1,25 @@
-import { Plus } from "lucide-react";
-import { type MouseEvent, useCallback } from "react";
+import { Activity, Folder, MessagesSquare, Plus } from "lucide-react";
+import { type MouseEvent, useCallback, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { css } from "styled-system/css";
 
 import { navigateLink, pagePath } from "../../route";
 import type { SessionInfo } from "../../services/client";
 import { LinkButton } from "../ParkUI";
-import { SessionGroup } from "./SessionGroup";
-import { groupSessions, isRunning } from "./sessions";
+import { ConversationList } from "./entries/ConversationList";
+import {
+  brand,
+  collections,
+  heading,
+  list,
+  newButton,
+  panel,
+  section,
+  title,
+  total,
+} from "./panelStyles";
+import { ProjectPicker } from "./ProjectPicker";
+import { compareSessions, groupSessions, isRunning, workspaceLabel } from "./sessions";
 
-const panel = css({
-    alignItems: "center",
-    background: "sidebar",
-    borderBlockEndWidth: "hairline",
-    borderBottomColor: "line",
-    display: "grid",
-    gap: "2",
-    gridTemplateColumns: "minmax(0, 1fr) auto",
-    minHeight: { _coarse: "14", _compact: "14", base: "12" },
-    paddingInline: "3",
-  }),
-  brand = css({
-    color: "text",
-    textStyle: "sidebarBrand",
-  }),
-  total = css({
-    color: "muted",
-    textStyle: "sidebarCount",
-  }),
-  newButton = css({
-    borderColor: "line",
-    height: "controlTarget",
-    paddingInline: "2.5",
-  }),
-  list = css({
-    alignContent: "start",
-    background: "sidebar",
-    display: "grid",
-    minHeight: "zero",
-    overflowX: "hidden",
-    overflowY: "auto",
-    overscrollBehavior: "contain",
-    paddingInline: "2",
-    scrollbarGutter: "stable",
-    touchAction: "pan-y",
-  });
 interface SidebarProps {
   sessions: SessionInfo[];
   activeId?: string;
@@ -62,11 +37,27 @@ export function Sidebar({
   onSelect,
 }: SidebarProps) {
   const { t } = useTranslation(),
-    hasRunningSessions = sessions.some(isRunning),
+    sessionsId = useId(),
+    activeWorkspace = sessions.find(({ id }) => id === activeId)?.workspace,
+    [selection, setSelection] = useState({ activeWorkspace, workspace: activeWorkspace }),
+    groups = groupSessions(sessions),
+    project = groups.find(({ workspace }) => workspace === selection.workspace) ?? groups[0],
+    attentionSessions = sessions
+      .filter((session) => isRunning(session) || unreadIds.has(session.id))
+      .toSorted(compareSessions),
+    selectProject = useCallback(
+      (workspace: string) => {
+        setSelection({ activeWorkspace, workspace });
+      },
+      [activeWorkspace],
+    ),
     handleCreate = useCallback(
       (event: MouseEvent<HTMLAnchorElement>) => navigateLink(event, onCreate),
       [onCreate],
     );
+  if (selection.activeWorkspace !== activeWorkspace) {
+    setSelection({ activeWorkspace, workspace: activeWorkspace ?? selection.workspace });
+  }
   return (
     <>
       <header className={panel}>
@@ -86,17 +77,61 @@ export function Sidebar({
           </LinkButton>
         )}
       </header>
-      <nav aria-label={t("sessions")} className={list}>
-        {groupSessions(sessions).map((group) => (
-          <SessionGroup
-            activeId={activeId}
-            group={group}
-            hasRunningSessions={hasRunningSessions}
-            key={group.workspace}
-            unreadIds={unreadIds}
-            onSelect={onSelect}
-          />
-        ))}
+      <nav aria-label={t("sessions")} className={collections}>
+        <section aria-label={t("runningAndUnread")} className={section}>
+          <h2 className={heading}>
+            <Activity aria-hidden size={14} />
+            <span className={title}>{t("runningAndUnread")}</span>
+            <span className={total}>{attentionSessions.length}</span>
+          </h2>
+          <div className={list}>
+            {attentionSessions.length > 0 ? (
+              <ConversationList
+                activeId={activeId}
+                onSelect={onSelect}
+                sessions={attentionSessions}
+                unreadIds={unreadIds}
+              />
+            ) : null}
+          </div>
+        </section>
+        <section aria-label={t("projects")} className={section}>
+          <h2 className={heading}>
+            <Folder aria-hidden size={14} />
+            <span className={title}>{t("projects")}</span>
+            <span className={total}>{groups.length}</span>
+          </h2>
+          <div className={list}>
+            {groups.length > 0 ? (
+              <ProjectPicker
+                groups={groups}
+                onSelect={selectProject}
+                selectedWorkspace={project?.workspace}
+                sessionsId={sessionsId}
+                unreadIds={unreadIds}
+              />
+            ) : null}
+          </div>
+        </section>
+        <section aria-label={t("projectSessions")} className={section} id={sessionsId}>
+          <h2 className={heading} title={project?.workspace}>
+            <MessagesSquare aria-hidden size={14} />
+            <span className={title}>
+              {project ? workspaceLabel(project.workspace) : t("projectSessions")}
+            </span>
+            <span className={total}>{project?.sessions.length ?? 0}</span>
+          </h2>
+          <div className={list} key={project?.workspace}>
+            {project ? (
+              <ConversationList
+                activeId={activeId}
+                onSelect={onSelect}
+                sessions={project.sessions}
+                unreadIds={unreadIds}
+              />
+            ) : null}
+          </div>
+        </section>
       </nav>
     </>
   );

@@ -51,7 +51,7 @@ export const sidebar = css({
   borderInlineEndWidth: { _topNav: "zero", base: "zero", lg: "hairline" },
   borderRightColor: "line",
   display: "grid",
-  gridTemplateRows: "auto minmax(0, 1fr)",
+  gridTemplateRows: "auto minmax(0, 1fr) auto",
   minHeight: "zero",
   minWidth: "zero",
   overflow: "hidden",

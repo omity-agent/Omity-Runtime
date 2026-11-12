@@ -14,16 +14,24 @@ export const scrollContent = css({
 export const conversation = css({ marginBlockStart: "auto" });
 export const setup = css({
   alignContent: "start",
+  alignItems: "start",
   alignSelf: "center",
   display: "grid",
   gap: { base: "4", md: "6" },
   gridTemplateColumns: {
     base: "minmax(0, 1fr)",
-    md: "repeat(2, minmax(0, 1fr))",
+    xl: "minmax(0, 1fr) minmax(0, 1.6fr)",
   },
   justifySelf: "center",
-  maxWidth: "content",
+  maxWidth: "breakpoint-xl",
   padding: { _short: "4", base: "4", md: "8" },
   width: "full",
 });
-export const setupFirst = css({ gridColumn: { md: "1 / -1" } });
+export const configuration = css({
+  alignContent: "start",
+  display: "grid",
+  gap: "4",
+  gridTemplateColumns: { base: "minmax(0, 1fr)", sm: "repeat(2, minmax(0, 1fr))" },
+  minWidth: "zero",
+});
+export const setupFirst = css({ gridColumn: { sm: "1 / -1" } });

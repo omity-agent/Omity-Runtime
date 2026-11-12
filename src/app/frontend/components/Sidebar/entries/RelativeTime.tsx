@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { formatUpdatedAt, updatedAtRefreshDelay } from "./sessions";
+import { formatUpdatedAt, updatedAtRefreshDelay } from "../sessions";
 
 interface Props {
   className?: string;

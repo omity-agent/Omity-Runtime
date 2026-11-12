@@ -6,6 +6,7 @@ import { cx } from "styled-system/css";
 
 import { layout, main, panelCaption, panelToolbar, sidebar } from "../../design";
 import { useSessionAttention } from "../../services/events/attention";
+import { NavigationActions } from "../Access/NavigationActions";
 import { IconButton } from "../ParkUI";
 import { Sidebar } from "../Sidebar";
 import { usePanelNavigation } from "./navigation";
@@ -69,6 +70,7 @@ export function ApplicationFrame({
           onCreate={create}
           onSelect={select}
         />
+        <NavigationActions />
       </aside>
       <main className={main}>{children}</main>
     </div>

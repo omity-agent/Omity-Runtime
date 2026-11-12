@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { reportPromiseErrors } from "../../../services/errors";
 import { Button } from "../../ParkUI";
-import { setupFirst } from "../layout";
+import { configuration, setupFirst } from "../layout";
 import { ProfilePicker } from "../ProfilePicker";
 import { CapabilityGroup } from "./CapabilityGroup";
 import { ModelInput } from "./ModelInput";
@@ -25,7 +25,7 @@ export function ConfigurationPanel({
   const { t } = useTranslation(),
     handleRetry = useCallback(() => reportPromiseErrors(selection.reload()), [selection]);
   return (
-    <>
+    <div className={configuration}>
       <ProfilePicker
         available={availableProfiles}
         disabled={disabled}
@@ -64,6 +64,6 @@ export function ConfigurationPanel({
           />
         </>
       )}
-    </>
+    </div>
   );
 }

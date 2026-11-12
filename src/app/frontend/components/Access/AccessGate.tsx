@@ -1,8 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { KeyRound, LogOut } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { css } from "styled-system/css";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 import { localize } from "../../i18n";
 import {
@@ -14,20 +11,11 @@ import {
   registrationTicket,
 } from "../../services/access";
 import { reportError } from "../../services/errors";
-import { IconButton, LinkButton } from "../ParkUI";
 import { AccessPage } from "./AccessPage";
+import { AccessNavigationContext } from "./NavigationActions";
 
-const accessButton = css({
-  height: "8",
-  insetBlockStart: "3",
-  insetInlineEnd: "3",
-  position: "fixed",
-  width: "8",
-  zIndex: "overlay",
-});
 export function AccessGate({ children }: { children: ReactNode }) {
-  const { t } = useTranslation(),
-    queryClient = useQueryClient(),
+  const queryClient = useQueryClient(),
     [status, setStatus] = useState<AccessStatus>(),
     [busy, setBusy] = useState(true),
     [error, setError] = useState<string>(),
@@ -97,36 +85,13 @@ export function AccessGate({ children }: { children: ReactNode }) {
         }),
       [queryClient, setStatus],
     ),
-    setup = setupValue !== undefined || (status?.local === true && status.credentialCount === 0);
-  if (status?.authenticated && (!setup || continueLocal)) {
-    return (
-      <>
-        {children}
-        {!status.local && (
-          <IconButton
-            aria-label={t("accessLogout")}
-            className={accessButton}
-            disabled={busy}
-            onClick={endSession}
-            title={t("accessLogout")}
-            type="button"
-          >
-            <LogOut size={14} />
-          </IconButton>
-        )}
-        {status.local && status.configured && (
-          <LinkButton
-            aria-label={t("accessManageCredentials")}
-            className={accessButton}
-            href="?setup=manage#/new"
-            iconOnly
-            title={t("accessManageCredentials")}
-          >
-            <KeyRound size={14} />
-          </LinkButton>
-        )}
-      </>
+    setup = setupValue !== undefined || (status?.local === true && status.credentialCount === 0),
+    navigation = useMemo(
+      () => (status ? { busy, handleLogout: endSession, status } : undefined),
+      [busy, endSession, status],
     );
+  if (status?.authenticated && (!setup || continueLocal)) {
+    return <AccessNavigationContext value={navigation}>{children}</AccessNavigationContext>;
   }
   return (
     <AccessPage

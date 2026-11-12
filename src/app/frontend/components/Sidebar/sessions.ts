@@ -7,7 +7,7 @@ const minuteMs = 60_000,
   hourMs = 3_600_000,
   dayMs = 86_400_000,
   weekMs = 604_800_000;
-export interface SessionGroup {
+export interface WorkspaceGroup {
   workspace: string;
   sessions: SessionInfo[];
   runningCount: number;
@@ -28,7 +28,7 @@ export function statusLabelKey(status: SessionStatus) {
     waiting: "statusWaiting",
   }[status];
 }
-export function groupSessions(sessions: SessionInfo[]): SessionGroup[] {
+export function groupSessions(sessions: SessionInfo[]): WorkspaceGroup[] {
   return [...Map.groupBy(sessions, (session) => session.workspace)]
     .map(toGroup)
     .toSorted(compareGroups);
@@ -73,7 +73,7 @@ export function updatedAtRefreshDelay(updatedAt: number, now = Date.now()) {
   }
   return undefined;
 }
-function toGroup([workspace, source]: [string, SessionInfo[]]): SessionGroup {
+function toGroup([workspace, source]: [string, SessionInfo[]]): WorkspaceGroup {
   const sessions = [...source].toSorted(compareSessions);
   return {
     createdAt: maxBy(sessions, (session) => session.createdAt)!.createdAt,
@@ -83,7 +83,7 @@ function toGroup([workspace, source]: [string, SessionInfo[]]): SessionGroup {
     workspace,
   };
 }
-function compareSessions(left: SessionInfo, right: SessionInfo) {
+export function compareSessions(left: SessionInfo, right: SessionInfo) {
   const runningOrder = Number(isRunning(right)) - Number(isRunning(left));
   if (runningOrder !== 0) {
     return runningOrder;
@@ -97,7 +97,7 @@ function compareSessions(left: SessionInfo, right: SessionInfo) {
     left.id.localeCompare(right.id)
   );
 }
-function compareGroups(left: SessionGroup, right: SessionGroup) {
+function compareGroups(left: WorkspaceGroup, right: WorkspaceGroup) {
   const runningOrder = Number(right.runningCount > 0) - Number(left.runningCount > 0);
   if (runningOrder !== 0) {
     return runningOrder;

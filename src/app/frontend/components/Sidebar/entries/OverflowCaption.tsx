@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { css } from "styled-system/css";
 
-import { localize } from "../../i18n";
+import { localize } from "../../../i18n";
 
 const viewport = css({
     flexBasis: "zero",
