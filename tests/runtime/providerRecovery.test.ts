@@ -23,8 +23,9 @@ interface ModelFailureCase {
 const modelFailures: ModelFailureCase[] = [...providerFailures, ...generationFailures];
 afterEach(cleanupDatabaseDirs);
 test.each(modelFailures)("handles $name through the model graph", async (failure) => {
-  const model = recoveringModel(failure.response),
-    { context, db, executions } = agentFixture({ model }),
+  const model = recoveringModel(failure.response);
+  using fixture = agentFixture({ model });
+  const { context, db } = fixture,
     warnings: BrowserWarning[] = [],
     loggedError = spyOn(context.logger, "error").mockReturnValue();
   context.settings.model.maxConcurrentRequests = 1;
@@ -69,8 +70,6 @@ test.each(modelFailures)("handles $name through the model graph", async (failure
     }
   } finally {
     loggedError.mockRestore();
-    executions.close();
-    db.close();
   }
 });
 test.each(websocketFailures)("handles $name through the model graph", async (failure) => {
@@ -95,8 +94,9 @@ test.each(websocketFailures)("handles $name through the model graph", async (fai
         body: JSON.stringify({ input: [], model: "test-model" }),
         method: "POST",
       }),
-    ),
-    { context, db, executions } = agentFixture({ model }),
+    );
+  using fixture = agentFixture({ model });
+  const { context, db } = fixture,
     warnings: BrowserWarning[] = [],
     reportedFailures: ErrorDetails[] = [],
     loggedError = spyOn(context.logger, "error").mockReturnValue(),
@@ -161,8 +161,6 @@ test.each(websocketFailures)("handles $name through the model graph", async (fai
     globalThis.fetch = previousFetch;
     loggedError.mockRestore();
     loggedWarning.mockRestore();
-    executions.close();
-    db.close();
     await runtime.close();
     await target.stop(true);
   }

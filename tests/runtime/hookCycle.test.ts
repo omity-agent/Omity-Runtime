@@ -2,54 +2,40 @@ import { afterEach, expect, test } from "bun:test";
 
 import { AIMessage, type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
-import { MemorySaver } from "@langchain/langgraph-checkpoint";
-import { simulateReadableStream } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
 import { z } from "zod";
 
-import { createAgentGraph } from "../../src/agent";
-import { HookRuntime } from "../../src/hooks/runtime";
 import { isHookCallId } from "../../src/hooks/storage/calls";
-import { Logger } from "../../src/infrastructure/logging/logger";
 import type { HookRule } from "../../src/types";
-import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
-import { testSettings } from "../support/settings";
+import { cleanupDatabaseDirs, required, workspace } from "../support/database";
+import { agentFixture, textResponse, toolResponse } from "./support/agentFixture";
 
-const usage = {
-  inputTokens: { cacheRead: 0, cacheWrite: 0, noCache: 1, total: 1 },
-  outputTokens: { reasoning: 0, text: 1, total: 1 },
-};
 afterEach(cleanupDatabaseDirs);
 test("takeover hooks bracket an Agent tool cycle without recursive hooks", async () => {
   const calls: string[] = [],
     hookTool = makeTool("hook", () => calls.push("hook")),
-    originalTool = makeTool("original", () => calls.push("original")),
-    db = makeDb();
-  db.resetSession("session", workspace);
-  const hooks = new HookRuntime(
-      [
-        rule("silent-before", "original", "before"),
-        rule("before", "original", "before", "takeover"),
-        rule("after", "original", "after", "takeover"),
-        rule("must-not-run", "hook", "before"),
-      ],
-      [hookTool, originalTool],
-      db.db,
-      new Logger("error", true),
-      "session",
-      workspace,
-    ),
-    graph = createAgentGraph({
-      checkpointer: new MemorySaver(),
-      hooks,
-      model: modelWithToolCall(),
-      settings: testSettings(),
-      tools: [hookTool, originalTool],
+    originalTool = makeTool("original", () => calls.push("original"));
+  using fixture = agentFixture({
+    hooks: [
+      rule("silent-before", "original", "before"),
+      rule("before", "original", "before", "takeover"),
+      rule("after", "original", "after", "takeover"),
+      rule("must-not-run", "hook", "before"),
+    ],
+    model: new MockLanguageModelV4({
+      doStream: [toolResponse([{ id: "original-call", name: "original" }]), textResponse("done")],
     }),
-    result = await graph.invoke(
-      { hookPendingUserIds: ["input:1"], messages: [{ content: "run", role: "user" }] },
-      { configurable: { thread_id: "hook-order" } },
-    );
+    sessionId: "session",
+    tools: [hookTool, originalTool],
+  });
+  fixture.db.resetSession("session", workspace);
+  fixture.db.appendUser("session", "run");
+  const input = required(fixture.db.nextInput("session"));
+  fixture.db.consumeInput("session", input);
+  const result = await fixture.context.graph.invoke(
+    { hookPendingUserIds: ["input:1"], messages: [{ content: "run", role: "user" }] },
+    { configurable: { thread_id: input.runId.toString() } },
+  );
   expect(calls).toEqual(["hook", "hook", "original", "hook"]);
   const hookIds = result.messages
     .filter((message) => AIMessage.isInstance(message))
@@ -59,37 +45,7 @@ test("takeover hooks bracket an Agent tool cycle without recursive hooks", async
   expect(hookIds).toHaveLength(2);
   expect(hookIds.every((id) => /^[A-Za-z0-9_-]+$/.test(id))).toBe(true);
   assertToolProtocol(result.messages);
-  db.close();
 });
-function modelWithToolCall() {
-  return new MockLanguageModelV4({
-    doStream: [
-      {
-        stream: simulateReadableStream({
-          chunks: [
-            {
-              input: "{}",
-              toolCallId: "original-call",
-              toolName: "original",
-              type: "tool-call",
-            },
-            { finishReason: { raw: undefined, unified: "tool-calls" }, type: "finish", usage },
-          ],
-        }),
-      },
-      {
-        stream: simulateReadableStream({
-          chunks: [
-            { id: "text", type: "text-start" },
-            { delta: "done", id: "text", type: "text-delta" },
-            { id: "text", type: "text-end" },
-            { finishReason: { raw: undefined, unified: "stop" }, type: "finish", usage },
-          ],
-        }),
-      },
-    ],
-  });
-}
 function makeTool(name: string, record: () => void) {
   return tool(
     () => {

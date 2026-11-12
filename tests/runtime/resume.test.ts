@@ -1,30 +1,19 @@
 import { afterEach, expect, test } from "bun:test";
 
 import { tool } from "@langchain/core/tools";
-import { simulateReadableStream } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
 import { z } from "zod";
 
-import { createAgentGraph } from "../../src/agent";
-import { BunSqliteSaver } from "../../src/checkpointer/saver";
-import { HookRuntime } from "../../src/hooks/runtime";
 import { queryAll } from "../../src/infrastructure/database/sqlite/connection";
-import { Logger } from "../../src/infrastructure/logging/logger";
 import { processInput } from "../../src/runtime/consumeInputs";
 import type { HostContext } from "../../src/runtime/context";
+import { wireHostSignals } from "../../src/runtime/execution/signals";
 import type { StreamEvent } from "../../src/types";
-import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
-import { testSettings } from "../support/settings";
+import { cleanupDatabaseDirs, required, workspace } from "../support/database";
+import { agentFixture, textResponse, toolResponse } from "./support/agentFixture";
 
-const usage = {
-  inputTokens: { cacheRead: 0, cacheWrite: 0, noCache: 1, total: 1 },
-  outputTokens: { reasoning: 0, text: 1, total: 1 },
-};
 afterEach(cleanupDatabaseDirs);
 test("a paused run resumes from the model boundary without repeating the model call", async () => {
-  using db = makeDb();
-  db.resetSession("session", workspace);
-  db.appendUser("session", "run tool");
   const calls: string[] = [],
     echo = tool(
       () => {
@@ -34,18 +23,13 @@ test("a paused run resumes from the model boundary without repeating the model c
       { description: "echo", name: "echo", schema: z.object({}) },
     ),
     model = modelWithToolCalls(),
-    saver = new BunSqliteSaver(db.db),
-    hooks = new HookRuntime([], [echo], db.db, new Logger("error", true), "session", workspace),
-    graph = createAgentGraph({
-      checkpointer: saver,
-      hooks,
-      model,
-      settings: testSettings(),
-      tools: [echo],
-    }),
-    stopping = new AbortController(),
-    pausedContext = context(db, saver, graph, stopping.signal);
-  pausedContext.observer = {
+    stopping = new AbortController();
+  using fixture = agentFixture({ model, sessionId: "session", tools: [echo] });
+  const { context, db } = fixture;
+  db.resetSession("session", workspace);
+  db.appendUser("session", "run tool");
+  context.stopping = stopping.signal;
+  context.observer = {
     changed: () => {
       if (model.doStreamCalls.length === 1) {
         stopping.abort();
@@ -53,52 +37,45 @@ test("a paused run resumes from the model boundary without repeating the model c
     },
     token: () => {},
   };
-  await processInput(pausedContext, required(db.nextInput("session")));
+  await processInput(context, required(db.nextInput("session")));
   expect(db.nextInput("session")?.status).toBe("paused");
   expect(model.doStreamCalls).toHaveLength(1);
   expect(calls).toEqual([]);
   db.setControl("session", "running");
-  await processInput(context(db, saver, graph), required(db.nextInput("session")));
+  context.stopping = undefined;
+  await processInput(context, required(db.nextInput("session")));
   expect(db.nextInput("session")).toBeNull();
   expect(model.doStreamCalls).toHaveLength(2);
   expect(calls).toEqual(["tool", "tool"]);
 });
 test("a paused run steps through one model request or a complete tool batch", async () => {
-  using db = makeDb();
-  db.resetSession("session", workspace);
-  db.appendUser("session", "run tool");
   const calls: string[] = [],
     delivered: StreamEvent[] = [],
     invoked = Promise.withResolvers<string>(),
     release = Promise.withResolvers<string>(),
     echo = tool(
       (_, config) => {
-        const callId = config.toolCall?.id;
-        calls.push(callId ?? "missing");
-        invoked.resolve(callId ?? "missing");
+        const { id } = z.object({ id: z.string() }).parse(config.toolCall);
+        calls.push(id);
+        invoked.resolve(id);
         return release.promise;
       },
       { description: "echo", name: "echo", schema: z.object({}) },
     ),
-    model = modelWithToolCalls(),
-    saver = new BunSqliteSaver(db.db),
-    hooks = new HookRuntime([], [echo], db.db, new Logger("error", true), "session", workspace),
-    graph = createAgentGraph({
-      checkpointer: saver,
-      hooks,
-      model,
-      settings: testSettings(),
-      tools: [echo],
-    });
+    model = modelWithToolCalls();
+  using fixture = agentFixture({ model, sessionId: "session", tools: [echo] });
+  const { context, db } = fixture;
+  db.resetSession("session", workspace);
+  db.appendUser("session", "run tool");
   db.setControl("session", "step");
   db.onChange((event) => delivered.push(event));
-  await processInput(stepContext(db, saver, graph), required(db.nextInput("session")));
+  await processInput(stepContext(context), required(db.nextInput("session")));
   expect(db.nextInput("session")?.status).toBe("paused");
   expect(db.control("session")).toBe("pause");
   expect(model.doStreamCalls).toHaveLength(1);
   expect(calls).toEqual([]);
   db.setControl("session", "step");
-  const toolStep = processInput(stepContext(db, saver, graph), required(db.nextInput("session")));
+  const toolStep = processInput(stepContext(context), required(db.nextInput("session")));
   expect(await invoked.promise).toBe("echo-call-1");
   expect(
     queryAll<{ kind: string }>(
@@ -122,33 +99,48 @@ test("a paused run steps through one model request or a complete tool batch", as
   expect(finished.every((event) => event.id > cursor)).toBe(true);
   expect(db.eventCursor()).toBe(required(finished.at(-1)).id);
 });
-function context(
-  db: ReturnType<typeof makeDb>,
-  checkpointer: BunSqliteSaver,
-  graph: ReturnType<typeof createAgentGraph>,
-  stopping?: AbortSignal,
-): HostContext {
-  return {
-    checkpointer,
-    controller: new AbortController(),
-    db,
-    graph,
-    logger: new Logger("error", true),
-    sessionId: "session",
-    settings: testSettings(),
-    stopping,
-  };
-}
-function stepContext(
-  db: ReturnType<typeof makeDb>,
-  checkpointer: BunSqliteSaver,
-  graph: ReturnType<typeof createAgentGraph>,
-) {
+test.each(["SIGINT", "SIGTERM"] as const)(
+  "repeated %s escalates a paused Agent from a graceful stop to forced cancellation",
+  async (signal) => {
+    using fixture = agentFixture();
+    const { context, db } = fixture,
+      stopping = new AbortController();
+    using listeners = new DisposableStack();
+    listeners.defer(
+      wireHostSignals({
+        enabled: true,
+        force: context.controller,
+        logger: context.logger,
+        stopping,
+        timeoutMs: 60_000,
+      }),
+    );
+    db.resetSession("target", workspace);
+    db.appendUser("target", "hello");
+    context.stopping = stopping.signal;
+    context.observer = {
+      changed: () => {
+        if (fixture.model.doStreamCalls.length === 1 && !stopping.signal.aborted) {
+          process.emit(signal, signal);
+        }
+      },
+      token: () => {},
+    };
+    await processInput(context, required(db.nextInput("target")));
+    expect(stopping.signal.aborted).toBe(true);
+    expect(context.controller.signal.aborted).toBe(false);
+    expect(db.nextInput("target")?.status).toBe("paused");
+    process.emit(signal, signal);
+    expect(context.controller.signal.aborted).toBe(true);
+  },
+);
+function stepContext(ctx: HostContext) {
   const stopping = new AbortController(),
-    ctx = context(db, checkpointer, graph, stopping.signal);
+    { db, sessionId } = ctx;
+  ctx.stopping = stopping.signal;
   ctx.observer = {
     changed: () => {
-      if (db.nextInput("session")?.status === "paused") {
+      if (db.nextInput(sessionId)?.status === "paused") {
         stopping.abort();
       }
     },
@@ -159,35 +151,11 @@ function stepContext(
 function modelWithToolCalls() {
   return new MockLanguageModelV4({
     doStream: [
-      {
-        stream: simulateReadableStream({
-          chunks: [
-            {
-              input: "{}",
-              toolCallId: "echo-call-1",
-              toolName: "echo",
-              type: "tool-call",
-            },
-            {
-              input: "{}",
-              toolCallId: "echo-call-2",
-              toolName: "echo",
-              type: "tool-call",
-            },
-            { finishReason: { raw: undefined, unified: "tool-calls" }, type: "finish", usage },
-          ],
-        }),
-      },
-      {
-        stream: simulateReadableStream({
-          chunks: [
-            { id: "answer", type: "text-start" },
-            { delta: "done", id: "answer", type: "text-delta" },
-            { id: "answer", type: "text-end" },
-            { finishReason: { raw: undefined, unified: "stop" }, type: "finish", usage },
-          ],
-        }),
-      },
+      toolResponse([
+        { id: "echo-call-1", name: "echo" },
+        { id: "echo-call-2", name: "echo" },
+      ]),
+      textResponse("done"),
     ],
   });
 }

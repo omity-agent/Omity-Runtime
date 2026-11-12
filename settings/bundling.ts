@@ -7,9 +7,11 @@ import { vocabularyChunks, vocabularyModulePrefix } from "../scripts/vocabularyC
 
 const root = resolve(import.meta.dirname, "..");
 export const frontendOutput = resolve(root, "dist/frontend");
+export const databaseOutput = resolve(root, "dist/database");
+export const schemaGenerationCache = resolve(root, "node_modules/.cache/schema-generation");
 const compilation = {
   aot: true,
-  assets: [resolve(root, "settings"), frontendOutput, resolve(root, "dist/database")],
+  assets: [resolve(root, "settings"), frontendOutput, databaseOutput],
   outfile: resolve(root, "dist/omity.exe"),
 } satisfies Bun.CompileBuildOptions & { aot: true };
 export const executableBuild = {

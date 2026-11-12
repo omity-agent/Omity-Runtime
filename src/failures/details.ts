@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { structuredErrorNames, uninformativeCauseNames } from "../../settings/resilience";
 import { localize } from "../i18n/server";
+import { describeThrownValue } from "./thrownValues";
 
 type ErrorValue = z.infer<z.ZodJSONSchema>;
 export interface ErrorDetails {
@@ -33,15 +34,18 @@ const errorValuesSchema = z.record(z.string(), errorValueSchema),
   hiddenDetailKeys = ["pregelTaskId"] as const,
   structuralErrorKeys = ["name", "message", "stack", "cause", ...hiddenDetailKeys] as const;
 export function captureError(error: unknown): ErrorDetails {
-  const serializedError: unknown = serializeError(error),
+  const serializedError: unknown =
+      error instanceof SuppressedError
+        ? {
+            ...serializeError(error),
+            error: captureError(error.error),
+            suppressed: captureError(error.suppressed),
+          }
+        : serializeError(error),
     json = JSON.stringify(serializedError),
     serialized: unknown = JSON.parse(json);
   if (!(error instanceof Error)) {
-    return errorDetailsSchema.parse({
-      details: { value: nonErrorValue(error, serialized) },
-      message: String(error),
-      name: valueName(error),
-    });
+    return errorDetailsSchema.parse(describeThrownValue(error, serialized));
   }
   return errorDetailsSchema.parse(adaptSerializedError(isRecord(serialized) ? serialized : {}));
 }
@@ -157,42 +161,10 @@ function embeddedErrorLevels(error: ErrorDetails): unknown[] {
   const levels: unknown[] = [];
   for (const candidate of candidates) {
     if (isRecord(candidate)) {
-      levels.push(omit(candidate, ["causes"]));
-      const causes: unknown = candidate["causes"];
-      if (Array.isArray(causes)) {
-        for (const cause of causes) {
-          levels.push(cause);
-        }
-      }
+      const causes: unknown = candidate["causes"],
+        nested: unknown[] = Array.isArray(causes) ? causes : [];
+      levels.push(omit(candidate, ["causes"]), ...nested);
     }
   }
   return levels;
-}
-function nonErrorValue(value: unknown, serialized: unknown): unknown {
-  if (value === null || ["string", "boolean"].includes(typeof value)) {
-    return value;
-  }
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : String(value);
-  }
-  if (typeof value === "bigint" || typeof value === "symbol") {
-    return String(value);
-  }
-  if (value === undefined) {
-    return "[undefined]";
-  }
-  if (typeof value === "function") {
-    return `[Function ${value.name || "anonymous"}]`;
-  }
-  return serialized;
-}
-function valueName(value: unknown) {
-  if (value === null) {
-    return "null";
-  }
-  if (typeof value !== "object") {
-    return typeof value;
-  }
-  const { constructor } = value;
-  return typeof constructor === "function" && constructor.name ? constructor.name : "Object";
 }

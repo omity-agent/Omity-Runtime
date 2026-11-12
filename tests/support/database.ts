@@ -1,7 +1,7 @@
-import { rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
+import { removeDatabaseDirectory } from "../../src/infrastructure/database/sqlite/connection";
 import { createTestDirectory } from "./artifacts";
 
 const dirs: string[] = [];
@@ -28,28 +28,8 @@ export function makeDatabases(count: number) {
   const path = join(dir, "app.sqlite");
   return Array.from({ length: count }, () => new AgentDatabase(path));
 }
-export async function cleanupDatabaseDirs() {
+export function cleanupDatabaseDirs() {
   for (const dir of dirs.splice(0)) {
-    await removeDatabaseDir(dir);
+    removeDatabaseDirectory(dir);
   }
-}
-async function removeDatabaseDir(dir: string) {
-  for (let attempt = 0; ; attempt++) {
-    let removed = false;
-    try {
-      rmSync(dir, { force: true, recursive: true });
-      removed = true;
-    } catch (error) {
-      if (!isBusy(error) || attempt === 29) {
-        throw error;
-      }
-    }
-    if (removed) {
-      return;
-    }
-    await Bun.sleep(100);
-  }
-}
-function isBusy(error: unknown): error is NodeJS.ErrnoException {
-  return error instanceof Error && "code" in error && error.code === "EBUSY";
 }

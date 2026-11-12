@@ -1,23 +1,12 @@
-import { afterEach, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 
 import { completion, createPredictionFixture } from "./modelFixture";
 
-const fixtures: Awaited<ReturnType<typeof createPredictionFixture>>[] = [];
-afterEach(async () => {
-  for (const entry of fixtures.splice(0)) {
-    await entry.dispose();
-  }
-});
-async function fixture() {
-  const value = await createPredictionFixture();
-  fixtures.push(value);
-  return value;
-}
 test("a new reply replaces an in-flight prediction and all readers receive the new result", async () => {
-  const value = await fixture(),
-    { database, service, sessionId } = value,
+  await using value = await createPredictionFixture();
+  const { database, service, sessionId } = value,
     started = Promise.withResolvers<void>(),
     blocked = Promise.withResolvers<Response>(),
     latest = ["新回复的建议一", "新回复的建议二"];
@@ -46,8 +35,8 @@ test("a new reply replaces an in-flight prediction and all readers receive the n
   }
 });
 test("a late completion cannot persist suggestions after a new user input", async () => {
-  const value = await fixture(),
-    { database, service, sessionId } = value,
+  await using value = await createPredictionFixture();
+  const { database, service, sessionId } = value,
     started = Promise.withResolvers<void>(),
     blocked = Promise.withResolvers<Response>();
   value.respondWith(() => {
@@ -66,7 +55,7 @@ test("a late completion cannot persist suggestions after a new user input", asyn
   ).toBe(0);
 });
 test("model failures are visible to callers and do not prevent a subsequent retry", async () => {
-  const value = await fixture();
+  await using value = await createPredictionFixture();
   value.respondWith(() =>
     Promise.resolve(
       Response.json({ error: { message: "prediction unavailable" } }, { status: 500 }),
@@ -78,7 +67,7 @@ test("model failures are visible to callers and do not prevent a subsequent retr
   expect(value.requests).toHaveLength(2);
 });
 test("invalid blank candidates are rejected instead of being persisted", async () => {
-  const value = await fixture();
+  await using value = await createPredictionFixture();
   value.respondWith(() => Promise.resolve(Response.json(completion([" ", "可用文本"]))));
   await expect(value.service.get(value.sessionId)).rejects.toThrow();
   expect(
@@ -88,8 +77,8 @@ test("invalid blank candidates are rejected instead of being persisted", async (
   ).toBe(0);
 });
 test("shutdown aborts generation and prevents later database writes", async () => {
-  const value = await fixture(),
-    started = Promise.withResolvers<void>(),
+  await using value = await createPredictionFixture();
+  const started = Promise.withResolvers<void>(),
     blocked = Promise.withResolvers<Response>();
   value.respondWith(() => {
     started.resolve();
@@ -114,7 +103,7 @@ test.each([
     tool_calls: [{ args: {}, id: "call-1", name: "lookup" }],
   }),
 ])("incomplete conversation endings do not trigger predictions: %j", async (ending) => {
-  const value = await fixture();
+  await using value = await createPredictionFixture();
   await value.database.syncHistory(value.sessionId, [
     ...value.database.history(value.sessionId).slice(0, -1),
     ending,

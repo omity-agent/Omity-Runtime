@@ -14,12 +14,11 @@ import { closeAppResources } from "../../../src/app/runtime/shutdown";
 import { loadSettings } from "../../../src/infrastructure/configuration/settings/load";
 import { createTestDirectory } from "../../support/artifacts";
 import { writeTestConfiguration } from "../../support/configuration";
+import { scopedEnvironment } from "../../support/scopedEnvironment";
 
 export async function liveApplication(adapter: "completions" | "responses-sse" = "completions") {
   const root = createTestDirectory("http-workflow"),
     modelName = adapter === "responses-sse" ? "gpt-6.1-sol" : "test",
-    previousHome = process.env["OMITY_HOME"],
-    previousKey = process.env["TEST_KEY"],
     requests: unknown[] = [],
     model = Bun.serve({
       async fetch(request) {
@@ -45,8 +44,10 @@ export async function liveApplication(adapter: "completions" | "responses-sse" =
       hostname: "127.0.0.1",
       port: 0,
     });
-  process.env["OMITY_HOME"] = join(root, "home");
-  process.env["TEST_KEY"] = "local-workflow";
+  const environment = scopedEnvironment({
+    OMITY_HOME: join(root, "home"),
+    TEST_KEY: "local-workflow",
+  });
   writeTestConfiguration(root, {
     agentYaml: `recursionLimit: 50
 prompts: [system.md]
@@ -102,16 +103,7 @@ retryDelayMs: 1000
         );
       } finally {
         await model.stop(true);
-        if (previousHome === undefined) {
-          delete process.env["OMITY_HOME"];
-        } else {
-          process.env["OMITY_HOME"] = previousHome;
-        }
-        if (previousKey === undefined) {
-          delete process.env["TEST_KEY"];
-        } else {
-          process.env["TEST_KEY"] = previousKey;
-        }
+        environment.dispose();
         rmSync(root, { force: true, recursive: true });
       }
     },

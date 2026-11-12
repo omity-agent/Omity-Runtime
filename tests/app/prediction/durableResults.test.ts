@@ -1,21 +1,11 @@
-import { afterEach, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 
 import { PredictionService } from "../../../src/app/prediction/service";
 import { createPredictionFixture } from "./modelFixture";
 
-const fixtures: Awaited<ReturnType<typeof createPredictionFixture>>[] = [];
-afterEach(async () => {
-  for (const entry of fixtures.splice(0)) {
-    await entry.dispose();
-  }
-});
-async function fixture() {
-  const value = await createPredictionFixture();
-  fixtures.push(value);
-  return value;
-}
 test("generated predictions survive a new service and a separate process", async () => {
-  const { service, sessionId, settings, replies, requests } = await fixture();
+  await using value = await createPredictionFixture();
+  const { service, sessionId, settings, replies, requests } = value;
   void service.onIdle(sessionId);
   void service.onIdle(sessionId);
   expect(await service.get(sessionId)).toEqual(replies);
@@ -40,12 +30,14 @@ test("generated predictions survive a new service and a separate process", async
   expect(requests).toHaveLength(1);
 });
 test("reading a completed session generates a missing prediction without an idle event", async () => {
-  const { service, sessionId, replies, requests } = await fixture();
+  await using value = await createPredictionFixture();
+  const { service, sessionId, replies, requests } = value;
   expect(await service.get(sessionId)).toEqual(replies);
   expect(requests).toHaveLength(1);
 });
 test("new input hides persisted predictions and deleting a session removes its record", async () => {
-  const { database, service, sessionId, replies } = await fixture();
+  await using value = await createPredictionFixture();
+  const { database, service, sessionId, replies } = value;
   void service.onIdle(sessionId);
   expect(await service.get(sessionId)).toEqual(replies);
   database.appendUser(sessionId, "另一个任务");
@@ -60,7 +52,8 @@ test("new input hides persisted predictions and deleting a session removes its r
   ).toBe(0);
 });
 test("disabled prediction does not return saved suggestions or call the model", async () => {
-  const { service, sessionId, settings, replies, requests } = await fixture();
+  await using value = await createPredictionFixture();
+  const { service, sessionId, settings, replies, requests } = value;
   void service.onIdle(sessionId);
   expect(await service.get(sessionId)).toEqual(replies);
   expect(
@@ -72,7 +65,8 @@ test("disabled prediction does not return saved suggestions or call the model", 
   expect(requests).toHaveLength(1);
 });
 test("insufficient samples do not issue a model request", async () => {
-  const { sessionId, settings, requests } = await fixture(),
+  await using value = await createPredictionFixture();
+  const { sessionId, settings, requests } = value,
     service = new PredictionService({
       ...settings,
       prediction: { ...settings.prediction!, sampleCount: 100_000 },

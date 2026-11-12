@@ -5,7 +5,7 @@ import { cleanupDatabaseDirs, makeDb, required, runOf, workspace } from "../supp
 
 afterEach(cleanupDatabaseDirs);
 test("recovery refuses a live lease unless its exact owner is confirmed dead", () => {
-  const db = makeDb();
+  using db = makeDb();
   db.resetSession("123", workspace);
   const inputId = db.appendUser("123", "继续运行");
   db.consumeInput("123", required(db.nextInput("123")));
@@ -54,10 +54,9 @@ test("recovery refuses a live lease unless its exact owner is confirmed dead", (
     status: "recovered",
   });
   expect(db.hostLease("123")).toBeNull();
-  db.close();
 });
 test("recovery preserves pending work while normalizing an interrupted run", () => {
-  const db = makeDb();
+  using db = makeDb();
   db.resetSession("123", workspace);
   const running = db.appendUser("123", "运行中"),
     paused = db.appendUser("123", "已经暂停"),
@@ -77,10 +76,9 @@ test("recovery preserves pending work while normalizing an interrupted run", () 
     { id: pending, status: "pending" },
   ]);
   expect(db.control("123")).toBe("pause");
-  db.close();
 });
 test("recovery leaves a stable paused session activity time unchanged", () => {
-  const db = makeDb();
+  using db = makeDb();
   db.resetSession("123", workspace);
   const inputId = db.appendUser("123", "已经暂停");
   db.setRunStatus(runOf(db, inputId), "paused");
@@ -95,10 +93,9 @@ test("recovery leaves a stable paused session activity time unchanged", () => {
     updated_at: 1,
   });
   expect(db.transcriptRevision("123")).toBe(3);
-  db.close();
 });
 test("recovery completes a persisted cancel and removes only its run data", async () => {
-  const db = makeDb();
+  using db = makeDb();
   db.resetSession("123", workspace);
   const root = db.appendUser("123", "取消我"),
     appended = db.appendUser("123", "也取消我");
@@ -129,10 +126,9 @@ test("recovery completes a persisted cancel and removes only its run data", asyn
   ]);
   expect(db.control("123")).toBe("running");
   expect(count(db, "events", "session_id = '123'")).toBe(0);
-  db.close();
 });
 test("pauseRun is atomic, preserves pending work and omitted errors", () => {
-  const db = makeDb();
+  using db = makeDb();
   db.resetSession("123", workspace);
   const root = db.appendUser("123", "第一条");
   db.appendUser("123", "第二条");
@@ -141,7 +137,9 @@ test("pauseRun is atomic, preserves pending work and omitted errors", () => {
   db.consumeInput("123", required(db.nextInput("123")));
   db.consumeInput("123", appendedItem);
   db.appendUser("123", "仍在等待");
-  const oldError = captureError(new Error("旧错误"));
+  const oldError = captureError(
+    new SuppressedError(new Error("清理错误"), new Error("执行错误"), "旧错误"),
+  );
   db.db.run("UPDATE runs SET error_json = ? WHERE id = ?", [stringifyError(oldError), runId]);
   db.db.run(
     `CREATE TRIGGER fail_group_pause BEFORE UPDATE ON runs
@@ -169,6 +167,10 @@ test("pauseRun is atomic, preserves pending work and omitted errors", () => {
     )
     .all();
   expect(parseError(required(rows[0]?.error))).toMatchObject({
+    details: {
+      error: { message: "清理错误" },
+      suppressed: { message: "执行错误" },
+    },
     message: "旧错误",
   });
   expect(rows).toHaveLength(1);
@@ -179,7 +181,6 @@ test("pauseRun is atomic, preserves pending work and omitted errors", () => {
     .all();
   expect(parseError(required(errors[0]?.error)).message).toBe("新错误");
   expect(errors).toHaveLength(1);
-  db.close();
 });
 function count(db: ReturnType<typeof makeDb>, table: "events", predicate: string) {
   return required(

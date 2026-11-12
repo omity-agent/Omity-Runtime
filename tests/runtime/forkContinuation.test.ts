@@ -17,32 +17,26 @@ afterEach(cleanupDatabaseDirs);
 test.each(["", "unsent draft"])(
   "fork continues without submitting the composer: %j",
   async (draft) => {
-    const source = makeDb(),
+    using source = makeDb(),
       target = makeDb();
-    try {
-      await prepareFork(source, target, new AIMessage("previous answer"));
-      writeComposerDraftRecord(target.db, "target", draft, 2);
-      const fixture = agentFixture({ db: target }),
-        before = target.history("target").filter((message) => HumanMessage.isInstance(message));
-      expect(target.nextInput("target")?.status).toBe("paused");
-      target.setControl("target", "running");
-      await processInput(fixture.context, required(target.nextInput("target")));
-      expect(fixture.model.doStreamCalls).toHaveLength(1);
-      expect(target.nextInput("target")).toBeNull();
-      expect(
-        target.history("target").filter((message) => HumanMessage.isInstance(message)),
-      ).toEqual(before);
-      expect(readComposerDraftRecord(target.db, "target").content).toBe(draft);
-      expect(target.history("target").at(-1)?.text).toBe("continued");
-      fixture.executions.close();
-    } finally {
-      source.close();
-      target.close();
-    }
+    await prepareFork(source, target, new AIMessage("previous answer"));
+    writeComposerDraftRecord(target.db, "target", draft, 2);
+    using fixture = agentFixture({ db: target });
+    const before = target.history("target").filter((message) => HumanMessage.isInstance(message));
+    expect(target.nextInput("target")?.status).toBe("paused");
+    target.setControl("target", "running");
+    await processInput(fixture.context, required(target.nextInput("target")));
+    expect(fixture.model.doStreamCalls).toHaveLength(1);
+    expect(target.nextInput("target")).toBeNull();
+    expect(target.history("target").filter((message) => HumanMessage.isInstance(message))).toEqual(
+      before,
+    );
+    expect(readComposerDraftRecord(target.db, "target").content).toBe(draft);
+    expect(target.history("target").at(-1)?.text).toBe("continued");
   },
 );
 test("fork resumes pending tools before requesting the model", async () => {
-  const source = makeDb(),
+  using source = makeDb(),
     target = makeDb();
   let called = 0;
   const echo = tool(
@@ -56,29 +50,23 @@ test("fork resumes pending tools before requesting the model", async () => {
       schema: z.object({}),
     },
   );
-  try {
-    await prepareFork(
-      source,
-      target,
-      new AIMessage({
-        content: "",
-        tool_calls: [{ args: {}, id: "echo-call", name: "echo" }],
-      }),
-    );
-    const fixture = agentFixture({ db: target, tools: [echo] });
-    target.setControl("target", "running");
-    await processInput(fixture.context, required(target.nextInput("target")));
-    expect(called).toBe(1);
-    expect(target.nextInput("target")).toBeNull();
-    expect(fixture.model.doStreamCalls).toHaveLength(1);
-    expect(
-      target.history("target").filter((message) => ToolMessage.isInstance(message)),
-    ).toHaveLength(1);
-    fixture.executions.close();
-  } finally {
-    source.close();
-    target.close();
-  }
+  await prepareFork(
+    source,
+    target,
+    new AIMessage({
+      content: "",
+      tool_calls: [{ args: {}, id: "echo-call", name: "echo" }],
+    }),
+  );
+  using fixture = agentFixture({ db: target, tools: [echo] });
+  target.setControl("target", "running");
+  await processInput(fixture.context, required(target.nextInput("target")));
+  expect(called).toBe(1);
+  expect(target.nextInput("target")).toBeNull();
+  expect(fixture.model.doStreamCalls).toHaveLength(1);
+  expect(
+    target.history("target").filter((message) => ToolMessage.isInstance(message)),
+  ).toHaveLength(1);
 });
 async function prepareFork(
   source: ReturnType<typeof makeDb>,

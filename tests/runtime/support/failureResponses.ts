@@ -1,6 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import { simulateReadableStream } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
+
+import { textResponse } from "./agentFixture";
 
 const upstreamError = {
     code: "basispoints_upstream_error",
@@ -141,23 +142,7 @@ export function recoveringModel(response: () => Response | Promise<Response>) {
       if (attempts++ === 0) {
         return provider.doStream(options);
       }
-      return {
-        stream: simulateReadableStream({
-          chunks: [
-            { id: "answer", type: "text-start" },
-            { delta: "recovered", id: "answer", type: "text-delta" },
-            { id: "answer", type: "text-end" },
-            {
-              finishReason: { raw: undefined, unified: "stop" },
-              type: "finish",
-              usage: {
-                inputTokens: { cacheRead: 0, cacheWrite: 0, noCache: 1, total: 1 },
-                outputTokens: { reasoning: 0, text: 1, total: 1 },
-              },
-            },
-          ],
-        }),
-      };
+      return textResponse("recovered");
     },
   });
 }

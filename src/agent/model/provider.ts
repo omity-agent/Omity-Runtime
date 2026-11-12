@@ -44,10 +44,8 @@ export function aiRequestOptions(
   }
   const openai = {
     forceReasoning: settings.model.reasoning_effort !== undefined,
-    include: ["reasoning.encrypted_content"],
     promptCacheKey: sessionId,
     reasoningEffort: settings.model.reasoning_effort,
-    reasoningSummary: "detailed" as const,
     store: false,
     textVerbosity: "low" as const,
   };
@@ -63,7 +61,9 @@ export function aiRequestOptions(
         providerOptions: {
           openai: {
             ...openai,
+            include: ["reasoning.encrypted_content"],
             instructions: settings.agent.systemPrompt,
+            reasoningSummary: "detailed",
           },
         },
       };

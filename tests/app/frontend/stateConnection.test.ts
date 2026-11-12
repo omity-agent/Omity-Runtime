@@ -39,33 +39,16 @@ test("a new state connection restores history while reconnection only synchroniz
   const events = new AppEvents(),
     app = new Hono().get("/events", (context) =>
       events.streamState(context, () => [storedFailure]),
-    ),
-    initial = readStateWire(await app.request("/events"));
-  let cursor: string;
-  try {
-    const snapshot = await nextStateEvent(initial);
-    expect(snapshot.type).toBe("restore");
+    );
+  let cursor = "";
+  for (const reconnect of [false, true, false]) {
+    await using wire = readStateWire(
+      await app.request("/events", reconnect ? { headers: { "Last-Event-ID": cursor } } : {}),
+    );
+    const snapshot = await nextStateEvent(wire);
+    expect(snapshot.type).toBe(reconnect ? "sessions" : "restore");
     expect(JSON.parse(snapshot.data)).toEqual({ sessions: [storedFailure] });
     cursor = snapshot.lastEventId;
-  } finally {
-    await initial.return();
-  }
-  const reconnected = readStateWire(
-    await app.request("/events", { headers: { "Last-Event-ID": cursor } }),
-  );
-  try {
-    const snapshot = await nextStateEvent(reconnected);
-    expect(snapshot.type).toBe("sessions");
-    expect(JSON.parse(snapshot.data)).toEqual({ sessions: [storedFailure] });
-  } finally {
-    await reconnected.return();
-  }
-  const refreshed = readStateWire(await app.request("/events"));
-  try {
-    const snapshot = await nextStateEvent(refreshed);
-    expect(snapshot.type).toBe("restore");
-  } finally {
-    await refreshed.return();
   }
 });
 test("a persisted run failure emits an occurrence independently of subsequent state changes", async () => {
@@ -74,8 +57,9 @@ test("a persisted run failure emits an occurrence independently of subsequent st
       doStream: async () => {
         throw fatal;
       },
-    }),
-    { context, db, executions } = agentFixture({ model }),
+    });
+  using fixture = agentFixture({ model });
+  const { context, db } = fixture,
     failures: SessionFailure[] = [];
   context.settings.model.maxConcurrentRequests = 1;
   context.observer = {
@@ -84,30 +68,25 @@ test("a persisted run failure emits an occurrence independently of subsequent st
     },
     token: () => {},
   };
-  try {
-    db.resetSession("target", workspace);
-    db.appendUser("target", "hello");
-    const input = required(db.nextInput("target"));
-    await processInput(context, input);
-    expect(db.nextInput("target")?.status).toBe("paused");
-    expect(failures).toMatchObject([
-      { error: { message: "fatal model failure", name: "Error" }, sessionId: "target" },
-    ]);
-    setRunStatus(
-      context,
-      { id: input.runId, items: [input], threadId: input.runId.toString() },
-      "paused",
-      required(failures[0]).error,
-    );
-    expect(failures).toHaveLength(1);
-    db.setControl("target", "running");
-    await processInput(context, required(db.nextInput("target")));
-    expect(failures).toHaveLength(2);
-    expect(failures[1]).toEqual(failures[0]);
-  } finally {
-    executions.close();
-    db.close();
-  }
+  db.resetSession("target", workspace);
+  db.appendUser("target", "hello");
+  const input = required(db.nextInput("target"));
+  await processInput(context, input);
+  expect(db.nextInput("target")?.status).toBe("paused");
+  expect(failures).toMatchObject([
+    { error: { message: "fatal model failure", name: "Error" }, sessionId: "target" },
+  ]);
+  setRunStatus(
+    context,
+    { id: input.runId, items: [input], threadId: input.runId.toString() },
+    "paused",
+    required(failures[0]).error,
+  );
+  expect(failures).toHaveLength(1);
+  db.setControl("target", "running");
+  await processInput(context, required(db.nextInput("target")));
+  expect(failures).toHaveLength(2);
+  expect(failures[1]).toEqual(failures[0]);
 });
 test("console restoration and live failures are independent from ordinary state synchronization", async () => {
   const events = new AppEvents(),
@@ -155,17 +134,13 @@ test("console restoration and live failures are independent from ordinary state 
     }
     expect(error).toHaveBeenCalledTimes(2);
     expect(error.mock.calls[0]).toEqual(error.mock.calls[1]);
-    const reconnected = readStateWire(
+    await using reconnected = readStateWire(
       await app.request("/events", { headers: { "Last-Event-ID": cursor } }),
     );
-    try {
-      source.dispatchEvent(await nextStateEvent(reconnected));
-      expect(handlers.sessions).toHaveBeenCalledTimes(2);
-      expect(info).toHaveBeenCalledTimes(1);
-      expect(error).toHaveBeenCalledTimes(2);
-    } finally {
-      await reconnected.return();
-    }
+    source.dispatchEvent(await nextStateEvent(reconnected));
+    expect(handlers.sessions).toHaveBeenCalledTimes(2);
+    expect(info).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledTimes(2);
   } finally {
     close();
     expect(source.close).toHaveBeenCalledTimes(1);

@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { rmSync } from "node:fs";
 
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { z } from "zod";
@@ -7,19 +6,22 @@ import { z } from "zod";
 import { PredictionService } from "../../../src/app/prediction/service";
 import { sessionPaths } from "../../../src/infrastructure/configuration/sessionPaths";
 import { AgentDatabase } from "../../../src/infrastructure/database/agentDatabase";
+import { removeDatabaseDirectory } from "../../../src/infrastructure/database/sqlite/connection";
 import { createTestDirectory } from "../../support/artifacts";
+import { scopedEnvironment } from "../../support/scopedEnvironment";
 import { testSettings } from "../../support/settings";
 
 export async function createPredictionFixture() {
-  const previousHome = process.env["OMITY_HOME"],
-    home = createTestDirectory("forecast-home");
-  process.env["OMITY_HOME"] = home;
+  await using cleanup = new AsyncDisposableStack();
+  const home = createTestDirectory("forecast-home");
+  cleanup.defer(() => removeDatabaseDirectory(home));
   const requests: Record<string, unknown>[] = [],
     replies = ["请继续实现", "先解释一下设计"],
     apiKeyEnv = `PREDICTION_${randomUUID()}`,
-    sessionId = randomUUID(),
-    paths = sessionPaths(sessionId),
-    database = new AgentDatabase(paths.dbPath);
+    sessionId = randomUUID();
+  cleanup.use(scopedEnvironment({ OMITY_HOME: home, [apiKeyEnv]: "local-test" }));
+  const paths = sessionPaths(sessionId),
+    database = cleanup.use(new AgentDatabase(paths.dbPath));
   let respond = () => Promise.resolve(Response.json(completion(replies)));
   const server = Bun.serve({
       fetch: async (request) => {
@@ -30,7 +32,7 @@ export async function createPredictionFixture() {
       port: 0,
     }),
     settings = testSettings();
-  process.env[apiKeyEnv] = "local-test";
+  cleanup.defer(() => server.stop(true));
   settings.prediction = {
     enabled: true,
     maxUserMessageTokens: 200,
@@ -54,22 +56,10 @@ export async function createPredictionFixture() {
     new AIMessage({ content: "当前回复 <current>", id: "current-assistant" }),
   ]);
   const service = new PredictionService(settings);
+  cleanup.defer(() => service.close());
+  const resources = cleanup.move();
   return {
     database,
-    async dispose() {
-      await service.close();
-      await server.stop(true);
-      database.deleteSession(sessionId);
-      database.close();
-      rmSync(paths.dir, { force: true, recursive: true });
-      delete process.env[apiKeyEnv];
-      if (previousHome === undefined) {
-        delete process.env["OMITY_HOME"];
-      } else {
-        process.env["OMITY_HOME"] = previousHome;
-      }
-      rmSync(home, { force: true, recursive: true });
-    },
     home,
     paths,
     replies,
@@ -80,6 +70,7 @@ export async function createPredictionFixture() {
     service,
     sessionId,
     settings,
+    [Symbol.asyncDispose]: () => resources.disposeAsync(),
   };
 }
 export function completion(replies: string[]) {

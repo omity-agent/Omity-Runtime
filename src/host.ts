@@ -26,16 +26,24 @@ export async function runHostSession(
   root = process.cwd(),
   options: HostRunOptions = {},
 ) {
+  await using resources = new AsyncDisposableStack();
   const {
-      db,
-      definition,
-      paths,
-      profiles,
-      settings: loadedSettings,
-      settingsContext,
-      workspace,
-    } = prepareHostSession(mode, root, options),
-    settings = options.quiet
+    db,
+    definition,
+    paths,
+    profiles,
+    settings: loadedSettings,
+    settingsContext,
+    workspace,
+  } = prepareHostSession(mode, root, options);
+  let sessionCreated = definition !== undefined;
+  resources.defer(() => {
+    if (!sessionCreated && mode.kind !== "load") {
+      removeDatabaseDirectory(paths.dir);
+    }
+  });
+  resources.defer(() => db.close());
+  const settings = options.quiet
       ? {
           ...loadedSettings,
           logging: { ...loadedSettings.logging, streamTokens: false },
@@ -50,8 +58,11 @@ export async function runHostSession(
     });
   let codexVersion: string | undefined,
     lease: HostLease | undefined,
-    ownedMcp: Awaited<ReturnType<typeof loadMcp>> | undefined,
-    sessionCreated = definition !== undefined;
+    ownedMcp: Awaited<ReturnType<typeof loadMcp>> | undefined;
+  resources.defer(() => lease?.close());
+  resources.defer(async () => {
+    await ownedMcp?.close();
+  });
   const unwireSignals = wireHostSignals({
     enabled: options.wireSigint ?? false,
     force: controller,
@@ -59,91 +70,73 @@ export async function runHostSession(
     stopping: stoppingController,
     timeoutMs: settings.host.shutdownTimeoutMs,
   });
-  try {
-    if (settings.model.adapter === "codex") {
-      codexVersion = await fetchLatestCodexVersion();
-    }
-    if (definition) {
-      lease = createLease();
-    }
-    const session = { cwd: workspace, session: paths.dir },
-      mcp = definition
-        ? options.mcp
-          ? await options.mcp(mode.sessionId, profiles, definition)
-          : (ownedMcp = await loadSessionMcp(logger, settingsContext, definition.prefix.tools, {
-              cwd: workspace,
-            }))
-        : (ownedMcp = await loadMcp(root, logger, settingsContext, { cwd: workspace })),
-      frozenDefinition = definition ?? createSessionDefinition(settings, mcp, session);
-    if (!definition) {
-      db.createSession(mode.sessionId, workspace, profiles, frozenDefinition);
-      sessionCreated = true;
-      lease = createLease();
-    }
-    db.onChange((event) => options.observer?.transcript?.(mode.sessionId, event));
-    logSessionOpened();
-    const tools = mcp.modelTools(session),
-      hooks = new HookRuntime(
-        settings.hooks,
-        tools,
-        db.db,
-        logger,
-        mode.sessionId,
-        workspace,
-        paths.dir,
-        mcp.freeformToolParameters,
-      ),
-      { checkpointer, graph } = buildGraph(
-        settings,
-        tools,
-        frozenDefinition.prefix.tools.tools,
-        db.db,
-        hooks,
-        {
-          codexVersion,
-          freeformToolParameters: mcp.freeformToolParameters,
-          toolExecutions,
-        },
-      );
-    options.onReady?.({
-      cancelTool: (callId) => toolExecutions.cancel(callId),
-    });
-    await hostLoop({
-      assertLease: () => {
-        requireLease().assertOwned();
-      },
-      checkpointer,
-      controller,
-      db,
-      graph,
-      logger,
-      observer: options.observer,
-      sessionId: mode.sessionId,
-      settings,
-      stopping: stoppingController.signal,
-      toolExecutions,
-      wake: options.wake,
-    });
-    requireLease().assertOwned();
-  } finally {
-    toolExecutions.close();
-    unwireSignals();
-    try {
-      await ownedMcp?.close();
-    } finally {
-      try {
-        lease?.close();
-      } finally {
-        try {
-          db.close();
-        } finally {
-          if (!sessionCreated && mode.kind !== "load") {
-            removeDatabaseDirectory(paths.dir);
-          }
-        }
-      }
-    }
+  resources.defer(unwireSignals);
+  resources.defer(() => toolExecutions.close());
+  if (settings.model.adapter === "codex") {
+    codexVersion = await fetchLatestCodexVersion();
   }
+  if (definition) {
+    lease = createLease();
+  }
+  const session = { cwd: workspace, session: paths.dir },
+    mcp = definition
+      ? options.mcp
+        ? await options.mcp(mode.sessionId, profiles, definition)
+        : (ownedMcp = await loadSessionMcp(logger, settingsContext, definition.prefix.tools, {
+            cwd: workspace,
+          }))
+      : (ownedMcp = await loadMcp(root, logger, settingsContext, { cwd: workspace })),
+    frozenDefinition = definition ?? createSessionDefinition(settings, mcp, session);
+  if (!definition) {
+    db.createSession(mode.sessionId, workspace, profiles, frozenDefinition);
+    sessionCreated = true;
+    lease = createLease();
+  }
+  db.onChange((event) => options.observer?.transcript?.(mode.sessionId, event));
+  logSessionOpened();
+  const tools = mcp.modelTools(session),
+    hooks = new HookRuntime(
+      settings.hooks,
+      tools,
+      db.db,
+      logger,
+      mode.sessionId,
+      workspace,
+      paths.dir,
+      mcp.freeformToolParameters,
+    ),
+    { checkpointer, graph } = buildGraph(
+      settings,
+      tools,
+      frozenDefinition.prefix.tools.tools,
+      db.db,
+      hooks,
+      {
+        codexVersion,
+        freeformToolParameters: mcp.freeformToolParameters,
+        toolExecutions,
+      },
+    );
+  options.onReady?.({
+    cancelTool: (callId) => toolExecutions.cancel(callId),
+  });
+  await hostLoop({
+    assertLease: () => {
+      requireLease().assertOwned();
+    },
+    checkpointer,
+    controller,
+    db,
+    graph,
+    logger,
+    observer: options.observer,
+    sessionId: mode.sessionId,
+    settings,
+    stopping: stoppingController.signal,
+    toolExecutions,
+    wake: options.wake,
+  });
+  requireLease().assertOwned();
   function createLease() {
     return new HostLease(
       db,

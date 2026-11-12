@@ -8,27 +8,31 @@ import { BunSqliteSaver } from "../../../src/checkpointer/saver";
 import { HookRuntime } from "../../../src/hooks/runtime";
 import { Logger } from "../../../src/infrastructure/logging/logger";
 import type { HostContext } from "../../../src/runtime/context";
+import type { HookRule } from "../../../src/types";
 import { makeDb, workspace } from "../../support/database";
 import { testSettings } from "../../support/settings";
 
 export function agentFixture({
-  db = makeDb(),
+  db: existingDatabase,
+  hooks: rules = [],
   model = new MockLanguageModelV4({ doStream: textResponse() }),
   sessionId = "target",
   tools = [],
 }: {
   db?: ReturnType<typeof makeDb>;
+  hooks?: HookRule[];
   model?: MockLanguageModelV4;
   sessionId?: string;
   tools?: StructuredToolInterface[];
 } = {}) {
-  const settings = testSettings(),
+  const db = existingDatabase ?? makeDb(),
+    settings = testSettings(),
     logger = new Logger("error", true),
     checkpointer = new BunSqliteSaver(db.db),
     executions = new ToolExecutions({
       cancellationRequested: (callId) => db.toolCancellation(sessionId, callId),
     }),
-    hooks = new HookRuntime([], tools, db.db, logger, sessionId, workspace),
+    hooks = new HookRuntime(rules, tools, db.db, logger, sessionId, workspace),
     graph = createAgentGraph({
       checkpointer,
       hooks,
@@ -47,18 +51,29 @@ export function agentFixture({
       settings,
       toolExecutions: executions,
     };
-  return { context, db, executions, model };
+  return {
+    context,
+    db,
+    executions,
+    model,
+    [Symbol.dispose]() {
+      executions.close();
+      if (!existingDatabase) {
+        db.close();
+      }
+    },
+  };
 }
 const usage = {
   inputTokens: { cacheRead: 0, cacheWrite: 0, noCache: 1, total: 1 },
   outputTokens: { reasoning: 0, text: 1, total: 1 },
 };
-function textResponse() {
+export function textResponse(text = "continued") {
   return {
     stream: simulateReadableStream({
       chunks: [
         { id: "answer", type: "text-start" as const },
-        { delta: "continued", id: "answer", type: "text-delta" as const },
+        { delta: text, id: "answer", type: "text-delta" as const },
         { id: "answer", type: "text-end" as const },
         {
           finishReason: { raw: undefined, unified: "stop" as const },
@@ -69,14 +84,23 @@ function textResponse() {
     }),
   };
 }
-export function toolResponse() {
+export function toolResponse(calls = [{ id: "echo-call", name: "echo" }], reasoning?: string) {
   return {
     stream: simulateReadableStream({
       chunks: [
-        { id: "echo-call", toolName: "echo", type: "tool-input-start" as const },
-        { delta: "{}", id: "echo-call", type: "tool-input-delta" as const },
-        { id: "echo-call", type: "tool-input-end" as const },
-        { input: "{}", toolCallId: "echo-call", toolName: "echo", type: "tool-call" as const },
+        ...(reasoning === undefined
+          ? []
+          : [
+              { id: "0", type: "reasoning-start" as const },
+              { delta: reasoning, id: "0", type: "reasoning-delta" as const },
+              { id: "0", type: "reasoning-end" as const },
+            ]),
+        ...calls.flatMap(({ id, name }) => [
+          { id, toolName: name, type: "tool-input-start" as const },
+          { delta: "{}", id, type: "tool-input-delta" as const },
+          { id, type: "tool-input-end" as const },
+          { input: "{}", toolCallId: id, toolName: name, type: "tool-call" as const },
+        ]),
         {
           finishReason: { raw: undefined, unified: "tool-calls" as const },
           type: "finish" as const,

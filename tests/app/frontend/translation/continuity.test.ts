@@ -67,108 +67,90 @@ async function initialize(page: Page) {
 }
 test("settling a growing thought retains its translated prefix until the final translation", async () => {
   const { page } = await open();
-  try {
-    await initialize(page);
-    await render(page, [message("a", grown)]);
-    expect(await page.locator("section").textContent()).toContain(`${translated} Extra tail.`);
-    await render(page, [message("a", grown, false)]);
-    expect(await page.locator("section").textContent()).toContain(`${translated} Extra tail.`);
-    await complete(page, grown, "完整译文。");
-    expect(await page.evaluate(() => globalThis.translationScenario.reversions)).toEqual([]);
-  } finally {
-    await page.close();
-  }
+  await using _pageScope = page;
+  await initialize(page);
+  await render(page, [message("a", grown)]);
+  expect(await page.locator("section").textContent()).toContain(`${translated} Extra tail.`);
+  await render(page, [message("a", grown, false)]);
+  expect(await page.locator("section").textContent()).toContain(`${translated} Extra tail.`);
+  await complete(page, grown, "完整译文。");
+  expect(await page.evaluate(() => globalThis.translationScenario.reversions)).toEqual([]);
 }, 15_000);
 test("the next thought preserves the previous translation and its pending final save", async () => {
   const { page, saved } = await open();
-  try {
-    await initialize(page);
-    await render(page, [message("a", grown)]);
-    await page.waitForFunction(
-      (text) => globalThis.translationScenario.pending.some((item) => item.source === text),
-      grown,
-    );
-    await render(page, [message("a", grown, false), message("b", "Next thought.")]);
-    expect(await page.locator("section").textContent()).toContain(translated);
-    const persisted = page.waitForResponse(
-      (response) =>
-        response.url().endsWith("/reasoning-translation") &&
-        response.request().postDataJSON().messageId === "a",
-      { timeout: 4000 },
-    );
-    await complete(page, grown, "上一段的完整译文。");
-    await complete(page, "Next thought.", "下一段译文。");
-    await persisted;
-    expect(saved.some((item) => item.messageId === "a" && item.source === grown)).toBe(true);
-    expect(await page.locator("section").textContent()).toContain("上一段的完整译文。");
-    expect(await page.evaluate(() => globalThis.translationScenario.reversions)).toEqual([]);
-  } finally {
-    await page.close();
-  }
+  await using _pageScope = page;
+  await initialize(page);
+  await render(page, [message("a", grown)]);
+  await page.waitForFunction(
+    (text) => globalThis.translationScenario.pending.some((item) => item.source === text),
+    grown,
+  );
+  await render(page, [message("a", grown, false), message("b", "Next thought.")]);
+  expect(await page.locator("section").textContent()).toContain(translated);
+  const persisted = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/reasoning-translation") &&
+      response.request().postDataJSON().messageId === "a",
+    { timeout: 4000 },
+  );
+  await complete(page, grown, "上一段的完整译文。");
+  await complete(page, "Next thought.", "下一段译文。");
+  await persisted;
+  expect(saved.some((item) => item.messageId === "a" && item.source === grown)).toBe(true);
+  expect(await page.locator("section").textContent()).toContain("上一段的完整译文。");
+  expect(await page.evaluate(() => globalThis.translationScenario.reversions)).toEqual([]);
 }, 15_000);
 test("a completed streaming translation is saved without translating the same source again", async () => {
   const { page, saved } = await open();
-  try {
-    await initialize(page);
-    const persisted = page.waitForResponse(
-      (response) => response.url().endsWith("/reasoning-translation"),
-      { timeout: 4000 },
-    );
-    await render(page, [message("a", source, false)]);
-    await persisted;
-    expect(saved).toHaveLength(1);
-    expect(saved[0]).toMatchObject({ messageId: "a", source, translated });
-    expect(await page.evaluate(() => globalThis.translationScenario.calls)).toEqual([source]);
-    await render(page, [message("a", source, false), message("b", "Next thought.")]);
-    await complete(page, "Next thought.", "下一段译文。");
-    expect(await page.locator("section").textContent()).toContain(translated);
-  } finally {
-    await page.close();
-  }
+  await using _pageScope = page;
+  await initialize(page);
+  const persisted = page.waitForResponse(
+    (response) => response.url().endsWith("/reasoning-translation"),
+    { timeout: 4000 },
+  );
+  await render(page, [message("a", source, false)]);
+  await persisted;
+  expect(saved).toHaveLength(1);
+  expect(saved[0]).toMatchObject({ messageId: "a", source, translated });
+  expect(await page.evaluate(() => globalThis.translationScenario.calls)).toEqual([source]);
+  await render(page, [message("a", source, false), message("b", "Next thought.")]);
+  await complete(page, "Next thought.", "下一段译文。");
+  expect(await page.locator("section").textContent()).toContain(translated);
 }, 15_000);
 test("translation updates and deferred rendering never restore the original prefix", async () => {
   const { page } = await open();
-  try {
-    await initialize(page);
-    let content = source;
-    for (let revision = 0; revision < 8; revision += 1) {
-      content += ` Part ${revision.toString()}.`;
-      await render(page, [message("a", content)]);
-      await complete(page, content, `第 ${revision.toString()} 版译文。`);
-    }
-    expect(await page.evaluate(() => globalThis.translationScenario.reversions)).toEqual([]);
-  } finally {
-    await page.close();
+  await using _pageScope = page;
+  await initialize(page);
+  let content = source;
+  for (let revision = 0; revision < 8; revision += 1) {
+    content += ` Part ${revision.toString()}.`;
+    await render(page, [message("a", content)]);
+    await complete(page, content, `第 ${revision.toString()} 版译文。`);
   }
+  expect(await page.evaluate(() => globalThis.translationScenario.reversions)).toEqual([]);
 }, 15_000);
 test("an unrelated source replacement never reuses the previous translation", async () => {
   const { page } = await open();
-  try {
-    await initialize(page);
-    await render(page, [message("a", "Replacement thought.")]);
-    expect(await page.locator("section").textContent()).toContain("Replacement thought.");
-    expect(await page.locator("section").textContent()).not.toContain(translated);
-    await complete(page, "Replacement thought.", "替换内容的译文。");
-  } finally {
-    await page.close();
-  }
+  await using _pageScope = page;
+  await initialize(page);
+  await render(page, [message("a", "Replacement thought.")]);
+  expect(await page.locator("section").textContent()).toContain("Replacement thought.");
+  expect(await page.locator("section").textContent()).not.toContain(translated);
+  await complete(page, "Replacement thought.", "替换内容的译文。");
 }, 15_000);
 test("session changes isolate translations and cancel unfinished work", async () => {
   const { page } = await open();
-  try {
-    await initialize(page);
-    await render(page, [message("a", grown)]);
-    await page.waitForFunction(() => globalThis.translationScenario.pending.length === 1);
-    await page.evaluate(
-      (view) => globalThis.translationScenario.render(view, "another-session"),
-      [message("a", source)],
-    );
-    await settleLayout(page);
-    expect(await page.locator("section").textContent()).toContain(source);
-    expect(await page.locator("section").textContent()).not.toContain(translated);
-    await complete(page, source, "另一个会话的译文。");
-    expect(await page.evaluate(() => globalThis.translationScenario.pending)).toEqual([]);
-  } finally {
-    await page.close();
-  }
+  await using _pageScope = page;
+  await initialize(page);
+  await render(page, [message("a", grown)]);
+  await page.waitForFunction(() => globalThis.translationScenario.pending.length === 1);
+  await page.evaluate(
+    (view) => globalThis.translationScenario.render(view, "another-session"),
+    [message("a", source)],
+  );
+  await settleLayout(page);
+  expect(await page.locator("section").textContent()).toContain(source);
+  expect(await page.locator("section").textContent()).not.toContain(translated);
+  await complete(page, source, "另一个会话的译文。");
+  expect(await page.evaluate(() => globalThis.translationScenario.pending)).toEqual([]);
 }, 15_000);

@@ -9,6 +9,13 @@ import { sessionPaths } from "../../../src/infrastructure/configuration/sessionP
 import { liveApplication } from "./liveApplication";
 
 test("HTTP session creation runs a model then preserves draft revisions and attachments until deletion", async () => {
+  using cleanup = new DisposableStack();
+  const warnings: unknown[] = [],
+    previousLogger = globalThis.AI_SDK_LOG_WARNINGS;
+  cleanup.defer(() => {
+    globalThis.AI_SDK_LOG_WARNINGS = previousLogger;
+  });
+  globalThis.AI_SDK_LOG_WARNINGS = (event) => warnings.push(...event.warnings);
   await using app = await liveApplication();
   const created = await fetch(`${app.url}/api/sessions`, {
     body: submissionForm({ history: [], message: "first question", workspace: app.root }, []),
@@ -27,6 +34,7 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
     await app.controller.events.wait(session.id, 25);
   }
   expect(app.requests).toHaveLength(1);
+  expect(warnings).toEqual([]);
   const transcript = await fetch(`${endpoint}/transcript`);
   expect(await transcript.json()).toMatchObject({
     messages: expect.arrayContaining([

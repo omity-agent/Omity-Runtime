@@ -7,6 +7,7 @@ import { z } from "zod";
 import { fetchWithExplicitHeaders } from "../../../src/infrastructure/network/explicitHeaders";
 import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
 import { createCodexConnection } from "../../../src/infrastructure/openai/oauthConnection";
+import { scopedEnvironment } from "../../support/scopedEnvironment";
 import { createOAuthFile, createTestJwt } from "./authSessionFixture";
 
 test.each([
@@ -156,19 +157,10 @@ test("local credentials honor CODEX_HOME and derive account and FedRamp claims",
       },
     }),
   });
-  const previousHome = process.env["CODEX_HOME"];
-  process.env["CODEX_HOME"] = auth.directory;
-  try {
-    const connection = createCodexConnection({ codexVersion: "0.154.4" }),
-      session = await connection.websocket();
-    expect(session.apiKey).toBe("codex-test-token");
-    expect(session.headers["ChatGPT-Account-Id"]).toBe("derived-account");
-    expect(session.headers["X-OpenAI-Fedramp"]).toBe("true");
-  } finally {
-    if (previousHome === undefined) {
-      Reflect.deleteProperty(process.env, "CODEX_HOME");
-    } else {
-      process.env["CODEX_HOME"] = previousHome;
-    }
-  }
+  using _environment = scopedEnvironment({ CODEX_HOME: auth.directory });
+  const connection = createCodexConnection({ codexVersion: "0.154.4" }),
+    session = await connection.websocket();
+  expect(session.apiKey).toBe("codex-test-token");
+  expect(session.headers["ChatGPT-Account-Id"]).toBe("derived-account");
+  expect(session.headers["X-OpenAI-Fedramp"]).toBe("true");
 });
