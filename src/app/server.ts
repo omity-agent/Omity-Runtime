@@ -1,10 +1,3 @@
-import { once } from "node:events";
-import { createServer } from "node:http";
-import type { AddressInfo, Socket } from "node:net";
-
-import { getRequestListener } from "@hono/node-server";
-
-import { requestListenerOptions } from "../../settings/networking";
 import { localize } from "../i18n/server";
 import { applicationAssetPath } from "../infrastructure/applicationAssets";
 import { createSettingsContext } from "../infrastructure/configuration/settings/context";
@@ -12,8 +5,7 @@ import { userDataDirectory } from "../infrastructure/configuration/settings/file
 import { loadSettings } from "../infrastructure/configuration/settings/load";
 import { AccessService } from "./access/service";
 import { AppController } from "./controller";
-import { createApi } from "./http/handler";
-import { createStaticApp } from "./http/static";
+import { createHttpServer } from "./http/transport";
 import { appUrl } from "./launch";
 import { AppInstanceLock } from "./runtime/instanceLock";
 import {
@@ -37,8 +29,7 @@ export async function startAppServer(options: AppServerOptions) {
     shutdown = listenForShutdownSignal();
   let access: AccessService | undefined,
     controller: AppController | undefined,
-    server: ReturnType<typeof createServer> | undefined;
-  const connections = new Set<Socket>();
+    server: ReturnType<typeof createHttpServer> | undefined;
   let failure: Error | undefined, signal: Awaited<typeof shutdown.signal> | undefined;
   try {
     access = new AccessService(settings);
@@ -51,28 +42,18 @@ export async function startAppServer(options: AppServerOptions) {
       },
       settingsContext,
     });
-    const staticRoot = applicationAssetPath(options.root, "dist/frontend");
-    server = createServer();
-    server.on("connection", (socket) => {
-      connections.add(socket);
-      socket.once("close", () => {
-        connections.delete(socket);
-      });
+    server = createHttpServer({
+      access,
+      controller,
+      hostname: host,
+      port,
+      staticRoot: applicationAssetPath(options.root, "dist/frontend"),
     });
-    const handleApi = getRequestListener(
-        createApi(controller, access).fetch,
-        requestListenerOptions,
-      ),
-      handleStatic = getRequestListener(createStaticApp(staticRoot).fetch, requestListenerOptions);
-    server.on(
-      "request",
-      (req, res) =>
-        void (req.url?.startsWith("/api") ? handleApi(req, res) : handleStatic(req, res)),
-    );
-    const listening = once(server, "listening");
-    server.listen(port, host);
-    await listening;
-    const url = appUrl(host, listeningPort(server.address()));
+    const boundPort = server.port;
+    if (boundPort === undefined) {
+      throw new Error(localize("application:server.portUnavailable"));
+    }
+    const url = appUrl(host, boundPort);
     options.onReady?.(url);
     signal = await shutdown.signal;
   } catch (error) {
@@ -91,7 +72,7 @@ export async function startAppServer(options: AppServerOptions) {
         access,
         controller,
         releaseLock: () => lock.release(),
-        server: server ? { connections, instance: server } : undefined,
+        server,
       },
       logger,
       signal ?? "startup-failure",
@@ -114,10 +95,4 @@ export async function startAppServer(options: AppServerOptions) {
   if (closeFailure) {
     throw closeFailure;
   }
-}
-function listeningPort(address: string | AddressInfo | null) {
-  if (!address || typeof address === "string") {
-    throw new Error(localize("application:server.portUnavailable"));
-  }
-  return address.port;
 }

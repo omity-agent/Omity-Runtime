@@ -1,5 +1,3 @@
-import type { IncomingHttpHeaders } from "node:http";
-
 import ipaddr from "ipaddr.js";
 
 import { localize } from "../../i18n/server";
@@ -10,22 +8,17 @@ export interface ClientIdentity {
   address: string;
   local: boolean;
 }
-interface PeerRequest {
-  headers: IncomingHttpHeaders;
-  socket: { remoteAddress?: string };
-}
 export class ClientNetwork {
   private readonly trustedProxies: Cidr[];
   constructor(trustedProxies: string[]) {
     this.trustedProxies = trustedProxies.map((cidr) => ipaddr.parseCIDR(cidr));
   }
-  identify(request: PeerRequest): ClientIdentity {
-    const remote = parseAddress(request.socket.remoteAddress),
-      address = this.forwardedAddress(request, remote);
+  identify(remoteAddress: string | undefined, forwardedFor: string | undefined): ClientIdentity {
+    const remote = parseAddress(remoteAddress),
+      address = this.forwardedAddress(remote, forwardedFor);
     return { address: address.toString(), local: isLocal(address) };
   }
-  private forwardedAddress(request: PeerRequest, remote: Address) {
-    const forwarded = request.headers["x-forwarded-for"];
+  private forwardedAddress(remote: Address, forwarded: string | undefined) {
     if (forwarded === undefined && remote.range() === "loopback") {
       return remote;
     }
@@ -37,9 +30,6 @@ export class ClientNetwork {
     }
     if (forwarded === undefined) {
       throw new Error(localize("access:network.forwardedForMissing"));
-    }
-    if (Array.isArray(forwarded)) {
-      throw new TypeError(localize("access:network.forwardedForDuplicate"));
     }
     const chain = forwarded.split(",").map((value) => parseAddress(value.trim()));
     if (chain.length === 0) {
@@ -63,10 +53,9 @@ export class ClientNetwork {
     return current;
   }
   private matchesTrustedProxy(address: Address) {
-    return this.trustedProxies.some(([network, prefix]) => {
-      const normalized = normalizePair(address, network);
-      return normalized ? normalized[0].match(normalized[1], prefix) : false;
-    });
+    return this.trustedProxies.some(
+      ([network, prefix]) => address.kind() === network.kind() && address.match(network, prefix),
+    );
   }
 }
 function parseAddress(value?: string) {
@@ -79,18 +68,9 @@ function parseAddress(value?: string) {
   }
   return ipaddr.process(value);
 }
-function normalizePair(address: Address, network: Cidr[0]): [Address, Address] | undefined {
-  if (address.kind() === network.kind()) {
-    return [address, network];
-  }
-  return undefined;
-}
-function isLocalAddress(address: Address) {
+function isLocal(address: Address) {
   const range = address.range();
   return (
     range === "loopback" || range === "linkLocal" || range === "private" || range === "uniqueLocal"
   );
-}
-function isLocal(address: Address) {
-  return isLocalAddress(address);
 }

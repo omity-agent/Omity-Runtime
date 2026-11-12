@@ -26,7 +26,6 @@
     "@codemirror/state": "latest",
     "@codemirror/view": "latest",
     "@eslint-community/regexpp": "latest",
-    "@hono/node-server": "latest",
     "@hono/zod-validator": "latest",
     "@langchain/core": "latest",
     "@langchain/langgraph": "latest",

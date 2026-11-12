@@ -1,7 +1,3 @@
-import type { Server } from "node:http";
-import type { Socket } from "node:net";
-import { promisify } from "node:util";
-
 import pMap from "p-map";
 
 import { captureError } from "../../failures/details";
@@ -12,15 +8,11 @@ import type { AppRegistry } from "../registry";
 
 type ShutdownSignal = "SIGINT" | "SIGTERM";
 type ShutdownReason = ShutdownSignal | "startup-failure";
-interface ShutdownHttpServer {
-  connections: ReadonlySet<Socket>;
-  instance: Server;
-}
 interface ShutdownResources {
   access?: { close: () => void };
   controller?: { close: () => Promise<void> };
   releaseLock: () => void;
-  server?: ShutdownHttpServer;
+  server?: Pick<Bun.Server<undefined>, "stop">;
 }
 interface ShutdownLogger {
   error: (message: string, data?: unknown) => void;
@@ -69,17 +61,7 @@ export async function closeAppResources(
   await closeStep(
     logger,
     localize("application:shutdown.httpServer"),
-    async () => {
-      if (!resources.server?.instance.listening) {
-        return;
-      }
-      const close = promisify(resources.server.instance.close.bind(resources.server.instance)),
-        closed = close();
-      for (const connection of resources.server.connections) {
-        connection.destroy();
-      }
-      await closed;
-    },
+    () => resources.server?.stop(true),
     failures,
   );
   await closeStep(

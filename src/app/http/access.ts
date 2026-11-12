@@ -1,4 +1,3 @@
-import type { HttpBindings } from "@hono/node-server";
 import type { Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 
@@ -14,7 +13,7 @@ import { HttpError } from "./errors";
 import { jsonBody, limitRequestBody } from "./request";
 
 export interface AccessEnvironment {
-  Bindings: HttpBindings;
+  Bindings: { remoteAddress: string | undefined };
   Variables: { client: ClientIdentity };
 }
 export function mountAccess(app: Hono<AccessEnvironment>, access: AccessService | undefined) {
@@ -25,7 +24,7 @@ export function mountAccess(app: Hono<AccessEnvironment>, access: AccessService 
       c.set("client", { address: "127.0.0.1", local: true });
       return next();
     }
-    const identity = access.identify(c.env.incoming);
+    const identity = access.identify(c.env.remoteAddress, c.req.header("x-forwarded-for"));
     c.set("client", identity);
     if (isStateChanging(c.req.method)) {
       access.requireTrustedOrigin(identity, c.req.header("origin"), new URL(c.req.url).origin);

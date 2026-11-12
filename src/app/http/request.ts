@@ -13,8 +13,7 @@ export function limitRequestBody(
 ) {
   return bodyLimit({
     maxSize,
-    onError(c) {
-      c.header("Connection", "close");
+    onError() {
       throw new HttpError(
         413,
         localize("http:request.bodyTooLarge", {

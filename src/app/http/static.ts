@@ -1,19 +1,18 @@
 import { join, normalize, relative, resolve } from "node:path";
 
-import type { HttpBindings } from "@hono/node-server";
 import { Hono } from "hono";
 
 import { localize } from "../../i18n/server";
 
 export function createStaticApp(root: string) {
-  const app = new Hono<{ Bindings: HttpBindings }>(),
+  const app = new Hono(),
     staticRoot = resolve(root);
-  app.use("*", async (c, next) => {
+  app.use("*", (c, next) => {
     c.header("content-security-policy", contentSecurityPolicy);
     c.header("cross-origin-opener-policy", "same-origin");
     c.header("referrer-policy", "no-referrer");
     c.header("x-content-type-options", "nosniff");
-    await next();
+    return next();
   });
   app.get("/assets/*", async (c) => {
     const file = Bun.file(resolveStaticAsset(staticRoot, c.req.path));
@@ -22,7 +21,7 @@ export function createStaticApp(root: string) {
   app.get("/", () => fileResponse(Bun.file(join(staticRoot, "index.html"))));
   return app;
 }
-async function fileResponse(file: Bun.BunFile) {
+function fileResponse(file: Bun.BunFile) {
   return new Response(file, {
     headers: {
       "content-length": file.size.toString(),

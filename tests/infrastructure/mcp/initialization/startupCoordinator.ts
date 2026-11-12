@@ -1,14 +1,10 @@
-import { once } from "node:events";
 import { mkdirSync, rmSync } from "node:fs";
-import { createServer } from "node:http";
 import { join } from "node:path";
-import { promisify } from "node:util";
 
-import { getRequestListener } from "@hono/node-server";
 import { raceSignal } from "race-signal";
 import type { z } from "zod";
 
-import { requestListenerOptions } from "../../../../settings/networking";
+import { httpServerOptions } from "../../../../settings/networking";
 import { createAppMcp } from "../../../../src/app/runtime/resources/toolPool";
 import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
 import type { mcpServerSchema } from "../../../../src/infrastructure/mcp/configuration/connections";
@@ -20,9 +16,7 @@ interface StartupCheckpoint {
   reached: PromiseWithResolvers<void>;
   response: PromiseWithResolvers<{ failure?: string }>;
 }
-export async function coordinateStartup(
-  declarations: Record<string, z.input<typeof mcpServerSchema>>,
-) {
+export function coordinateStartup(declarations: Record<string, z.input<typeof mcpServerSchema>>) {
   const root = createTestDirectory("parallel-mcp-startup"),
     processes = new Map<string, number>(),
     checkpoints = new Map<string, StartupCheckpoint>(
@@ -39,27 +33,23 @@ export async function coordinateStartup(
         ),
       ),
     ),
-    handleRequest = getRequestListener(async (request) => {
-      const url = new URL(request.url),
-        checkpoint = checkpoints.get(url.pathname);
-      if (!checkpoint) {
-        return new Response("未知测试同步点", { status: 404 });
-      }
-      processes.set(url.pathname.split("/")[1]!, Number(url.searchParams.get("pid")));
-      checkpoint.reached.resolve();
-      const { failure } = await checkpoint.response.promise;
-      return new Response(failure, { status: failure ? 500 : 200 });
-    }, requestListenerOptions),
-    server = createServer((request, response) => {
-      void handleRequest(request, response);
-    });
-  server.listen(0, "127.0.0.1");
-  await once(server, "listening");
-  const address = server.address();
-  if (!address || typeof address === "string") {
-    throw new Error("MCP 测试协调服务器没有 TCP 地址");
-  }
-  const endpoint = `http://127.0.0.1:${address.port.toString()}`,
+    server = Bun.serve({
+      ...httpServerOptions,
+      async fetch(request) {
+        const url = new URL(request.url),
+          checkpoint = checkpoints.get(url.pathname);
+        if (!checkpoint) {
+          return new Response("未知测试同步点", { status: 404 });
+        }
+        processes.set(url.pathname.split("/")[1]!, Number(url.searchParams.get("pid")));
+        checkpoint.reached.resolve();
+        const { failure } = await checkpoint.response.promise;
+        return new Response(failure, { status: failure ? 500 : 200 });
+      },
+      hostname: "127.0.0.1",
+      port: 0,
+    }),
+    endpoint = server.url.origin,
     mcpServers = Object.fromEntries(
       Object.entries(declarations).map(([name, configuration]) => [
         name,
@@ -98,8 +88,7 @@ export async function coordinateStartup(
         await loading;
         await mcp.close();
       } finally {
-        server.closeAllConnections();
-        await promisify(server.close.bind(server))();
+        await server.stop(true);
         rmSync(root, { force: true, recursive: true });
       }
     },

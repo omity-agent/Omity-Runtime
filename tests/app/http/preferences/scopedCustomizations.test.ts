@@ -18,7 +18,7 @@ const sessionResponse = z.object({ session: z.object({ id: z.string() }) });
 test.each([true, false])(
   "MCP-owned original-name customizations survive server selection and snapshot restoration (prefix: %s)",
   async (prefixToolNameWithServerName) => {
-    await using app = await liveApplication("responses-sse");
+    await using app = liveApplication("responses-sse");
     const sourceName = prefixToolNameWithServerName ? "active__original" : "original",
       workspace = join(app.root, "workspace"),
       profileDirectory = join(app.root, "home", "settings", "profiles", "custom"),

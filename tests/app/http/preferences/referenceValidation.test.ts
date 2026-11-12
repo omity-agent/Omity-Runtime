@@ -8,7 +8,7 @@ import { liveApplication } from "../liveApplication";
 test.each(["freeformToolInputs", "toolDescriptionOverrides"] as const)(
   "enabled MCP validates original tool names in %s",
   async (field) => {
-    await using app = await liveApplication();
+    await using app = liveApplication();
     writeToolboxConfiguration(app.root, {
       mcpServers: {
         active: {
@@ -46,7 +46,7 @@ test.each(["freeformToolInputs", "toolDescriptionOverrides"] as const)(
   15_000,
 );
 test("all disabled MCP customizations and unavailable global renames are ignored with no tools loaded", async () => {
-  await using app = await liveApplication();
+  await using app = liveApplication();
   writeToolboxConfiguration(app.root, {
     mcpServers: {
       inactive: {

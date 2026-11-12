@@ -12,7 +12,7 @@ import { readDefinitionRecord } from "../../../../src/infrastructure/database/re
 import { liveApplication } from "../liveApplication";
 
 test("idle sessions can move a profile to the top without changing frozen tool schemas", async () => {
-  await using app = await liveApplication();
+  await using app = liveApplication();
   const profileDirectory = join(app.root, "home", "settings", "profiles", "alternate");
   mkdirSync(profileDirectory, { recursive: true });
   writeFileSync(join(profileDirectory, "model.yaml"), "model: alternate-model\n");

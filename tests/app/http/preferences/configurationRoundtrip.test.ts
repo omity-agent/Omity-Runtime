@@ -28,7 +28,7 @@ function createSubmission(
   return submissionForm({ history: [], message: "hello", workspace: root, ...overrides }, []);
 }
 test("HTTP session preferences list disabled servers without resolving secrets and preserve per-session selections", async () => {
-  await using app = await liveApplication();
+  await using app = liveApplication();
   const optionalServer = {
       args: [resolve(import.meta.dir, "argumentServer.ts"), "identity"],
       command: process.execPath,

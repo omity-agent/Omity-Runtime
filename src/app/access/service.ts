@@ -1,5 +1,3 @@
-import type { IncomingMessage } from "node:http";
-
 import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/server";
 import { RateLimiterMemory, RateLimiterRes } from "rate-limiter-flexible";
 
@@ -37,9 +35,9 @@ export class AccessService {
   close() {
     this.store.close();
   }
-  identify(request: IncomingMessage) {
+  identify(remoteAddress: string | undefined, forwardedFor: string | undefined) {
     try {
-      return this.network.identify(request);
+      return this.network.identify(remoteAddress, forwardedFor);
     } catch (error) {
       throw new HttpError(
         400,

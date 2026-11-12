@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import { liveApplication } from "./liveApplication";
 
 test("real HTTP access rejects public reads and cross-site writes while registration tickets are single-use", async () => {
-  await using app = await liveApplication();
+  await using app = liveApplication();
   const remote = { "x-forwarded-for": "203.0.113.9" },
     origin = "https://omity.example.test",
     unauthorized = await fetch(`${app.url}/api/sessions`, { headers: remote });

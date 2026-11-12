@@ -1,22 +1,16 @@
-import { once } from "node:events";
 import { rmSync } from "node:fs";
-import { createServer } from "node:http";
-import type { Socket } from "node:net";
 import { join } from "node:path";
 
-import { getRequestListener } from "@hono/node-server";
-
-import { requestListenerOptions } from "../../../settings/networking";
 import { AccessService } from "../../../src/app/access/service";
 import { AppController } from "../../../src/app/controller";
-import { createApi } from "../../../src/app/http/handler";
+import { createHttpServer } from "../../../src/app/http/transport";
 import { closeAppResources } from "../../../src/app/runtime/shutdown";
 import { loadSettings } from "../../../src/infrastructure/configuration/settings/load";
 import { createTestDirectory } from "../../support/artifacts";
 import { writeTestConfiguration } from "../../support/configuration";
 import { scopedEnvironment } from "../../support/scopedEnvironment";
 
-export async function liveApplication(adapter: "completions" | "responses-sse" = "completions") {
+export function liveApplication(adapter: "completions" | "responses-sse" = "completions") {
   const root = createTestDirectory("http-workflow"),
     modelName = adapter === "responses-sse" ? "gpt-6.1-sol" : "test",
     requests: unknown[] = [],
@@ -68,27 +62,18 @@ retryDelayMs: 1000
   });
   const controller = new AppController(root),
     access = new AccessService(loadSettings(root)),
-    handleRequest = getRequestListener(createApi(controller, access).fetch, requestListenerOptions),
-    server = createServer((request, response) => {
-      void handleRequest(request, response);
-    }),
-    connections = new Set<Socket>();
-  server.on("connection", (socket) => {
-    connections.add(socket);
-    socket.once("close", () => connections.delete(socket));
-  });
-  const listening = once(server, "listening");
-  server.listen(0, "127.0.0.1");
-  await listening;
-  const address = server.address();
-  if (!address || typeof address === "string") {
-    throw new Error("HTTP 集成夹具未监听端口");
-  }
+    server = createHttpServer({
+      access,
+      controller,
+      hostname: "127.0.0.1",
+      port: 0,
+      staticRoot: join(root, "frontend"),
+    });
   return {
     controller,
     requests,
     root,
-    url: `http://127.0.0.1:${address.port.toString()}`,
+    url: server.url.origin,
     async [Symbol.asyncDispose]() {
       try {
         await closeAppResources(
@@ -96,7 +81,7 @@ retryDelayMs: 1000
             access,
             controller,
             releaseLock: () => {},
-            server: { connections, instance: server },
+            server,
           },
           { error: console.error, info: () => {} },
           "SIGTERM",

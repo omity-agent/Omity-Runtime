@@ -13,7 +13,7 @@ const preparation = {
   ],
 };
 test("new session drafts retain incomplete message pairs across controller reopening and reject stale saves", async () => {
-  await using app = await liveApplication();
+  await using app = liveApplication();
   const endpoint = `${app.url}/api/session-preparation`,
     initial = await fetch(endpoint);
   expect(initial.status).toBe(200);
@@ -59,7 +59,7 @@ test("new session drafts retain incomplete message pairs across controller reope
   expect(await unchanged.json()).toMatchObject({ revision: 5 });
 });
 test("session creation clears only its submitted preparation and keeps drafts on failed creation", async () => {
-  await using app = await liveApplication();
+  await using app = liveApplication();
   const endpoint = `${app.url}/api/session-preparation`,
     ready = { message: preparation.message, pairs: [preparation.pairs[0]!] },
     saved = await fetch(endpoint, draft(ready, 1));

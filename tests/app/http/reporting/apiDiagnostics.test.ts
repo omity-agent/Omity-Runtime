@@ -10,7 +10,7 @@ import {
 import { liveApplication } from "../liveApplication";
 
 test("MCP startup diagnostics survive the API and are reported as one summary and a structured browser record", async () => {
-  await using app = await liveApplication();
+  await using app = liveApplication();
   configureFailure(app.root, {
     broken: {
       args: [failingStartupPath, "exit"],

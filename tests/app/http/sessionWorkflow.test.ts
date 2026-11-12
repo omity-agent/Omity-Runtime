@@ -16,7 +16,7 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
     globalThis.AI_SDK_LOG_WARNINGS = previousLogger;
   });
   globalThis.AI_SDK_LOG_WARNINGS = (event) => warnings.push(...event.warnings);
-  await using app = await liveApplication();
+  await using app = liveApplication();
   const created = await fetch(`${app.url}/api/sessions`, {
     body: submissionForm({ history: [], message: "first question", workspace: app.root }, []),
     method: "POST",
@@ -103,7 +103,7 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   expect(await sessions.json()).toEqual({ sessions: [] });
 }, 15_000);
 test("HTTP validation rejects malformed or ambiguous submissions before session mutations", async () => {
-  await using app = await liveApplication();
+  await using app = liveApplication();
   const draftEndpoint = `${app.url}/api/sessions/absent/composer-draft`,
     invalidJsonRequests = [
       { body: "{", headers: { "content-type": "application/json" } },
@@ -155,9 +155,9 @@ test("HTTP validation rejects malformed or ambiguous submissions before session 
 test.each(["buffered", "streamed"])(
   "HTTP rejects oversized %s bodies without breaking subsequent requests",
   async (mode) => {
-    await using app = await liveApplication();
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      const payload = new Uint8Array(requestBodyLimit + 1),
+    await using app = liveApplication();
+    for (const size of [requestBodyLimit + 1, requestBodyLimit * 4, requestBodyLimit * 16]) {
+      const payload = new Uint8Array(size),
         body =
           mode === "buffered"
             ? payload
@@ -173,7 +173,6 @@ test.each(["buffered", "streamed"])(
           method: "POST",
         });
       expect(rejected.status).toBe(413);
-      expect(rejected.headers.get("connection")).toBe("close");
       expect(await rejected.json()).toMatchObject({ error: { code: "PAYLOAD_TOO_LARGE" } });
       const subsequent = await fetch(`${app.url}/api/sessions`);
       expect(subsequent.status).toBe(200);

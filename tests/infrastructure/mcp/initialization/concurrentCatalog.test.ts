@@ -6,7 +6,7 @@ import { isProcessRunning } from "../../../../src/infrastructure/process/ownersh
 import { coordinateStartup } from "./startupCoordinator";
 
 test("session MCP pipelines overlap while preserving tool order and reusing the session pool", async () => {
-  const fixture = await coordinateStartup({
+  const fixture = coordinateStartup({
       first: { defer_loading: true, excludedTools: ["hidden"] },
       second: { excludedTools: ["hidden"], prefixToolNameWithServerName: false },
       third: {},
@@ -57,7 +57,7 @@ test("session MCP pipelines overlap while preserving tool order and reusing the 
 test.each([false, true])(
   "initialization failure drains other pipelines and closes all children (multiple errors: %s)",
   async (multipleErrors) => {
-    const fixture = await coordinateStartup({ broken: {}, late: {}, other: {} }),
+    const fixture = coordinateStartup({ broken: {}, late: {}, other: {} }),
       loading = fixture.mcp.createSession("failed-session", [], fixture.root),
       outcome = Promise.allSettled([loading]);
     try {

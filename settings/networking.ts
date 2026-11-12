@@ -1,6 +1,10 @@
 export const requestBodyLimit = 1024 * 1024;
 export const jsonContentType = /^application\/(?:[a-z.-]+\+)?json(?:;\s*[a-z0-9-]+=[^;]+)*$/iu;
-export const requestListenerOptions = { overrideGlobalObjects: false };
+export const httpServerOptions = {
+  development: false,
+  idleTimeout: 0,
+  maxRequestBodySize: Number.MAX_SAFE_INTEGER,
+};
 export const queryClientDefaults = {
   mutations: { retry: false },
   queries: { retry: false },
