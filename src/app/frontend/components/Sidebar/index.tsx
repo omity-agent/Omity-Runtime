@@ -38,25 +38,23 @@ export function Sidebar({
 }: SidebarProps) {
   const { t } = useTranslation(),
     sessionsId = useId(),
-    activeWorkspace = sessions.find(({ id }) => id === activeId)?.workspace,
-    [selection, setSelection] = useState({ activeWorkspace, workspace: activeWorkspace }),
+    [selectedWorkspace, setSelectedWorkspace] = useState<string>(),
     groups = groupSessions(sessions),
-    project = groups.find(({ workspace }) => workspace === selection.workspace) ?? groups[0],
+    project =
+      groups.find(({ workspace }) => workspace === selectedWorkspace) ??
+      groups.find(({ sessions: projectSessions }) =>
+        projectSessions.some(({ id }) => id === activeId),
+      ) ??
+      groups[0],
     attentionSessions = sessions
       .filter((session) => isRunning(session) || unreadIds.has(session.id))
       .toSorted(compareSessions),
-    selectProject = useCallback(
-      (workspace: string) => {
-        setSelection({ activeWorkspace, workspace });
-      },
-      [activeWorkspace],
-    ),
     handleCreate = useCallback(
       (event: MouseEvent<HTMLAnchorElement>) => navigateLink(event, onCreate),
       [onCreate],
     );
-  if (selection.activeWorkspace !== activeWorkspace) {
-    setSelection({ activeWorkspace, workspace: activeWorkspace ?? selection.workspace });
+  if (selectedWorkspace !== project?.workspace) {
+    setSelectedWorkspace(project?.workspace);
   }
   return (
     <>
@@ -105,7 +103,7 @@ export function Sidebar({
             {groups.length > 0 ? (
               <ProjectPicker
                 groups={groups}
-                onSelect={selectProject}
+                onSelect={setSelectedWorkspace}
                 selectedWorkspace={project?.workspace}
                 sessionsId={sessionsId}
                 unreadIds={unreadIds}

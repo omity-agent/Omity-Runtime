@@ -6,17 +6,13 @@ import { streamAiModel } from "../../../src/agent/model/request";
 import { aiModelTools } from "../../../src/agent/model/tools";
 import { geminiApis, geminiWire } from "../gemini/endpointFixture";
 import { parameterCases, schemaBoundaries } from "./parameterCases";
-import { discoverySettings, wireModel } from "./wireFixtures";
+import { wireModel } from "./wireFixtures";
 
 test("Messages disables strict for unsupported regular-expression features", async () => {
   await using wire = wireModel("messages");
   await expect(
-    streamAiModel({
-      messages: [new HumanMessage("Use a tool")],
-      model: wire.model,
-      sessionId: "strict-patterns",
-      settings: discoverySettings("messages"),
-      tools: aiModelTools(
+    wire.requestModel(
+      aiModelTools(
         ["a(?=b)", "(?<=a)b", String.raw`(a)\1`, String.raw`\bword\b`].map((pattern, i) => ({
           description: "Pattern",
           freeform: false,
@@ -30,7 +26,7 @@ test("Messages disables strict for unsupported regular-expression features", asy
         })),
         "messages",
       ),
-    }),
+    ),
   ).rejects.toThrow("request captured");
   expect(wire.requests[0]?.["tools"]).toMatchObject(
     Array.from({ length: 4 }, () => ({ strict: false })),
@@ -47,15 +43,9 @@ test.each(["completions", "responses", "messages"] as const)(
         name,
       })),
       before = JSON.stringify(definitions);
-    await expect(
-      streamAiModel({
-        messages: [new HumanMessage("Use a tool")],
-        model: wire.model,
-        sessionId: "strict-schemas",
-        settings: discoverySettings(api),
-        tools: aiModelTools(definitions, api),
-      }),
-    ).rejects.toThrow("request captured");
+    await expect(wire.requestModel(aiModelTools(definitions, api))).rejects.toThrow(
+      "request captured",
+    );
     expect(wire.requests).toHaveLength(1);
     expect(wire.requests[0]?.["tools"]).toEqual(
       parameterCases.map(({ eligible, name, schema }) => {
@@ -111,12 +101,8 @@ test.each([...geminiApis])(
 test.each(schemaBoundaries)("Responses checks the strict $name boundary", async ({ schemas }) => {
   await using wire = wireModel("responses");
   await expect(
-    streamAiModel({
-      messages: [new HumanMessage("Use a tool")],
-      model: wire.model,
-      sessionId: "strict-boundary",
-      settings: discoverySettings("responses"),
-      tools: aiModelTools(
+    wire.requestModel(
+      aiModelTools(
         schemas.map((inputSchema, i) => ({
           description: "Boundary",
           freeform: false,
@@ -125,7 +111,7 @@ test.each(schemaBoundaries)("Responses checks the strict $name boundary", async 
         })),
         "responses",
       ),
-    }),
+    ),
   ).rejects.toThrow("request captured");
   expect(wire.requests[0]?.["tools"]).toMatchObject([{ strict: true }, { strict: false }]);
 });

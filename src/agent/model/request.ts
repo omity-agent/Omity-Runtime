@@ -7,8 +7,9 @@ import { ModelEmptyResponseError } from "../../runtime/transientErrors";
 import type { Settings } from "../../types";
 import { toModelMessages } from "../aiMessages";
 import { fromModelMessages } from "../fromAiMessages";
-import { estimateCacheHitRate } from "./cacheExpectation";
 import { aiRequestOptions, buildAiModel, modelApi } from "./provider";
+import { estimateCacheHitRate } from "./usage/cacheExpectation";
+import { readReportedUsage } from "./usage/reportedTokens";
 
 interface ModelRequestOptions {
   freeformToolNames?: ReadonlySet<string>;
@@ -29,7 +30,8 @@ export async function streamAiModel(options: ModelRequestOptions) {
   const attempts = new Map<number, AbortController>(),
     completed = Promise.withResolvers<AIMessage>(),
     model = options.model ?? buildAiModel(options.settings),
-    modelMessages = toModelMessages(options.messages, modelApi(options.settings)),
+    api = modelApi(options.settings),
+    modelMessages = toModelMessages(options.messages, api),
     estimatedCacheHitRate = estimateCacheHitRate(options.messages, modelMessages),
     turnId = options.messages.findLast((message) => HumanMessage.isInstance(message))?.id;
   let finished = false,
@@ -116,7 +118,7 @@ export async function streamAiModel(options: ModelRequestOptions) {
         throw new ModelEmptyResponseError();
       }
       const step = await result.finalStep,
-        messages = fromModelMessages(step.response.messages, step.response.id, step.usage),
+        messages = fromModelMessages(step.response.messages, step.response.id, step.usage, api),
         response = messages.findLast((message) => AIMessage.isInstance(message));
       if (
         !response ||
@@ -125,7 +127,10 @@ export async function streamAiModel(options: ModelRequestOptions) {
         throw new ModelEmptyResponseError();
       }
       response.response_metadata["rawFinishReason"] = step.rawFinishReason;
-      response.response_metadata["estimatedCacheHitRate"] = estimatedCacheHitRate;
+      response.response_metadata["usage"] = {
+        ...readReportedUsage(response),
+        estimatedCacheHitRate,
+      };
       return response;
     } finally {
       attempts.delete(id);

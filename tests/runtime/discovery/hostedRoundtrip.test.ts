@@ -5,6 +5,7 @@ import { HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { toModelMessages } from "../../../src/agent/aiMessages";
 import { streamAiModel } from "../../../src/agent/model/request";
 import { aiModelTools } from "../../../src/agent/model/tools";
+import { modelTokenUsage } from "../../../src/app/timeline/tokenCounts";
 import { cleanupDatabaseDirs, makeDb, required, workspace } from "../../support/database";
 import {
   deferredDefinition,
@@ -34,6 +35,7 @@ test.each(["responses", "messages"] as const)(
     db.createSession("discovery", workspace);
     await db.syncHistory("discovery", [new HumanMessage("Find a file"), response]);
     const restored = required(db.history("discovery").at(-1));
+    expect(required(modelTokenUsage(restored)).cacheReadTokens).toBeUndefined();
     expect(toModelMessages([restored], api)).toEqual(toModelMessages([response], api));
     await expect(
       streamAiModel({

@@ -1,8 +1,11 @@
 import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
 import { z } from "zod";
 
+import {
+  reportedUsageSchema,
+  tokenCountSchema,
+} from "../../../../../agent/model/usage/reportedTokens";
 import { isProviderOptions } from "../../../../../agent/toolProviderOptions";
-import { localize } from "../../../../../i18n/server";
 
 export const toolProviderOptionsSchema = z.record(
   z.string(),
@@ -12,18 +15,7 @@ const content = z.union([
     z.string(),
     z.array(z.looseObject({ id: z.string().optional(), type: z.string() })),
   ]),
-  tokens = z.number().int().nonnegative(),
-  usage = z
-    .strictObject({
-      cacheRead: tokens,
-      estimatedCacheHitRate: z.number().min(0).max(1).optional(),
-      input: tokens,
-      output: tokens,
-    })
-    .refine(
-      ({ input, output }) => Number.isSafeInteger(input + output),
-      localize("database:messages.tokenTotalUnsafe"),
-    ),
+  tokens = tokenCountSchema,
   toolCall = z.strictObject({
     args: z.record(z.string(), z.unknown()),
     id: z.string().optional(),
@@ -39,7 +31,7 @@ const content = z.union([
     reasoning: z.record(z.string(), z.unknown()).optional(),
     toolCalls: z.array(toolCall).optional(),
     type: z.literal("ai"),
-    usage: usage.optional(),
+    usage: reportedUsageSchema.optional(),
   }),
   tool = z.strictObject({
     builtInTool: z.literal("update_title").optional(),
@@ -56,4 +48,3 @@ export const storedConversationSchema = z.discriminatedUnion("type", [human, ai,
 export type StoredConversationMessage = z.infer<typeof storedConversationSchema>;
 export type StoredAi = z.infer<typeof ai>;
 export type StoredTool = z.infer<typeof tool>;
-export type StoredUsage = z.infer<typeof usage>;

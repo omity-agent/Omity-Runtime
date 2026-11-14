@@ -1,21 +1,18 @@
-import {
-  AIMessage,
-  type BaseMessage,
-  type ToolCall,
-  ToolMessage,
-  type UsageMetadata,
-} from "@langchain/core/messages";
+import { AIMessage, type BaseMessage, type ToolCall, ToolMessage } from "@langchain/core/messages";
 import type { LanguageModelUsage, ModelMessage } from "ai";
 import { isPlainObject as isRecord } from "es-toolkit";
 
 import { localize } from "../i18n/server";
 import { trimFreeformInput } from "../runtime/freeform";
+import type { ModelApi } from "../types";
+import { reportedModelUsage } from "./model/usage/providerCounts";
 import { omitToolItemIds } from "./toolProviderOptions";
 
 export function fromModelMessages(
   messages: ModelMessage[],
   assistantId: string,
-  usage?: LanguageModelUsage,
+  usage: LanguageModelUsage | undefined,
+  api: ModelApi,
 ): BaseMessage[] {
   const result: BaseMessage[] = [];
   for (const [index, message] of messages.entries()) {
@@ -29,8 +26,8 @@ export function fromModelMessages(
           },
           content: assistantText(message.content).join(""),
           id: `${assistantId}:assistant:${index.toString()}`,
+          response_metadata: usage ? { usage: reportedModelUsage(usage, api) } : undefined,
           tool_calls: toolCalls(message.content),
-          usage_metadata: usage ? langChainUsage(usage) : undefined,
         }),
       );
     } else if (message.role === "tool") {
@@ -115,14 +112,6 @@ function toolProviderOptions(content: Extract<ModelMessage, { role: "assistant" 
     return providerOptions ? [[part.toolCallId, providerOptions] as const] : [];
   });
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
-}
-function langChainUsage(usage: LanguageModelUsage): UsageMetadata {
-  return {
-    input_token_details: { cache_read: usage.inputTokenDetails.cacheReadTokens ?? 0 },
-    input_tokens: usage.inputTokens ?? 0,
-    output_tokens: usage.outputTokens ?? 0,
-    total_tokens: usage.totalTokens ?? 0,
-  };
 }
 type ToolResult = Extract<
   Extract<ModelMessage, { role: "tool" }>["content"][number],

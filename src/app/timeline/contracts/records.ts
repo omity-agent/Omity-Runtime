@@ -20,10 +20,10 @@ const integer = z.number().int(),
     temporary: z.literal(true).optional(),
   }),
   tokenUsageSchema = z.object({
-    cacheReadTokens: integer.nonnegative(),
+    cacheReadTokens: integer.nonnegative().optional(),
     estimatedCacheHitRate: z.number().min(0).max(1).optional(),
-    inputTokens: integer.nonnegative(),
-    outputTokens: integer.nonnegative(),
+    inputTokens: integer.nonnegative().optional(),
+    outputTokens: integer.nonnegative().optional(),
   }),
   messageSchema = z.object({
     content: z.string(),

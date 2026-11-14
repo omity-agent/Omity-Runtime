@@ -1,7 +1,7 @@
 import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
 
 import { structuredOutputArtifact } from "../../../../mcp/tools/structured";
-import { storedConversationSchema, type StoredUsage } from "./replayShape";
+import { storedConversationSchema } from "./replayShape";
 
 export function decodeMessage(value: string, id?: string) {
   const stored = storedConversationSchema.parse(JSON.parse(value) as unknown);
@@ -19,11 +19,8 @@ export function decodeMessage(value: string, id?: string) {
       },
       content: stored.content,
       id,
-      ...(stored.usage?.estimatedCacheHitRate === undefined
-        ? {}
-        : { response_metadata: { estimatedCacheHitRate: stored.usage.estimatedCacheHitRate } }),
+      ...(stored.usage ? { response_metadata: { usage: stored.usage } } : {}),
       ...(stored.toolCalls ? { tool_calls: stored.toolCalls } : {}),
-      ...(stored.usage ? { usage_metadata: restoredUsage(stored.usage) } : {}),
     });
   }
   return new ToolMessage({
@@ -49,12 +46,4 @@ export function decodeMessage(value: string, id?: string) {
     status: stored.status,
     tool_call_id: stored.toolCallId,
   });
-}
-function restoredUsage(usage: StoredUsage) {
-  return {
-    input_token_details: { cache_read: usage.cacheRead },
-    input_tokens: usage.input,
-    output_tokens: usage.output,
-    total_tokens: usage.input + usage.output,
-  };
 }

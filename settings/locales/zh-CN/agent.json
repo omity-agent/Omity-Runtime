@@ -16,7 +16,6 @@
     "manuallyCancelled": "用户手动终止工具"
   },
   "model": {
-    "cachePreviousTokensInvalid": "缓存命中率预估的先前输入 token 数无效",
     "cacheInputTokensUnsafe": "缓存命中率预估的输入 token 数超出安全整数范围",
     "structuredReasoningEffortUnsupported": "Messages API 不支持 reasoning_effort: minimal",
     "interactionsReasoningEffortUnsupported": "Gemini Interactions API 不支持 reasoning_effort: {{value0}}；请选择 minimal、low、medium 或 high",

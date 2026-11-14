@@ -2,12 +2,10 @@ import { expect, test } from "bun:test";
 
 import { anthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";
-import { HumanMessage } from "@langchain/core/messages";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 
 import { structuredRequestOptions } from "../../../src/agent/model/provider";
-import { streamAiModel } from "../../../src/agent/model/request";
 import { aiModelTools } from "../../../src/agent/model/tools";
 import { discoverySettings, wireModel } from "./wireFixtures";
 
@@ -16,15 +14,7 @@ test.each(["completions", "responses", "messages"] as const)(
   async (api) => {
     await using wire = wireModel(api);
     const settings = discoverySettings(api);
-    await expect(
-      streamAiModel({
-        messages: [new HumanMessage("Reply without tools")],
-        model: wire.model,
-        sessionId: "empty-tools",
-        settings,
-        tools: {},
-      }),
-    ).rejects.toThrow("request captured");
+    await expect(wire.requestModel()).rejects.toThrow("request captured");
     await expect(
       generateText({
         ...structuredRequestOptions(settings.model),
@@ -48,12 +38,8 @@ test.each(["completions", "responses", "messages"] as const)(
   async (api) => {
     await using wire = wireModel(api);
     await expect(
-      streamAiModel({
-        messages: [new HumanMessage("Use the application tool")],
-        model: wire.model,
-        sessionId: "application-tools",
-        settings: discoverySettings(api),
-        tools: aiModelTools(
+      wire.requestModel(
+        aiModelTools(
           [
             {
               description: "Local search",
@@ -64,7 +50,7 @@ test.each(["completions", "responses", "messages"] as const)(
           ],
           api,
         ),
-      }),
+      ),
     ).rejects.toThrow("request captured");
     expect(wire.requests[0]?.["tools"]).toHaveLength(1);
     expect(wire.requests[0]?.["tool_choice"]).toEqual(
@@ -77,17 +63,9 @@ test.each(["responses", "messages"] as const)(
   async (api) => {
     await using wire = wireModel(api);
     await expect(
-      streamAiModel({
-        messages: [new HumanMessage("Search")],
-        model: wire.model,
-        sessionId: "blocked-tools",
-        settings: discoverySettings(api),
-        tools: {
-          search:
-            api === "responses"
-              ? openai.tools.webSearch({})
-              : anthropic.tools.webSearch_20250305({}),
-        },
+      wire.requestModel({
+        search:
+          api === "responses" ? openai.tools.webSearch({}) : anthropic.tools.webSearch_20250305({}),
       }),
     ).rejects.toThrow("供应商内置工具已禁用");
     expect(wire.requests).toHaveLength(0);
@@ -96,12 +74,8 @@ test.each(["responses", "messages"] as const)(
 test("Responses preserves application free-form tools", async () => {
   await using wire = wireModel("responses");
   await expect(
-    streamAiModel({
-      messages: [new HumanMessage("Run a local command")],
-      model: wire.model,
-      sessionId: "custom-tools",
-      settings: discoverySettings("responses"),
-      tools: aiModelTools(
+    wire.requestModel(
+      aiModelTools(
         [
           {
             description: "Local command",
@@ -112,7 +86,7 @@ test("Responses preserves application free-form tools", async () => {
         ],
         "responses",
       ),
-    }),
+    ),
   ).rejects.toThrow("request captured");
   expect(wire.requests[0]?.["tools"]).toEqual([
     expect.objectContaining({ name: "shell", type: "custom" }),

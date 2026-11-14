@@ -21,7 +21,6 @@
   "timeline": {
     "toolInputNotString": "自定义工具输入不是字符串",
     "toolInputNotSerializable": "工具输入无法序列化",
-    "usageFieldInvalid": "模型 usage_metadata.{{value0}} 无效",
     "cacheReadExceedsInput": "模型 cache_read tokens 超过 input tokens",
     "toolStartStreamIdentityMissing": "工具开始事件缺少流身份：{{value0}}",
     "toolStreamCallIdMismatch": "工具流身份绑定了不同的正式调用 ID：{{value0}}、{{value1}}",

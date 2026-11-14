@@ -7,7 +7,7 @@ import {
 } from "@langchain/core/messages";
 import { isPlainObject as isRecord } from "es-toolkit";
 
-import { readCacheExpectation } from "../../../../../agent/model/cacheExpectation";
+import { readReportedUsage } from "../../../../../agent/model/usage/reportedTokens";
 import { omitToolItemIds } from "../../../../../agent/toolProviderOptions";
 import { localize } from "../../../../../i18n/server";
 import { structuredToolOutput } from "../../../../mcp/tools/structured";
@@ -15,7 +15,6 @@ import {
   type StoredAi,
   type StoredConversationMessage,
   type StoredTool,
-  type StoredUsage,
   toolProviderOptionsSchema,
 } from "./replayShape";
 
@@ -38,7 +37,7 @@ export function encodeMessage(message: BaseMessage, mode: MessageStorageMode) {
 }
 function encodeAiMessage(message: AIMessage): StoredAi {
   const reasoning = storedReasoning(message),
-    usage = storedUsage(message);
+    usage = readReportedUsage(message);
   return {
     content: message.content,
     type: "ai",
@@ -106,17 +105,6 @@ function storedReasoning(message: AIMessage) {
     ...(isRecord(raw) && typeof raw["encrypted_content"] === "string"
       ? { encrypted_content: raw["encrypted_content"] }
       : {}),
-  };
-}
-function storedUsage(message: AIMessage): StoredUsage | undefined {
-  if (!message.usage_metadata) {
-    return undefined;
-  }
-  return {
-    ...readCacheExpectation(message),
-    cacheRead: message.usage_metadata.input_token_details?.cache_read ?? 0,
-    input: message.usage_metadata.input_tokens,
-    output: message.usage_metadata.output_tokens,
   };
 }
 function readLargeOutputTokens(message: ToolMessage) {

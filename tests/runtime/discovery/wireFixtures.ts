@@ -1,8 +1,11 @@
 import { randomUUID } from "node:crypto";
 
+import { HumanMessage } from "@langchain/core/messages";
+import type { ToolSet } from "ai";
 import { isPlainObject } from "es-toolkit";
 
 import { buildConfiguredAiModel } from "../../../src/agent/model/provider";
+import { streamAiModel } from "../../../src/agent/model/request";
 import type { ModelToolDefinition } from "../../../src/infrastructure/mcp/tools/definitions";
 import type { ModelAdapter, ModelApi, Settings } from "../../../src/types";
 import { testSettings } from "../../support/settings";
@@ -68,7 +71,19 @@ export function wireModel(api: ModelApi, events: Record<string, unknown>[] = [])
       apiKeyEnv,
       baseURL: new URL("/v1", server.url).href,
     });
-    return { model, requests, [Symbol.asyncDispose]: () => server.stop(true) };
+    return {
+      model,
+      requestModel: (tools: ToolSet = {}) =>
+        streamAiModel({
+          messages: [new HumanMessage("Check request policy")],
+          model,
+          sessionId: "wire",
+          settings: discoverySettings(api),
+          tools,
+        }),
+      requests,
+      [Symbol.asyncDispose]: () => server.stop(true),
+    };
   } catch (error) {
     void server.stop(true);
     throw error;

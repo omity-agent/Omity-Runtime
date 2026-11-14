@@ -37,13 +37,20 @@ export function ContextUsage({
   usage: TokenUsage | null;
 }) {
   const { t } = useTranslation(),
-    totalTokens = usage
-      ? formatTokens(usage.inputTokens + usage.outputTokens)
-      : t("unavailableTokens"),
+    totalTokens =
+      usage?.inputTokens !== undefined && usage.outputTokens !== undefined
+        ? formatTokens(usage.inputTokens + usage.outputTokens)
+        : t("unavailableTokens"),
     actualCacheHitRate =
-      usage && usage.inputTokens > 0 ? usage.cacheReadTokens / usage.inputTokens : 0,
-    cacheRate = usage ? `${(actualCacheHitRate * 100).toFixed(2)}%` : "—",
+      usage?.inputTokens !== undefined &&
+      usage.inputTokens > 0 &&
+      usage.cacheReadTokens !== undefined
+        ? usage.cacheReadTokens / usage.inputTokens
+        : undefined,
+    cacheRate =
+      actualCacheHitRate === undefined ? "—" : `${(actualCacheHitRate * 100).toFixed(2)}%`,
     belowExpectation =
+      actualCacheHitRate !== undefined &&
       cacheHitWarningRatio !== undefined &&
       usage?.estimatedCacheHitRate !== undefined &&
       actualCacheHitRate + Number.EPSILON < usage.estimatedCacheHitRate * cacheHitWarningRatio,
@@ -59,7 +66,11 @@ export function ContextUsage({
           <DatabaseZap aria-hidden="true" size={12} />
           <span>{t("kvCache")}</span>
         </span>
-        <span className={usage ? (belowExpectation ? cacheWarning : cacheNormal) : value}>
+        <span
+          className={
+            actualCacheHitRate === undefined ? value : belowExpectation ? cacheWarning : cacheNormal
+          }
+        >
           {cacheRate}
         </span>
       </span>

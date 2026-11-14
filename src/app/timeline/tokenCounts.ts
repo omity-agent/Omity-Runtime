@@ -1,7 +1,7 @@
-import { AIMessage, type BaseMessage } from "@langchain/core/messages";
+import type { BaseMessage } from "@langchain/core/messages";
 import { isPlainObject as isRecord } from "es-toolkit";
 
-import { readCacheExpectation } from "../../agent/model/cacheExpectation";
+import { readReportedUsage } from "../../agent/model/usage/reportedTokens";
 import { localize } from "../../i18n/server";
 import { countTokens } from "../../runtime/tokenizer";
 import type { TokenUsage } from "./contracts/projection";
@@ -23,26 +23,14 @@ export function toolInputTokens(call: Record<string, unknown>, input: unknown) {
   return countTokens(serialized);
 }
 export function modelTokenUsage(message: BaseMessage): TokenUsage | undefined {
-  if (!AIMessage.isInstance(message) || !message.usage_metadata) {
+  const usage = readReportedUsage(message);
+  if (!usage) {
     return undefined;
   }
-  const {
-      input_tokens: inputTokens,
-      output_tokens: outputTokens,
-      input_token_details: inputDetails,
-    } = message.usage_metadata,
-    cacheReadTokens = inputDetails?.cache_read ?? 0;
-  for (const [name, value] of Object.entries({
-    cacheReadTokens,
-    inputTokens,
-    outputTokens,
-  })) {
-    if (!Number.isSafeInteger(value) || value < 0) {
-      throw new Error(localize("application:timeline.usageFieldInvalid", { value0: name }));
-    }
-  }
-  if (cacheReadTokens > inputTokens) {
-    throw new Error(localize("application:timeline.cacheReadExceedsInput"));
-  }
-  return { ...readCacheExpectation(message), cacheReadTokens, inputTokens, outputTokens };
+  return {
+    cacheReadTokens: usage.cacheRead,
+    estimatedCacheHitRate: usage.estimatedCacheHitRate,
+    inputTokens: usage.input,
+    outputTokens: usage.output,
+  };
 }

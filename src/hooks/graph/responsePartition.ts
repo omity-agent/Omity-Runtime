@@ -11,7 +11,6 @@ export function partitionToolResponse(
     additional_kwargs: partitionAdditionalKwargs(original, selectedCallIds, includeResponse),
     content: includeResponse ? original.content : "",
     response_metadata: partitionResponseMetadata(original, selectedCallIds, includeResponse),
-    usage_metadata: includeResponse ? original.usage_metadata : undefined,
   };
 }
 function partitionAdditionalKwargs(

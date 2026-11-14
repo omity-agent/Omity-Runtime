@@ -32,11 +32,10 @@ test.each([...geminiApis])(
     expect(events).toEqual(
       expect.arrayContaining(["reasoning-delta", "tool-input-delta", "tool-call"]),
     );
-    expect(response.usage_metadata).toMatchObject({
-      input_token_details: { cache_read: 3 },
-      input_tokens: 10,
-      output_tokens: 7,
-      total_tokens: 17,
+    expect(response.response_metadata["usage"]).toMatchObject({
+      cacheRead: 3,
+      input: 10,
+      output: 7,
     });
     db.createSession("gemini", workspace);
     await db.syncHistory("gemini", [user, response]);
