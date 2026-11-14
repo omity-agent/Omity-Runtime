@@ -15,9 +15,12 @@ import {
   usePageNavigation,
   usePageNavigator,
 } from "./route";
-import { deleteSession, pickWorkspacePath, type SessionInfo, setControl } from "./services/client";
-import { useNewSession } from "./services/newSession";
-import { createProfileChangeHandler } from "./services/profileChange";
+import { deleteSession, pickWorkspacePath, type SessionInfo } from "./services/client";
+import {
+  createControlChangeHandler,
+  createProfileChangeHandler,
+} from "./services/interactionHandlers";
+import { useNewSession } from "./services/preparation/newSession";
 import { removeSession, useBootstrap, useUserMessages } from "./services/queries";
 import { recentWorkspaces } from "./services/recentWorkspaces";
 import { useForkableTranscript } from "./services/transcript/fork";
@@ -76,14 +79,14 @@ function AuthenticatedApp() {
     {
       create: createNewSession,
       open: openNewSession,
-      profile: newProfile,
-      setProfile: setNewProfile,
-      setWorkspace: setNewWorkspace,
-      workspace: newWorkspace,
+      preparation,
     } = useNewSession({
+      attachmentSettings: bootstrap.data?.attachments,
       cwd,
+      enabled: bootstrap.data !== undefined,
       navigate,
       queryClient,
+      saveDelayMs: bootstrap.data?.frontend.draftSaveDelayMs,
       sourceWorkspace: sourceSession?.workspace,
     });
   usePageNavigation(page, currentPage, setPage);
@@ -102,41 +105,19 @@ function AuthenticatedApp() {
     selectSession = useCallback((id: string) => navigate({ id, kind: "session" }), [navigate]),
     changeProfile = createProfileChangeHandler({
       activeSession,
-      newSession: currentPage.kind === "new",
       pendingFork: Boolean(pendingFork),
       profileChangePending,
       queryClient,
       sessionStatus: displayedActiveSession?.status,
-      setNewProfile,
       setProfileChangePending,
     }),
     toolActions = useSessionToolActions(activeSession),
-    changeControl = useCallback<ChatPageProps["onControl"]>(
-      async (control) => {
-        if (pendingFork) {
-          await controlPendingFork(control);
-          return;
-        }
-        if (!activeSession) {
-          return;
-        }
-        if (control === "pause") {
-          setPausingSessionId(activeSession.id);
-        }
-        try {
-          await setControl(activeSession.id, control);
-        } catch (error) {
-          if (control === "pause") {
-            setPausingSessionId(undefined);
-          }
-          throw error;
-        }
-        if (control !== "pause") {
-          setPausingSessionId(undefined);
-        }
-      },
-      [activeSession, controlPendingFork, pendingFork, setPausingSessionId],
-    ),
+    changeControl = createControlChangeHandler({
+      activeSessionId: activeSession?.id,
+      controlPendingFork,
+      pendingFork: Boolean(pendingFork),
+      setPausingSessionId,
+    }),
     deleteActiveSession = useCallback(async () => {
       if (pendingFork) {
         await discardPendingFork();
@@ -188,15 +169,15 @@ function AuthenticatedApp() {
         pausing={pausing}
         profileChangePending={profileChangePending}
         profileEditable={Boolean(activeSession && !pendingFork)}
+        preparation={preparation}
         queue={pendingFork ? emptyQueue : transcript.queue}
         recentWorkspaces={workspaces}
         availableProfiles={bootstrap.data?.profiles.available ?? emptyProfiles}
-        selectedProfile={currentPage.kind === "new" ? newProfile : activeSession?.profile}
+        selectedProfile={activeSession?.profile}
         sessionStatus={pendingFork ? "paused" : displayedActiveSession?.status}
         translationSettings={bootstrap.data?.frontend.reasoningTranslation}
         view={pendingPreview?.view ?? submissions.view}
         userMessages={userMessageContents}
-        workspace={newWorkspace ?? cwd}
         onCreate={createNewSession}
         onCancelTool={toolActions.handleCancel}
         askUser={activeSession?.askUser ?? null}
@@ -207,7 +188,6 @@ function AuthenticatedApp() {
         onPickWorkspace={pickWorkspacePath}
         onProfileChange={changeProfile}
         onSend={sendSessionMessage}
-        onWorkspaceChange={setNewWorkspace}
       />
     </ApplicationFrame>
   );

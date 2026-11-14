@@ -1,4 +1,4 @@
-import { type RefObject, type SubmitEvent, useLayoutEffect, useRef, useState } from "react";
+import { type RefObject, type SubmitEvent, useRef, useState } from "react";
 
 import type { PendingAttachment } from "../../../../attachments/contract";
 import type { EditablePair } from "../../../../composition/preparation";
@@ -8,7 +8,6 @@ import type { PendingAttachments } from "../../Chat/Composer/attachments";
 
 export function useSessionCreation({
   attachmentsRef,
-  clearDraft,
   draftRevision,
   flushDraft,
   hookOverrides,
@@ -21,7 +20,6 @@ export function useSessionCreation({
   workspace,
 }: {
   attachmentsRef: RefObject<PendingAttachments>;
-  clearDraft: () => void;
   draftRevision: number;
   flushDraft: () => Promise<void>;
   hookOverrides: Record<string, boolean>;
@@ -35,14 +33,7 @@ export function useSessionCreation({
 }) {
   "use no memo";
   const [submitting, setSubmitting] = useState(false),
-    createRef = useRef(onCreate),
-    draftActionsRef = useRef({ clear: clearDraft, flush: flushDraft });
-  useLayoutEffect(() => {
-    createRef.current = onCreate;
-  }, [onCreate]);
-  useLayoutEffect(() => {
-    draftActionsRef.current = { clear: clearDraft, flush: flushDraft };
-  }, [clearDraft, flushDraft]);
+    submittingRef = useRef(false);
   const submit = async () => {
       const valid =
         optionsReady &&
@@ -50,13 +41,14 @@ export function useSessionCreation({
         workspace.trim().length > 0 &&
         message.trim().length > 0 &&
         pairs.every(({ user, assistant }) => user.trim().length > 0 && assistant.trim().length > 0);
-      if (!valid || submitting) {
+      if (!valid || submittingRef.current) {
         return;
       }
+      submittingRef.current = true;
       setSubmitting(true);
       try {
-        await draftActionsRef.current.flush();
-        await createRef.current(
+        await flushDraft();
+        await onCreate(
           {
             draftRevision,
             history: pairs.map(({ user, assistant }) => ({ assistant, user })),
@@ -67,8 +59,8 @@ export function useSessionCreation({
           },
           attachmentsRef.current.values(message),
         );
-        draftActionsRef.current.clear();
       } finally {
+        submittingRef.current = false;
         setSubmitting(false);
       }
     },

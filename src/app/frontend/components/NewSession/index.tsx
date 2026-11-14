@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
 
-import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
+import type { PendingAttachment } from "../../../attachments/contract";
 import type { InitialSessionState } from "../../../initialState";
-import { PendingAttachments } from "../Chat/Composer/attachments";
+import type { useNewSessionDraft } from "../../services/preparation/editorState";
 import { LatestMessage } from "./editor/LatestMessage";
-import { useNewSessionDraft } from "./editor/preparationState";
 import { useSessionCreation } from "./editor/submission";
 import { MessageStack } from "./MessageStack";
 import { ConfigurationPanel } from "./options/ConfigurationPanel";
@@ -13,71 +12,61 @@ import { scroll, scrollContent, setup } from "./preparationGrid";
 import { WorkspacePicker } from "./WorkspacePicker";
 
 export function NewSessionPage({
-  attachmentSettings,
-  draftSaveDelayMs,
   pageClassName,
+  preparation,
   recentWorkspaces,
   availableProfiles,
-  selectedProfile,
-  workspace,
   userMessages,
   onCreate,
   onPickWorkspace,
-  onProfileChange,
-  onWorkspaceChange,
 }: {
-  attachmentSettings?: AttachmentSettings;
-  draftSaveDelayMs?: number;
   pageClassName: string;
+  preparation: ReturnType<typeof useNewSessionDraft>;
   recentWorkspaces: string[];
   availableProfiles: string[];
-  selectedProfile?: string;
-  workspace: string;
   userMessages: readonly string[];
   onCreate: (state: InitialSessionState, attachments: PendingAttachment[]) => Promise<void>;
   onPickWorkspace: () => Promise<string | null>;
-  onProfileChange: (profile?: string) => void;
-  onWorkspaceChange: (workspace: string) => void;
 }) {
-  const selection = useSessionPreferences(selectedProfile),
+  const selection = useSessionPreferences(preparation),
     {
       addPair,
+      attachmentsRef,
       changePair,
-      clear: clearDraft,
       draft: { message, pairs },
       flush: flushDraft,
       loading: draftLoading,
+      pasteFiles,
       removePair,
       revision: draftRevision,
+      update,
       updateMessage,
-    } = useNewSessionDraft(draftSaveDelayMs),
+      workspace,
+    } = preparation,
     scrollRef = useRef<HTMLDivElement>(null),
-    attachmentsRef = useRef(new PendingAttachments(attachmentSettings)),
     previousPairCountRef = useRef(pairs.length);
-  useEffect(() => {
-    attachmentsRef.current.configure(attachmentSettings);
-  }, [attachmentSettings]);
   useLayoutEffect(() => {
     const pairAdded = pairs.length > previousPairCountRef.current;
     previousPairCountRef.current = pairs.length;
-    if (!pairAdded) {
-      return;
-    }
     const keepLastMessageInPlace = () => {
       const node = scrollRef.current;
       if (node) {
         node.scrollTop = node.scrollHeight;
       }
     };
-    keepLastMessageInPlace();
-    const frame = requestAnimationFrame(keepLastMessageInPlace);
+    let frame: number | undefined;
+    if (pairAdded) {
+      keepLastMessageInPlace();
+      frame = requestAnimationFrame(keepLastMessageInPlace);
+    }
     return () => {
-      cancelAnimationFrame(frame);
+      if (frame !== undefined) {
+        cancelAnimationFrame(frame);
+      }
     };
   }, [pairs.length]);
   const { handleFormSubmit, handleSubmit, submitting } = useSessionCreation({
       attachmentsRef,
-      clearDraft,
       draftRevision,
       flushDraft,
       hookOverrides: selection.hookOverrides,
@@ -85,7 +74,7 @@ export function NewSessionPage({
       message,
       model: selection.model,
       onCreate,
-      optionsReady: selection.ready,
+      optionsReady: !draftLoading && selection.ready,
       pairs,
       workspace,
     }),
@@ -93,27 +82,25 @@ export function NewSessionPage({
       workspace.trim().length > 0 &&
       message.trim().length > 0 &&
       pairs.every(({ user, assistant }) => user.trim().length > 0 && assistant.trim().length > 0),
-    pasteFiles = useCallback(
-      (files: File[]) => attachmentsRef.current.paste(files, message),
-      [attachmentsRef, message],
-    );
+    changeWorkspace = useCallback((value: string) => update({ workspace: value }), [update]),
+    changeProfile = useCallback((profile?: string) => update({ profile }), [update]);
   return (
     <form className={pageClassName} onSubmit={handleFormSubmit}>
       <div className={scroll} ref={scrollRef}>
         <div className={scrollContent}>
           <div className={setup}>
             <WorkspacePicker
-              disabled={submitting}
+              disabled={draftLoading || submitting}
               recentWorkspaces={recentWorkspaces}
               workspace={workspace}
-              onChange={onWorkspaceChange}
+              onChange={changeWorkspace}
               onPick={onPickWorkspace}
             />
             <ConfigurationPanel
               availableProfiles={availableProfiles}
-              disabled={submitting}
-              onProfileChange={onProfileChange}
-              selectedProfile={selectedProfile}
+              disabled={draftLoading || submitting}
+              onProfileChange={changeProfile}
+              selectedProfile={preparation.draft.profile}
               selection={selection}
             />
           </div>
@@ -133,7 +120,7 @@ export function NewSessionPage({
               userMessages={userMessages}
               onAddPair={addPair}
               onChange={updateMessage}
-              onPasteFiles={attachmentSettings ? pasteFiles : undefined}
+              onPasteFiles={pasteFiles}
               onSubmit={handleSubmit}
             />
           </div>

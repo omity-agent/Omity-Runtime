@@ -45,6 +45,12 @@ export class PendingAttachments {
     const referenced = attachmentIds(content);
     return [...this.entries.values()].filter(({ id }) => referenced.has(id));
   }
+  restore(attachments: PendingAttachment[]) {
+    this.entries.clear();
+    for (const attachment of attachments) {
+      this.entries.set(attachment.id, attachment);
+    }
+  }
   clear() {
     this.entries.clear();
   }

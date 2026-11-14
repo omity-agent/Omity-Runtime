@@ -1,5 +1,6 @@
 import type { Page } from "playwright";
 
+import { composerDraftBody } from "../../../../src/app/contracts/commands";
 import type { SessionInfo } from "../../../../src/app/events/contracts";
 import type { BrowserSession } from "../scrolling/browserSession";
 
@@ -36,6 +37,7 @@ export async function emitState(
   );
 }
 export async function openPreparation(browser: BrowserSession) {
+  let draft: { content: string | null; revision: number } = { content: null, revision: 0 };
   const errors: string[] = [],
     page = await browser.openFixture(
       "/tests/app/frontend/composition/applicationShell.html",
@@ -94,7 +96,7 @@ export async function openPreparation(browser: BrowserSession) {
                 mcpServers: [{ enable: !alternate, id: "shared-server" }],
                 model: alternate ? "alternate-model" : "default-model",
               },
-              "/api/session-preparation": { content: null, revision: 0 },
+              "/api/session-preparation": draft,
               "/api/sessions/:id/composer-draft": { content: null, revision: 0 },
               "/api/sessions/:id/predictions": { predictions: [] },
               "/api/sessions/:id/transcript": {
@@ -110,6 +112,13 @@ export async function openPreparation(browser: BrowserSession) {
               "/api/user-messages": { messages: [] },
             },
             json = responses[path];
+          if (path === "/api/session-preparation" && route.request().method() !== "GET") {
+            const next = composerDraftBody.parse(route.request().postDataJSON());
+            if (next.revision > draft.revision) {
+              draft = next;
+            }
+            return route.fulfill({ json: { revision: draft.revision } });
+          }
           if (json === undefined) {
             errors.push(`Unexpected API request: ${path}`);
             return route.fulfill({ body: path, status: 500 });

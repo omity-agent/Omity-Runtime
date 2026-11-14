@@ -124,7 +124,6 @@ function ControlledChat() {
       onPickWorkspace={pickWorkspace}
       onProfileChange={noop}
       onSend={noop}
-      onWorkspaceChange={noop}
       pausing={false}
       queue={empty}
       recentWorkspaces={empty}

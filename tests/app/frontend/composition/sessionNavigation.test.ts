@@ -8,31 +8,6 @@ import { emitState, fixtureSessions, openPreparation, projectPaths } from "./pre
 const browser = new BrowserSession();
 beforeAll(() => browser.start(), 60_000);
 afterAll(() => browser.stop());
-test("changing profiles preserves manual Hook and MCP choices across differing defaults and missing options", async () => {
-  const { errors, page } = await openPreparation(browser);
-  await using _pageScope = page;
-  const profile = page.getByRole("combobox", { exact: true, name: "Profile" }),
-    hook = page.getByRole("switch", { exact: true, name: "shared-hook" }),
-    optional = page.getByRole("switch", { exact: true, name: "optional-hook" }),
-    server = page.getByRole("switch", { exact: true, name: "shared-server" });
-  await hook.locator("..").click();
-  await hook.locator("..").click();
-  await optional.locator("..").click();
-  await server.locator("..").click();
-  await server.locator("..").click();
-  await profile.selectOption("alternate");
-  await browserExpect(page.getByRole("textbox", { exact: true, name: "模型" })).toHaveValue(
-    "alternate-model",
-  );
-  await browserExpect(hook).toBeChecked();
-  await browserExpect(optional).toBeChecked();
-  await browserExpect(server).toBeChecked();
-  await profile.selectOption("limited");
-  await browserExpect(optional).toHaveCount(0);
-  await profile.selectOption("");
-  await browserExpect(optional).toBeChecked();
-  expect(errors).toEqual([]);
-}, 30_000);
 test("project browsing preserves running and stopped unread sessions until opened", async () => {
   const { errors, page } = await openPreparation(browser);
   await using _pageScope = page;

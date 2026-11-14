@@ -1,60 +1,49 @@
 import { useQuery } from "@tanstack/react-query";
-import { useReducer } from "react";
 
+import type { SessionPreparation } from "../../../../composition/preparation";
 import { type CapabilityOption, sessionOptionsSchema } from "../../../../contracts/results";
 import { api, request } from "../../../services/httpTransport";
+import type { useNewSessionDraft } from "../../../services/preparation/editorState";
 
 export type { CapabilityOption } from "../../../../contracts/results";
-interface SessionPreferences {
-  hooks?: ReadonlyMap<string, boolean>;
-  mcpServers?: ReadonlyMap<string, boolean>;
-  models?: ReadonlyMap<string | undefined, string>;
-}
-type PreferenceUpdate =
-  | { kind: "model"; profile?: string; value: string }
-  | { enable: boolean; id: string; kind: "hooks" | "mcpServers" };
-function updatePreferences(
-  current: SessionPreferences,
-  update: PreferenceUpdate,
-): SessionPreferences {
-  if (update.kind === "model") {
-    const models = new Map(current.models);
-    models.set(update.profile, update.value);
-    return { ...current, models };
-  }
-  const values = new Map(current[update.kind]);
-  values.set(update.id, update.enable);
-  return { ...current, [update.kind]: values };
-}
 async function readSessionOptions(profile?: string, signal?: AbortSignal) {
   return request(
     api["session-options"].$get({ query: { profile } }, { init: { signal } }),
     sessionOptionsSchema,
   );
 }
-function resolveCapabilities(
-  options: CapabilityOption[],
-  overrides?: ReadonlyMap<string, boolean>,
-) {
+function resolveCapabilities(options: CapabilityOption[], overrides?: Record<string, boolean>) {
   return options.map((option) => ({
     ...option,
-    enable: overrides?.get(option.id) ?? option.enable,
+    enable: overrides?.[option.id] ?? option.enable,
   }));
 }
-export function useSessionPreferences(profile?: string) {
-  const [selections, dispatch] = useReducer(updatePreferences, {}),
+export function useSessionPreferences({
+  draft,
+  loading,
+  update,
+}: Pick<ReturnType<typeof useNewSessionDraft>, "draft" | "loading" | "update">) {
+  const { profile } = draft,
     query = useQuery({
+      enabled: !loading,
       queryFn: ({ signal }) => readSessionOptions(profile, signal),
       queryKey: ["sessionOptions", profile ?? null],
     }),
-    hooks = resolveCapabilities(query.data?.hooks ?? [], selections.hooks),
-    mcpServers = resolveCapabilities(query.data?.mcpServers ?? [], selections.mcpServers),
-    model = selections.models?.get(profile) ?? query.data?.model ?? "",
-    ready = query.isSuccess && !query.isFetching,
-    handleHookChange = (id: string, enable: boolean) => dispatch({ enable, id, kind: "hooks" }),
+    hooks = resolveCapabilities(query.data?.hooks ?? [], draft.hookOverrides),
+    mcpServers = resolveCapabilities(query.data?.mcpServers ?? [], draft.mcpOverrides),
+    model = draft.models?.[profile ?? ""] ?? query.data?.model ?? "",
+    ready = !loading && query.isSuccess && !query.isFetching,
+    changeCapability = (
+      kind: keyof Pick<SessionPreparation, "hookOverrides" | "mcpOverrides">,
+      id: string,
+      enable: boolean,
+    ) => update((current) => ({ [kind]: { ...current[kind], [id]: enable } })),
+    handleHookChange = (id: string, enable: boolean) =>
+      changeCapability("hookOverrides", id, enable),
     handleServerChange = (id: string, enable: boolean) =>
-      dispatch({ enable, id, kind: "mcpServers" }),
-    handleModelChange = (value: string) => dispatch({ kind: "model", profile, value });
+      changeCapability("mcpOverrides", id, enable),
+    handleModelChange = (value: string) =>
+      update((current) => ({ models: { ...current.models, [profile ?? ""]: value } }));
   return {
     error: query.error,
     handleHookChange,

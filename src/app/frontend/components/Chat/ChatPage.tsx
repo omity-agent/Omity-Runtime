@@ -7,6 +7,7 @@ import type { InitialSessionState } from "../../../initialState";
 import type { DisplayQueue, TimelineMessage } from "../../../timeline";
 import type { FrontendSettings } from "../../services/client";
 import { composerDraftKey, type ComposerDraftTarget } from "../../services/composerDrafts";
+import type { useNewSessionDraft } from "../../services/preparation/editorState";
 import { usePredictions } from "../../services/queries";
 import type { OptimisticUser } from "../../services/transcript/optimistic";
 import { useTranslatedTranscript } from "../../services/translation/useTranslatedTranscript";
@@ -48,6 +49,7 @@ export function ChatPage({
   pausing,
   profileChangePending = false,
   profileEditable = false,
+  preparation,
   queue,
   recentWorkspaces,
   availableProfiles,
@@ -56,7 +58,6 @@ export function ChatPage({
   translationSettings,
   view,
   userMessages,
-  workspace,
   onCreate,
   onCancelTool,
   onSend,
@@ -67,7 +68,6 @@ export function ChatPage({
   onFork,
   onPickWorkspace,
   onProfileChange,
-  onWorkspaceChange,
 }: {
   activeId?: string;
   actionPending?: boolean;
@@ -82,6 +82,7 @@ export function ChatPage({
   pausing: boolean;
   profileChangePending?: boolean;
   profileEditable?: boolean;
+  preparation?: ReturnType<typeof useNewSessionDraft>;
   queue: DisplayQueue[];
   recentWorkspaces: string[];
   availableProfiles: string[];
@@ -90,7 +91,6 @@ export function ChatPage({
   translationSettings?: FrontendSettings["reasoningTranslation"];
   view: TimelineMessage[];
   userMessages: readonly string[];
-  workspace?: string;
   onCreate: (state: InitialSessionState, attachments: PendingAttachment[]) => Promise<void>;
   onCancelTool: (toolCallId: string) => Promise<void>;
   onSend: (
@@ -105,7 +105,6 @@ export function ChatPage({
   onFork: (messageId: number) => Promise<void>;
   onPickWorkspace: () => Promise<string | null>;
   onProfileChange: (profile?: string) => void;
-  onWorkspaceChange: (workspace: string) => void;
 }) {
   const { t } = useTranslation(),
     predictionsQuery = usePredictions(activeId, sessionStatus === "idle"),
@@ -118,20 +117,15 @@ export function ChatPage({
     latestUsage = view.findLast((item) => item.usage !== undefined)?.usage ?? null,
     translatedView = useTranslatedTranscript(activeId ?? "", view, translationSettings);
   if (!activeId) {
-    if (newSession) {
+    if (newSession && preparation) {
       return (
         <NewSessionPage
-          attachmentSettings={attachmentSettings}
-          draftSaveDelayMs={draftSaveDelayMs}
           pageClassName={page}
+          preparation={preparation}
           recentWorkspaces={recentWorkspaces}
           availableProfiles={availableProfiles}
-          selectedProfile={selectedProfile}
-          workspace={workspace ?? ""}
           onCreate={onCreate}
           onPickWorkspace={onPickWorkspace}
-          onProfileChange={onProfileChange}
-          onWorkspaceChange={onWorkspaceChange}
           userMessages={userMessages}
         />
       );

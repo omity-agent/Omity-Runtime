@@ -1,9 +1,13 @@
 import { z } from "zod";
 
 import { localize } from "../../i18n/server";
+import { settingsProfileNameSchema } from "../../infrastructure/configuration/settings/profileNames";
 
 const sessionPreparationSchema = z.strictObject({
+  hookOverrides: z.record(z.string().min(1), z.boolean()).optional(),
+  mcpOverrides: z.record(z.string().min(1), z.boolean()).optional(),
   message: z.string(),
+  models: z.record(z.string(), z.string()).optional(),
   pairs: z
     .array(
       z.strictObject({
@@ -16,11 +20,13 @@ const sessionPreparationSchema = z.strictObject({
       (pairs) => new Set(pairs.map(({ id }) => id)).size === pairs.length,
       localize("application:composition.duplicateMessagePairId"),
     ),
+  profile: settingsProfileNameSchema.optional(),
+  workspace: z.string().optional(),
 });
 export type SessionPreparation = z.infer<typeof sessionPreparationSchema>;
 export type EditablePair = SessionPreparation["pairs"][number];
-export function emptyPreparation(): SessionPreparation {
-  return { message: "", pairs: [] };
+export function emptyPreparation(preferences?: SessionPreparation): SessionPreparation {
+  return { ...preferences, message: "", pairs: [] };
 }
 export function parsePreparation(content: string): SessionPreparation {
   return sessionPreparationSchema.parse(JSON.parse(content));

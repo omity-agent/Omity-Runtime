@@ -12,7 +12,7 @@ import {
   openSessionDatabase,
 } from "../../infrastructure/database/sqlite/connection";
 import { openStoredSession } from "../../storedSessions";
-import { emptyPreparation } from "./preparation";
+import { emptyPreparation, parsePreparation } from "./preparation";
 
 export function writeSessionDraft(sessionId: string, content: string, revision: number) {
   using database = openStoredSession(sessionId);
@@ -25,9 +25,11 @@ export function writePreparationDraft(content: string, revision: number) {
   return withDraftDatabase((db) => writePreparationDraftRecord(db, content, revision));
 }
 export function clearPreparationDraft(revision: number) {
-  withDraftDatabase((db) =>
-    clearPreparationDraftRecord(db, JSON.stringify(emptyPreparation()), revision),
-  );
+  withDraftDatabase((db) => {
+    const { content } = readPreparationDraftRecord(db),
+      preferences = content === null ? undefined : parsePreparation(content);
+    clearPreparationDraftRecord(db, JSON.stringify(emptyPreparation(preferences)), revision);
+  });
 }
 function withDraftDatabase<T>(operation: (db: Database) => T) {
   const db = openSessionDatabase(databasePath());

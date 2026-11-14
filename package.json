@@ -63,6 +63,7 @@
     "i18next": "latest",
     "i18next-browser-languagedetector": "latest",
     "iconv-lite": "latest",
+    "idb-keyval": "latest",
     "ipaddr.js": "latest",
     "is-network-error": "latest",
     "json-schema-library": "latest",
