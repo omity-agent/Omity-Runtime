@@ -6,9 +6,13 @@ import { buildConfiguredAiModel, structuredRequestOptions } from "../../agent/mo
 import type { PredictionSample } from "./samples";
 import type { PredictionSettings } from "./selectExamples";
 
+interface PredictionInput {
+  assistant: string;
+  user: string;
+}
 export async function requestCandidates(
   config: PredictionSettings,
-  assistantResponse: string,
+  conversation: PredictionInput,
   samples: PredictionSample[],
   signal: AbortSignal,
 ) {
@@ -17,35 +21,49 @@ export async function requestCandidates(
     abortSignal: signal,
     maxRetries: 0,
     model: buildConfiguredAiModel(config.model),
-    output: Output.array({
-      element: z.string().trim().min(1),
-      maxItems: config.outputCount,
-      minItems: config.outputCount,
+    output: Output.object({
+      schema: z.strictObject(
+        Object.fromEntries(
+          Array.from({ length: config.outputCount }, (_, index) => [
+            `candidate_${(index + 1).toString()}`,
+            z.string().trim().min(1),
+          ]),
+        ),
+      ),
     }),
-    prompt: predictionPrompt(config.task, assistantResponse, samples),
+    prompt: predictionPrompt(config.task, conversation, samples),
     temperature: config.model.temperature,
   });
-  return result.output;
+  return Object.values(result.output);
 }
-function predictionPrompt(task: string, assistantResponse: string, samples: PredictionSample[]) {
+function predictionPrompt(
+  task: string,
+  conversation: PredictionInput,
+  samples: PredictionSample[],
+) {
   return [
     "<samples>",
     ...samples.flatMap((sample, index) => [
-      `  <sample index="${(index + 1).toString()}">`,
-      "    <assistant>",
+      `<sample index="${(index + 1).toString()}">`,
+      "<assistant>",
       escapeXml(sample.assistant),
-      "    </assistant>",
-      "    <user>",
+      "</assistant>",
+      "<user>",
       escapeXml(sample.user),
-      "    </user>",
-      "  </sample>",
+      "</user>",
+      "</sample>",
     ]),
     "</samples>",
     "<task-description>",
     escapeXml(task),
     "</task-description>",
-    "<current-assistant-response>",
-    escapeXml(assistantResponse),
-    "</current-assistant-response>",
+    "<current-conversation>",
+    "<user>",
+    escapeXml(conversation.user),
+    "</user>",
+    "<assistant>",
+    escapeXml(conversation.assistant),
+    "</assistant>",
+    "</current-conversation>",
   ].join("\n");
 }

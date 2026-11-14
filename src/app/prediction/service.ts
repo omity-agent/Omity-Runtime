@@ -95,18 +95,13 @@ export class PredictionService {
   }
   private async generate(
     sessionId: string,
-    context: { content: string; revision: number },
+    context: NonNullable<ReturnType<typeof readPredictionContext>>,
     config: PredictionSettings,
     samples: PredictionSample[],
     controller: AbortController,
   ) {
     try {
-      const candidates = await requestCandidates(
-        config,
-        context.content,
-        samples,
-        controller.signal,
-      );
+      const candidates = await requestCandidates(config, context, samples, controller.signal);
       if (!controller.signal.aborted) {
         using db = openSessionDatabase(this.path);
         writePredictionRecord(db, sessionId, context.revision, candidates);

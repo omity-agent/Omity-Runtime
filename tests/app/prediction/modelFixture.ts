@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { z } from "zod";
 
 import { PredictionService } from "../../../src/app/prediction/service";
@@ -11,12 +11,15 @@ import { createTestDirectory } from "../../support/artifacts";
 import { scopedEnvironment } from "../../support/scopedEnvironment";
 import { testSettings } from "../../support/settings";
 
-export async function createPredictionFixture() {
+export async function createPredictionFixture(outputCount = 2) {
   await using cleanup = new AsyncDisposableStack();
   const home = createTestDirectory("forecast-home");
   cleanup.defer(() => removeDatabaseDirectory(home));
   const requests: Record<string, unknown>[] = [],
-    replies = ["请继续实现", "先解释一下设计"],
+    replies = Array.from(
+      { length: outputCount },
+      (_, index) => `候选输入 ${(index + 1).toString()}`,
+    ),
     apiKeyEnv = `PREDICTION_${randomUUID()}`,
     sessionId = randomUUID();
   cleanup.use(scopedEnvironment({ OMITY_HOME: home, [apiKeyEnv]: "local-test" }));
@@ -42,7 +45,7 @@ export async function createPredictionFixture() {
       apiKeyEnv,
       baseURL: new URL("/v1", server.url).href,
     },
-    outputCount: replies.length,
+    outputCount,
     refreshIntervalHours: 1,
     sampleContextTokens: 1,
     sampleCount: 1,
@@ -52,7 +55,13 @@ export async function createPredictionFixture() {
   await database.syncHistory(sessionId, [
     new HumanMessage({ content: "请分析这段代码并给出详细设计", id: "first-user" }),
     new AIMessage({ content: "历史回复 <sample>", id: "sample-assistant" }),
-    new HumanMessage({ content: "请继续实现", id: "sample-user" }),
+    new HumanMessage({ content: "请继续实现 <latest-user>", id: "sample-user" }),
+    new AIMessage({
+      content: "准备执行",
+      id: "working-assistant",
+      tool_calls: [{ args: {}, id: "work-call", name: "work" }],
+    }),
+    new ToolMessage({ content: "执行结果", id: "work-result", tool_call_id: "work-call" }),
     new AIMessage({ content: "当前回复 <current>", id: "current-assistant" }),
   ]);
   const service = new PredictionService(settings);
@@ -73,13 +82,22 @@ export async function createPredictionFixture() {
     [Symbol.asyncDispose]: () => resources.disposeAsync(),
   };
 }
-export function completion(replies: string[]) {
+export function completion(replies: readonly string[]) {
   return {
     choices: [
       {
         finish_reason: "stop",
         index: 0,
-        message: { content: JSON.stringify({ elements: replies }), role: "assistant" },
+        message: {
+          content: JSON.stringify(
+            Object.fromEntries(
+              replies
+                .map((reply, index) => [`candidate_${(index + 1).toString()}`, reply])
+                .toReversed(),
+            ),
+          ),
+          role: "assistant",
+        },
       },
     ],
     created: 1,

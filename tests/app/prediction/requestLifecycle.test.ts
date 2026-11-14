@@ -66,9 +66,13 @@ test("model failures are visible to callers and do not prevent a subsequent retr
   expect(await value.service.get(value.sessionId)).toEqual(value.replies);
   expect(value.requests).toHaveLength(2);
 });
-test("invalid blank candidates are rejected instead of being persisted", async () => {
+test.each([
+  { replies: [" ", "可用文本"] },
+  { replies: ["缺少候选"] },
+  { replies: ["第一条", "第二条", "多余候选"] },
+])("invalid candidates are rejected instead of being persisted: %j", async ({ replies }) => {
   await using value = await createPredictionFixture();
-  value.respondWith(() => Promise.resolve(Response.json(completion([" ", "可用文本"]))));
+  value.respondWith(() => Promise.resolve(Response.json(completion(replies))));
   await expect(value.service.get(value.sessionId)).rejects.toThrow();
   expect(
     value.database.db
