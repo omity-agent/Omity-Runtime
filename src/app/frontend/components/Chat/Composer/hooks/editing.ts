@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 import {
   type ComposerDraftTarget,
@@ -13,21 +13,17 @@ export function useComposerDraft({
   draft,
   draftSaveDelayMs,
   draftTarget,
-  historyRef,
-  predictionRef,
 }: {
   draft?: string;
   draftSaveDelayMs?: number;
   draftTarget: ComposerDraftTarget;
-  historyRef: RefObject<{ reset: () => void }>;
-  predictionRef: RefObject<{ reset: () => void }>;
 }) {
-  const [target] = useReducer((value: ComposerDraftTarget) => value, draftTarget),
-    [content, setContent] = useState(draft ?? ""),
-    [loading, setLoading] = useState(true),
-    contentRef = useRef(content),
-    revisionRef = useRef(0),
-    saverRef = useRef<DraftSaver | undefined>(undefined);
+  const [target] = useReducer((value: ComposerDraftTarget) => value, draftTarget);
+  const [content, setContent] = useState(draft ?? "");
+  const [loading, setLoading] = useState(true);
+  const contentRef = useRef(content);
+  const revisionRef = useRef(0);
+  const saverRef = useRef<DraftSaver | undefined>(undefined);
   useEffect(() => {
     let current = true;
     const load = async () => {
@@ -35,8 +31,6 @@ export function useComposerDraft({
       if (current) {
         revisionRef.current = loaded.revision;
         contentRef.current = loaded.content;
-        historyRef.current.reset();
-        predictionRef.current.reset();
         setContent(loaded.content);
         setLoading(false);
       }
@@ -45,7 +39,7 @@ export function useComposerDraft({
     return () => {
       current = false;
     };
-  }, [draft, historyRef, predictionRef, target]);
+  }, [draft, target]);
   useEffect(() => {
     if (draftSaveDelayMs === undefined) {
       return undefined;
@@ -74,7 +68,16 @@ export function useComposerDraft({
       await writeComposerDraft(target, contentRef.current, revisionRef.current);
     }
   }, [target]);
+  const change = (nextContent: string) => {
+    if (nextContent !== contentRef.current) {
+      contentRef.current = nextContent;
+      setContent(nextContent);
+      revisionRef.current += 1;
+      saverRef.current?.schedule(nextContent, revisionRef.current);
+    }
+  };
   return {
+    change,
     content,
     contentRef,
     flush,

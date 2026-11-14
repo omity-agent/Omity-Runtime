@@ -3,6 +3,7 @@ import { useCallback, useLayoutEffect, useRef } from "react";
 import type { PendingAttachment } from "../../../attachments/contract";
 import type { InitialSessionState } from "../../../initialState";
 import type { useNewSessionDraft } from "../../services/preparation/editorState";
+import { useMessageCandidates } from "../Chat/MarkdownEditor/candidateBrowsing";
 import { LatestMessage } from "./editor/LatestMessage";
 import { useSessionCreation } from "./editor/submission";
 import { MessageStack } from "./MessageStack";
@@ -65,13 +66,18 @@ export function NewSessionPage({
       }
     };
   }, [pairs.length]);
-  const { handleFormSubmit, handleSubmit, submitting } = useSessionCreation({
+  const {
+      change,
+      content: input,
+      navigate,
+    } = useMessageCandidates(message, updateMessage, userMessages),
+    { handleFormSubmit, handleSubmit, submitting } = useSessionCreation({
       attachmentsRef,
       draftRevision,
       flushDraft,
       hookOverrides: selection.hookOverrides,
       mcpOverrides: selection.mcpOverrides,
-      message,
+      message: input,
       model: selection.model,
       onCreate,
       optionsReady: !draftLoading && selection.ready,
@@ -80,7 +86,7 @@ export function NewSessionPage({
     }),
     complete =
       workspace.trim().length > 0 &&
-      message.trim().length > 0 &&
+      input.trim().length > 0 &&
       pairs.every(({ user, assistant }) => user.trim().length > 0 && assistant.trim().length > 0),
     changeWorkspace = useCallback((value: string) => update({ workspace: value }), [update]),
     changeProfile = useCallback((profile?: string) => update({ profile }), [update]);
@@ -114,12 +120,12 @@ export function NewSessionPage({
             />
             <LatestMessage
               disabled={draftLoading || submitting}
-              message={message}
+              message={input}
               submitDisabled={draftLoading || !selection.valid || !complete || submitting}
               submitting={submitting}
-              userMessages={userMessages}
               onAddPair={addPair}
-              onChange={updateMessage}
+              onChange={change}
+              onNavigate={navigate}
               onPasteFiles={pasteFiles}
               onSubmit={handleSubmit}
             />

@@ -16,10 +16,11 @@ export function useComposerSubmit({
   clearAttachments,
   contentRef,
   draftTarget,
-  historyRef,
+  inputRef,
   onAnswer,
   onSend,
   revisionRef,
+  reset,
   saverRef,
   selectedOptions,
   setAskNote,
@@ -34,10 +35,11 @@ export function useComposerSubmit({
   clearAttachments: () => void;
   contentRef: RefObject<string | null>;
   draftTarget: ComposerDraftTarget;
-  historyRef: RefObject<{ reset: () => void } | null>;
+  inputRef: RefObject<string>;
   onAnswer?: (callId: string, answer: AskUserAnswer) => Promise<void>;
   onSend: ComposerProps["onSend"];
   revisionRef: RefObject<number | null>;
+  reset: (content: string) => void;
   saverRef: RefObject<DraftSaver | undefined>;
   selectedOptions: string[];
   setAskNote: (note: string) => void;
@@ -74,14 +76,13 @@ export function useComposerSubmit({
       }
       return;
     }
-    const submittedContent = contentRef.current;
-    if (submittingRef.current || !submittedContent?.trim()) {
+    const submittedContent = inputRef.current;
+    if (submittingRef.current || !submittedContent.trim()) {
       return;
     }
     const submittedRevision = revisionRef.current ?? 0;
     submittingRef.current = true;
     setSubmitting(true);
-    historyRef.current?.reset();
     if (draftTarget.kind === "new") {
       throw new Error(localize("frontend:composer.chatProtocolUnsupported"));
     }
@@ -90,6 +91,7 @@ export function useComposerSubmit({
       optimistic = createOptimisticUser(submissionTarget, submittedContent),
       sending = onSend(optimistic, submittedRevision, attachmentValues(submittedContent));
     contentRef.current = "";
+    reset("");
     setContent("");
     try {
       await submitMessage({
@@ -97,6 +99,7 @@ export function useComposerSubmit({
         restore: () => {
           revisionRef.current = submittedRevision + 1;
           contentRef.current = submittedContent;
+          reset(submittedContent);
           setContent(submittedContent);
           saverRef.current?.schedule(submittedContent, revisionRef.current);
         },

@@ -1,18 +1,16 @@
-import { useCallback, useRef, useState } from "react";
+import { type SubmitEvent, useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { reportPromiseErrors } from "../../../services/errors";
 import { MarkdownEditor } from "../MarkdownEditor";
+import { useMessageCandidates } from "../MarkdownEditor/candidateBrowsing";
 import { composerFrame } from "./arrangement";
 import { AskUserPrompt } from "./AskUser/Prompt";
 import { useQuestionAnswerState } from "./AskUser/state";
 import { Actions } from "./controls";
-import { UserMessageHistory } from "./history";
 import { usePendingAttachments } from "./hooks/attachments";
 import { useComposerDraft } from "./hooks/editing";
-import { useComposerEvents } from "./hooks/events";
 import { useComposerSubmit } from "./hooks/submission";
-import { useSuggestionNavigation } from "./hooks/suggestionNavigation";
-import { UserInputPrediction } from "./prediction";
 import type { ComposerProps } from "./props";
 
 const emptyPredictions: readonly string[] = [];
@@ -42,80 +40,80 @@ export function Composer({
   askUser,
 }: ComposerProps) {
   "use no memo";
-  const { t } = useTranslation(),
-    [submitting, setSubmitting] = useState(false),
-    answerState = useQuestionAnswerState(askUser?.callId),
+  const { t } = useTranslation();
+  const [submitting, setSubmitting] = useState(false);
+  const answerState = useQuestionAnswerState(askUser?.callId),
     askNote = answerState.note,
-    selectedOptions = answerState.options,
-    { attachmentValues, clearAttachments, handlePasteFiles } =
-      usePendingAttachments(attachmentSettings),
-    historyRef = useRef(new UserMessageHistory()),
-    predictionRef = useRef(new UserInputPrediction()),
-    submittingRef = useRef(false),
-    {
-      content,
-      contentRef,
-      flush,
-      loading,
-      revisionRef,
-      saverRef,
-      setContent,
-      target: stableDraftTarget,
-    } = useComposerDraft({ draft, draftSaveDelayMs, draftTarget, historyRef, predictionRef }),
-    handleControl = useCallback(
-      async (control: Parameters<NonNullable<ComposerProps["onControl"]>>[0]) => {
-        await flush();
-        await onControl?.(control);
-      },
-      [flush, onControl],
-    ),
-    handleDelete = useCallback(async () => {
-      saverRef.current?.discardPending();
-      await onDelete?.();
-    }, [onDelete, saverRef]),
-    submit = useComposerSubmit({
-      askNote,
-      askUser,
-      attachmentValues,
-      clearAttachments,
-      contentRef,
-      draftTarget: stableDraftTarget,
-      historyRef,
-      onAnswer,
-      onSend,
-      revisionRef,
-      saverRef,
-      selectedOptions,
-      setAskNote: answerState.handleNoteChange,
-      setContent,
-      setSelectedOptions: answerState.handleOptionsChange,
-      setSubmitting,
-      submittingRef,
-    }),
-    { handleContentChange, handleFormSubmit, handleSubmit, pasteFiles, updateContent } =
-      useComposerEvents({
-        contentRef,
-        handlePasteFiles,
-        historyRef,
-        predictionRef,
-        revisionRef,
-        saverRef,
-        setContent,
-        submit,
-      }),
-    { handleHistoryNavigate, handlePredictionNavigate } = useSuggestionNavigation({
-      contentRef,
-      historyRef,
-      predictionRef,
-      predictions,
-      updateContent,
-      userMessages,
-    }),
-    editorDisabled = disabled || loading || submitting,
+    selectedOptions = answerState.options;
+  const { attachmentValues, clearAttachments, handlePasteFiles } =
+    usePendingAttachments(attachmentSettings);
+  const submittingRef = useRef(false);
+  const {
+    change,
+    content,
+    contentRef,
+    flush,
+    loading,
+    revisionRef,
+    saverRef,
+    setContent,
+    target: stableDraftTarget,
+  } = useComposerDraft({ draft, draftSaveDelayMs, draftTarget });
+  const {
+    change: handleContentChange,
+    content: input,
+    contentRef: inputRef,
+    navigate,
+    reset,
+  } = useMessageCandidates(content, change, userMessages, predictions);
+  const handleControl = useCallback(
+    async (control: Parameters<NonNullable<ComposerProps["onControl"]>>[0]) => {
+      await flush();
+      await onControl?.(control);
+    },
+    [flush, onControl],
+  );
+  const handleDelete = useCallback(async () => {
+    saverRef.current?.discardPending();
+    await onDelete?.();
+  }, [onDelete, saverRef]);
+  const submit = useComposerSubmit({
+    askNote,
+    askUser,
+    attachmentValues,
+    clearAttachments,
+    contentRef,
+    draftTarget: stableDraftTarget,
+    inputRef,
+    onAnswer,
+    onSend,
+    reset,
+    revisionRef,
+    saverRef,
+    selectedOptions,
+    setAskNote: answerState.handleNoteChange,
+    setContent,
+    setSelectedOptions: answerState.handleOptionsChange,
+    setSubmitting,
+    submittingRef,
+  });
+  const handleSubmit = useCallback(() => reportPromiseErrors(submit()), [submit]);
+  const handleFormSubmit = useCallback(
+    (event: SubmitEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      handleSubmit();
+    },
+    [handleSubmit],
+  );
+  const pasteFiles = useCallback(
+    (files: File[]) => handlePasteFiles(files, inputRef.current),
+    [handlePasteFiles, inputRef],
+  );
+  const editorDisabled = disabled || loading || submitting,
     submitDisabled = askUser
       ? editorDisabled ||
         (askUser.kind === "choice" && selectedOptions.length === 0 && askNote.trim().length === 0)
-      : editorDisabled || !content.trim();
+      : editorDisabled || !input.trim();
   return (
     <form className={composerFrame} onSubmit={handleFormSubmit}>
       {askUser ? (
@@ -131,12 +129,11 @@ export function Composer({
         <MarkdownEditor
           disabled={editorDisabled}
           onChange={handleContentChange}
-          onHistoryNavigate={handleHistoryNavigate}
-          onPredictionNavigate={handlePredictionNavigate}
+          onNavigate={navigate}
           onPasteFiles={attachmentSettings ? pasteFiles : undefined}
           onSubmit={handleSubmit}
           placeholder={t("messagePlaceholder")}
-          value={content}
+          value={input}
         />
       )}
       <Actions

@@ -8,7 +8,7 @@ import { useLayoutEffect, useMemo, useReducer } from "react";
 import { token } from "styled-system/tokens";
 
 import { markdownSyntax } from "../../Markdown/syntax";
-import type { HistoryDirection } from "../Composer/history";
+import type { InputDirection } from "./candidateBrowsing";
 import { EditorHandlerStore, editorInteractions } from "./interactions";
 import { editorFrame, editorTheme, editorWrapper, fixedTheme, fluidTheme } from "./presentation";
 
@@ -27,8 +27,7 @@ export function MarkdownEditor({
   label,
   onChange,
   onPasteFiles,
-  onHistoryNavigate,
-  onPredictionNavigate,
+  onNavigate,
   onSubmit,
   placeholder,
   value,
@@ -40,8 +39,7 @@ export function MarkdownEditor({
   label?: string;
   onChange: (value: string) => void;
   onPasteFiles?: (files: File[]) => string | undefined;
-  onHistoryNavigate?: (direction: HistoryDirection) => string | undefined;
-  onPredictionNavigate?: () => string | undefined;
+  onNavigate?: (direction: InputDirection) => string | undefined;
   onSubmit: () => void;
   placeholder: string;
   value: string;
@@ -52,21 +50,19 @@ export function MarkdownEditor({
     () =>
       new EditorHandlerStore({
         disabled,
-        onHistoryNavigate,
+        onNavigate,
         onPasteFiles,
-        onPredictionNavigate,
         onSubmit,
       }),
   );
   useLayoutEffect(() => {
     handlers.update({
       disabled,
-      onHistoryNavigate,
+      onNavigate,
       onPasteFiles,
-      onPredictionNavigate,
       onSubmit,
     });
-  }, [disabled, handlers, onHistoryNavigate, onPasteFiles, onPredictionNavigate, onSubmit]);
+  }, [disabled, handlers, onNavigate, onPasteFiles, onSubmit]);
   const extensions = useMemo(
     () => [
       markdown(),

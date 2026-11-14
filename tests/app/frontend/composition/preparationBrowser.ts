@@ -36,8 +36,12 @@ export async function emitState(
     { data: JSON.stringify(value), type: name },
   );
 }
-export async function openPreparation(browser: BrowserSession) {
-  let draft: { content: string | null; revision: number } = { content: null, revision: 0 };
+export async function openPreparation(
+  browser: BrowserSession,
+  suggestions: { messages?: string[]; predictions?: string[] } = {},
+) {
+  let draft: { content: string | null; revision: number } = { content: null, revision: 0 },
+    composer: typeof draft = { content: null, revision: 0 };
   const errors: string[] = [],
     page = await browser.openFixture(
       "/tests/app/frontend/composition/applicationShell.html",
@@ -97,8 +101,8 @@ export async function openPreparation(browser: BrowserSession) {
                 model: alternate ? "alternate-model" : "default-model",
               },
               "/api/session-preparation": draft,
-              "/api/sessions/:id/composer-draft": { content: null, revision: 0 },
-              "/api/sessions/:id/predictions": { predictions: [] },
+              "/api/sessions/:id/composer-draft": composer,
+              "/api/sessions/:id/predictions": { predictions: suggestions.predictions ?? [] },
               "/api/sessions/:id/transcript": {
                 control: "running",
                 eventCursor: 0,
@@ -109,7 +113,12 @@ export async function openPreparation(browser: BrowserSession) {
                 reasoningTranslations: [],
                 transcriptRevision: 0,
               },
-              "/api/user-messages": { messages: [] },
+              "/api/user-messages": {
+                messages: (suggestions.messages ?? []).map((content, createdAt) => ({
+                  content,
+                  createdAt,
+                })),
+              },
             },
             json = responses[path];
           if (path === "/api/session-preparation" && route.request().method() !== "GET") {
@@ -118,6 +127,10 @@ export async function openPreparation(browser: BrowserSession) {
               draft = next;
             }
             return route.fulfill({ json: { revision: draft.revision } });
+          }
+          if (path.endsWith("/composer-draft") && route.request().method() !== "GET") {
+            composer = composerDraftBody.parse(route.request().postDataJSON());
+            return route.fulfill({ json: { revision: composer.revision } });
           }
           if (json === undefined) {
             errors.push(`Unexpected API request: ${path}`);

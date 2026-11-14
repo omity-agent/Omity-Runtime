@@ -6,17 +6,17 @@ import { composerFrame, composerRole } from "../../Chat/Composer/arrangement";
 import { ActionPanel } from "../../Chat/Composer/controls/ActionPanel";
 import { SubmitButton } from "../../Chat/Composer/controls/SubmitButton";
 import { MarkdownEditor } from "../../Chat/MarkdownEditor";
+import type { InputDirection } from "../../Chat/MarkdownEditor/candidateBrowsing";
 import { IconButton } from "../../ui";
-import { useInputNavigation } from "./inputNavigation";
 
 export function LatestMessage({
   disabled,
   message,
   submitDisabled,
   submitting,
-  userMessages,
   onAddPair,
   onChange,
+  onNavigate,
   onPasteFiles,
   onSubmit,
 }: {
@@ -24,14 +24,13 @@ export function LatestMessage({
   message: string;
   submitDisabled: boolean;
   submitting: boolean;
-  userMessages: readonly string[];
   onAddPair: () => void;
   onChange: (content: string) => void;
+  onNavigate: (direction: InputDirection) => string | undefined;
   onPasteFiles?: (files: File[]) => string | undefined;
   onSubmit: () => void;
 }) {
   const { t } = useTranslation(),
-    { change, navigateHistory } = useInputNavigation(message, onChange, userMessages),
     footer = useMemo(
       () => (
         <span aria-label={t("user")} className={composerRole} title={t("user")}>
@@ -45,8 +44,8 @@ export function LatestMessage({
       <MarkdownEditor
         disabled={disabled}
         label={t("user")}
-        onChange={change}
-        onHistoryNavigate={navigateHistory}
+        onChange={onChange}
+        onNavigate={onNavigate}
         onPasteFiles={onPasteFiles}
         onSubmit={onSubmit}
         placeholder={t("messagePlaceholder")}
