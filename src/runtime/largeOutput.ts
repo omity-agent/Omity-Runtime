@@ -1,10 +1,10 @@
-import { mkdirSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { type MessageContent, ToolMessage } from "@langchain/core/messages";
 import { isPlainObject as isRecord } from "es-toolkit";
 
+import { hasErrorCode } from "../failures/thrownValues";
 import { localize } from "../i18n/server";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import { claimShortIdAsync } from "../infrastructure/randomId";
@@ -75,7 +75,7 @@ function mergeMetadata(
 }
 async function writeLargeToolOutput(content: string, sessionId: string) {
   const dir = join(resolveSessionPaths(sessionId).dir, "large_output");
-  mkdirSync(dir, { recursive: true });
+  await mkdir(dir, { recursive: true });
   let path = "";
   await claimShortIdAsync(async (id) => {
     path = join(dir, `${id}.txt`);
@@ -83,18 +83,11 @@ async function writeLargeToolOutput(content: string, sessionId: string) {
       await writeFile(path, content, { encoding: "utf8", flag: "wx" });
       return true;
     } catch (error) {
-      if (isExistsError(error)) {
+      if (hasErrorCode(error, "EEXIST")) {
         return false;
       }
       throw error;
     }
   });
   return path;
-}
-function isExistsError(error: unknown) {
-  return (
-    error instanceof Error &&
-    "code" in error &&
-    (error as Error & { code?: unknown }).code === "EEXIST"
-  );
 }

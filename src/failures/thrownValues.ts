@@ -1,3 +1,6 @@
+export function hasErrorCode(error: unknown, code: string) {
+  return error instanceof Error && "code" in error && error.code === code;
+}
 export function describeThrownValue(value: unknown, serialized: unknown) {
   return {
     details: { value: nonErrorValue(value, serialized) },

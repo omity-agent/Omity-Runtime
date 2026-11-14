@@ -115,6 +115,7 @@
     "detect-libc": "latest",
     "drizzle-kit": "rc",
     "eslint": "9.39.5",
+    "eventsource-parser": "latest",
     "knip": "latest",
     "playwright": "latest",
     "postcss": "latest",

@@ -1,10 +1,11 @@
-import { mkdirSync } from "node:fs";
+import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 
+import { hasErrorCode } from "../../failures/thrownValues";
 import { userDataDirectory } from "../../infrastructure/configuration/settings/files";
 import { normalizeWorkspacePath } from "../../infrastructure/configuration/workspacePath";
 import type { SessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
-import { claimShortId } from "../../infrastructure/randomId";
+import { claimShortIdAsync } from "../../infrastructure/randomId";
 import type { Settings } from "../../types";
 import type { SessionSubmission } from "../attachments/contract";
 import { createSessionWithAttachments } from "../attachments/session";
@@ -21,7 +22,7 @@ export async function createAppSession(
   ) => Promise<{ definition: SessionDefinition; settings: Settings }>,
 ) {
   const workspace = normalizeWorkspacePath(submission.workspace, appRoot),
-    sessionId = reserveSessionId();
+    sessionId = await reserveSessionId();
   try {
     const { definition, settings } = await prepare(sessionId, workspace);
     await createSessionWithAttachments({
@@ -50,7 +51,7 @@ export async function materializeAppFork(options: {
   workspace: string;
   profiles: string[];
 }) {
-  const targetSessionId = reserveSessionId();
+  const targetSessionId = await reserveSessionId();
   let targetCreated = false;
   try {
     forkSessionStorage({
@@ -70,25 +71,18 @@ export async function materializeAppFork(options: {
   }
   return targetSessionId;
 }
-function reserveSessionId() {
+async function reserveSessionId() {
   const sessionsDir = resolve(userDataDirectory(), "sessions");
-  mkdirSync(sessionsDir, { recursive: true });
-  return claimShortId((id) => {
+  await mkdir(sessionsDir, { recursive: true });
+  return claimShortIdAsync(async (id) => {
     try {
-      mkdirSync(resolve(sessionsDir, id));
+      await mkdir(resolve(sessionsDir, id));
       return true;
     } catch (error) {
-      if (isExistsError(error)) {
+      if (hasErrorCode(error, "EEXIST")) {
         return false;
       }
       throw error;
     }
   });
-}
-function isExistsError(error: unknown) {
-  return (
-    error instanceof Error &&
-    "code" in error &&
-    (error as Error & { code?: unknown }).code === "EEXIST"
-  );
 }

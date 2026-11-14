@@ -1,6 +1,11 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { omit } from "es-toolkit";
+import { stringify } from "yaml";
+
+import { testSettings } from "./settings";
+
 interface TestConfigurationOptions {
   agentYaml?: string;
   hooksYaml?: string;
@@ -8,75 +13,29 @@ interface TestConfigurationOptions {
   systemPrompt?: string;
   skillsPrompt?: string;
 }
-const defaultAgentYaml = `recursionLimit: 1
-prompts:
-  - system.md
-  - skills.md
-toolOutput:
-  maxTokens: 8192
-toolExecution:
-  parallel: true
-skills:
-  enabled: false
-  directory: ~/.agents/skills
-  skillEnabled: {}
-`,
-  defaultModelYaml = `adapter: completions
-model: test
-apiKeyEnv: TEST_KEY
-baseURL: null
-maxConcurrentRequests: 2
-temperature: 0
-reasoning_effort: medium
-raceIntervalMs: 1000
-retryDelayMs: 1000
-`;
 export function writeTestConfiguration(root: string, options: TestConfigurationOptions = {}) {
   const settingsDir = join(root, "settings"),
-    promptsDir = join(settingsDir, "prompts");
+    promptsDir = join(settingsDir, "prompts"),
+    defaults = testSettings(),
+    main = omit(defaults, ["agent", "hooks", "model", "skills", "toolExecution", "toolOutput"]),
+    files = {
+      agent:
+        options.agentYaml ??
+        stringify({
+          prompts: ["system.md", "skills.md"],
+          recursionLimit: 1,
+          skills: defaults.skills,
+          toolExecution: defaults.toolExecution,
+          toolOutput: defaults.toolOutput,
+        }),
+      hooks: options.hooksYaml ?? "hooks: []\n",
+      main: stringify({ ...main, logging: { ...main.logging, level: "debug" } }),
+      model: options.modelYaml ?? stringify({ ...defaults.model, reasoning_effort: "medium" }),
+    };
   mkdirSync(promptsDir, { recursive: true });
-  writeFileSync(
-    join(settingsDir, "main.yaml"),
-    `server:
-  host: 127.0.0.1
-  port: 3030
-access:
-  publicOrigin: https://omity.example.test
-  trustedProxies:
-    - 127.0.0.1/32
-  challengeTtlMs: 300000
-  sessionTtlMs: 43200000
-  loginRateLimit:
-    attempts: 10
-    windowMs: 60000
-attachments:
-  allowedSuffixes:
-    - .txt
-    - .md
-  maxSizeBytes: 1024
-frontend:
-  cacheHitWarningRatio: 0.8
-  draftSaveDelayMs: 1
-  reasoningTranslation:
-    enabled: false
-    highConfidenceThreshold: 0.8
-    minimumIntervalMs: 1000
-  transcriptSnapshotThrottleMs: 1
-host:
-  pollMs: 1
-  pausePollMs: 1
-  idleLogMs: 1
-  shutdownTimeoutMs: 1000
-logging:
-  level: debug
-  streamTokens: false
-leases:
-  hostTtlMs: 30000
-`,
-  );
-  writeFileSync(join(settingsDir, "agent.yaml"), options.agentYaml ?? defaultAgentYaml);
-  writeFileSync(join(settingsDir, "model.yaml"), options.modelYaml ?? defaultModelYaml);
-  writeFileSync(join(settingsDir, "hooks.yaml"), options.hooksYaml ?? "hooks: []\n");
+  for (const [name, content] of Object.entries(files)) {
+    writeFileSync(join(settingsDir, `${name}.yaml`), content);
+  }
   writeFileSync(join(promptsDir, "system.md"), options.systemPrompt ?? "test");
   writeFileSync(join(promptsDir, "skills.md"), options.skillsPrompt ?? `use skills\n\n\${skills}`);
   return settingsDir;

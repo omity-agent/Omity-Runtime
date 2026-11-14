@@ -1,43 +1,31 @@
-import { afterEach, expect, test } from "bun:test";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { expect, test } from "bun:test";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { type AppMcp, createAppMcp } from "../../src/app/runtime/resources/toolPool";
+import { createAppMcp } from "../../src/app/runtime/resources/toolPool";
 import { createSnapshotSession } from "../../src/app/runtime/sessionSnapshot";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { createSettingsContext } from "../../src/infrastructure/configuration/settings/context";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { readDefinitionRecord } from "../../src/infrastructure/database/records/session/metadata";
+import { removeDatabaseDirectory } from "../../src/infrastructure/database/sqlite/connection";
 import { AskUserRuntime } from "../../src/infrastructure/toolbox/runtime";
 import { prepareHostSession } from "../../src/runtime/execution/sessionPreparation";
 import { createTestDirectory } from "../support/artifacts";
 import { defaultBuiltIns, writeToolboxConfiguration } from "../support/builtins";
 import { writeTestConfiguration } from "../support/configuration";
+import { scopedEnvironment } from "../support/scopedEnvironment";
 
-const roots: string[] = [],
-  databases: AgentDatabase[] = [],
-  sessionDirectories: string[] = [],
-  mcps: AppMcp[] = [];
-afterEach(async () => {
-  await Promise.all(mcps.splice(0).map((mcp) => mcp.close()));
-  for (const database of databases.splice(0)) {
-    database.close();
-  }
-  for (const directory of sessionDirectories.splice(0)) {
-    rmSync(directory, { force: true, recursive: true });
-  }
-  for (const root of roots.splice(0)) {
-    rmSync(root, { force: true, recursive: true });
-  }
-});
 test("session snapshots lock only the model prefix while runtime configuration changes", async () => {
+  await using resources = new AsyncDisposableStack();
   const root = createTestDirectory("session-snapshot"),
     builtIns = defaultBuiltIns(),
     toolboxes = {
       choice: { ...builtIns.choice!, enabled: true },
       open_ended: { ...builtIns.open_ended!, enabled: true },
     };
-  roots.push(root);
+  resources.defer(() => removeDatabaseDirectory(root));
+  resources.use(scopedEnvironment({ OMITY_HOME: join(root, "home") }));
   writeTestConfiguration(root, {
     hooksYaml: `hooks:
   - { id: notify, enable: true, target: agent, when: after, runLimit: -1, mode: silent, tool: ${JSON.stringify(toolboxes.open_ended.name)}, args: {} }
@@ -59,8 +47,9 @@ raceIntervalMs: 1000
   const workspacePath = join(root, "workspace");
   mkdirSync(workspacePath);
   const context = createSettingsContext(root, join(root, "user-settings")),
-    mcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => {})),
-    created = await createSnapshotSession({
+    mcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => {}));
+  resources.defer(() => mcp.close());
+  const created = await createSnapshotSession({
       baseContext: context,
       mcp,
       root,
@@ -73,11 +62,8 @@ raceIntervalMs: 1000
       },
     }),
     paths = sessionPaths(created.sessionId),
-    db = new AgentDatabase(paths.dbPath),
+    db = resources.use(new AgentDatabase(paths.dbPath)),
     definition = readDefinitionRecord(db.db, created.sessionId);
-  databases.push(db);
-  mcps.push(mcp);
-  sessionDirectories.push(paths.dir);
   writeFileSync(join(root, "settings", "prompts", "system.md"), "changed prompt");
   writeFileSync(
     join(root, "settings", "model.yaml"),
@@ -115,7 +101,7 @@ raceIntervalMs: 3500
     cwd: workspacePath,
     settingsContext: context,
   });
-  databases.push(prepared.db);
+  resources.use(prepared.db);
   expect(prepared.settings.agent.systemPrompt).toBe(definition.prefix.systemPrompt);
   expect(prepared.settings.hooks.map(({ id, enable }) => ({ enable, id }))).toEqual([
     { enable: false, id: "notify" },
@@ -133,7 +119,7 @@ raceIntervalMs: 3500
     temperature: 0.75,
   });
   const restoredMcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => {}));
-  mcps.push(restoredMcp);
+  resources.defer(() => restoredMcp.close());
   const restored = await restoredMcp.loadSession(
     created.sessionId,
     [],

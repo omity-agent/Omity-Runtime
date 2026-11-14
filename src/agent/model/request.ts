@@ -1,5 +1,6 @@
 import { AIMessage, type BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { type LanguageModel, streamText, type TextStreamPart, type ToolSet } from "ai";
+import { raceSignal } from "race-signal";
 
 import { localize } from "../../i18n/server";
 import { ModelEmptyResponseError } from "../../runtime/transientErrors";
@@ -24,6 +25,7 @@ export interface AiStreamEvent {
   part: TextStreamPart<ToolSet>;
 }
 export async function streamAiModel(options: ModelRequestOptions) {
+  options.signal?.throwIfAborted();
   const attempts = new Map<number, AbortController>(),
     completed = Promise.withResolvers<AIMessage>(),
     model = options.model ?? buildAiModel(options.settings),
@@ -40,8 +42,9 @@ export async function streamAiModel(options: ModelRequestOptions) {
   }, options.settings.model.raceIntervalMs);
   startAttempt();
   try {
-    return await completed.promise;
+    return await raceSignal(completed.promise, options.signal);
   } finally {
+    finished = true;
     clearInterval(interval);
     abortAttempts();
   }
@@ -83,6 +86,9 @@ export async function streamAiModel(options: ModelRequestOptions) {
         tools: options.tools,
       });
       for await (const part of result.stream) {
+        if (finished) {
+          return undefined;
+        }
         if (part.type === "error") {
           throw part.error;
         }

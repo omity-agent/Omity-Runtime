@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { z } from "zod";
 
+import { hasErrorCode } from "../../failures/thrownValues";
 import { localize } from "../../i18n/server";
 
 const ownerSchema = z.object({
@@ -38,17 +39,12 @@ export function isProcessRunning(pid: number) {
     process.kill(pid, 0);
     return true;
   } catch (error) {
-    if (isErrorCode(error, "ESRCH")) {
+    if (hasErrorCode(error, "ESRCH")) {
       return false;
     }
-    if (isErrorCode(error, "EPERM")) {
+    if (hasErrorCode(error, "EPERM")) {
       return true;
     }
     throw error;
   }
-}
-function isErrorCode(error: unknown, code: string) {
-  return (
-    error instanceof Error && "code" in error && (error as Error & { code?: unknown }).code === code
-  );
 }

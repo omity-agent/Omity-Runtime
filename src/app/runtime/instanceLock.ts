@@ -12,6 +12,7 @@ import { resolve } from "node:path";
 
 import { z } from "zod";
 
+import { hasErrorCode } from "../../failures/thrownValues";
 import { localize } from "../../i18n/server";
 import { isProcessRunning } from "../../infrastructure/process/ownership";
 
@@ -45,7 +46,7 @@ export class AppInstanceLock {
         closeSync(descriptor);
         return new AppInstanceLock(path, owner, abandonedOwner);
       } catch (error) {
-        if (!isExistsError(error)) {
+        if (!hasErrorCode(error, "EEXIST")) {
           throw error;
         }
         const existingOwner = readOwner(path);
@@ -88,12 +89,4 @@ function readOwner(path: string) {
     throw new Error(localize("application:runtime.lockInvalid", { value0: path }));
   }
   return parsed.data;
-}
-function isExistsError(error: unknown) {
-  return isErrorCode(error, "EEXIST");
-}
-function isErrorCode(error: unknown, code: string) {
-  return (
-    error instanceof Error && "code" in error && (error as Error & { code?: unknown }).code === code
-  );
 }

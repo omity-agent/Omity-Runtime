@@ -1,14 +1,6 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import {
-  type ComposerDraftTarget,
-  flushComposerDraft,
-  readComposerDraft,
-  writeComposerDraft,
-} from "../../../services/composerDrafts";
-import { reportError, reportPromiseErrors } from "../../../services/errors";
-import { DraftSaver } from "../../../services/scheduling/draftSaver";
 import { MarkdownEditor } from "../MarkdownEditor";
 import { composerFrame } from "./arrangement";
 import { AskUserPrompt } from "./AskUser/Prompt";
@@ -16,6 +8,7 @@ import { useQuestionAnswerState } from "./AskUser/state";
 import { Actions } from "./controls";
 import { UserMessageHistory } from "./history";
 import { usePendingAttachments } from "./hooks/attachments";
+import { useComposerDraft } from "./hooks/editing";
 import { useComposerEvents } from "./hooks/events";
 import { useComposerSubmit } from "./hooks/submission";
 import { useSuggestionNavigation } from "./hooks/suggestionNavigation";
@@ -50,76 +43,36 @@ export function Composer({
 }: ComposerProps) {
   "use no memo";
   const { t } = useTranslation(),
-    [content, setContent] = useState(draft ?? ""),
-    [loading, setLoading] = useState(true),
     [submitting, setSubmitting] = useState(false),
     answerState = useQuestionAnswerState(askUser?.callId),
     askNote = answerState.note,
     selectedOptions = answerState.options,
-    contentRef = useRef(content),
     { attachmentValues, clearAttachments, handlePasteFiles } =
       usePendingAttachments(attachmentSettings),
     historyRef = useRef(new UserMessageHistory()),
     predictionRef = useRef(new UserInputPrediction()),
-    revisionRef = useRef(0),
-    saverRef = useRef<DraftSaver | undefined>(undefined),
     submittingRef = useRef(false),
-    [stableDraftTarget] = useReducer((target: ComposerDraftTarget) => target, draftTarget);
-  useEffect(() => {
-    let current = true;
-    const load = async () => {
-      const loaded = await readComposerDraft(stableDraftTarget, draft ?? "");
-      if (!current) {
-        return;
-      }
-      revisionRef.current = loaded.revision;
-      contentRef.current = loaded.content;
-      historyRef.current.reset();
-      predictionRef.current.reset();
-      setContent(loaded.content);
-      setLoading(false);
-    };
-    reportPromiseErrors(load());
-    return () => {
-      current = false;
-    };
-  }, [draft, stableDraftTarget]);
-  useEffect(() => {
-    if (draftSaveDelayMs === undefined) {
-      return;
-    }
-    const saver = new DraftSaver(stableDraftTarget, draftSaveDelayMs, reportError);
-    saverRef.current = saver;
-    return () => {
-      if (saverRef.current === saver) {
-        saverRef.current = undefined;
-      }
-      reportPromiseErrors(saver.flush());
-    };
-  }, [draftSaveDelayMs, stableDraftTarget]);
-  useEffect(() => {
-    const flush = () => {
-      flushComposerDraft(stableDraftTarget, contentRef.current, revisionRef.current);
-    };
-    window.addEventListener("pagehide", flush);
-    return () => {
-      window.removeEventListener("pagehide", flush);
-    };
-  }, [stableDraftTarget]);
-  const handleControl = useCallback(
+    {
+      content,
+      contentRef,
+      flush,
+      loading,
+      revisionRef,
+      saverRef,
+      setContent,
+      target: stableDraftTarget,
+    } = useComposerDraft({ draft, draftSaveDelayMs, draftTarget, historyRef, predictionRef }),
+    handleControl = useCallback(
       async (control: Parameters<NonNullable<ComposerProps["onControl"]>>[0]) => {
-        await saverRef.current?.flush();
-        if (stableDraftTarget.kind !== "session") {
-          await writeComposerDraft(stableDraftTarget, contentRef.current, revisionRef.current);
-        }
+        await flush();
         await onControl?.(control);
       },
-      [onControl, stableDraftTarget],
+      [flush, onControl],
     ),
     handleDelete = useCallback(async () => {
       saverRef.current?.discardPending();
       await onDelete?.();
-    }, [onDelete]),
+    }, [onDelete, saverRef]),
     submit = useComposerSubmit({
       askNote,
       askUser,

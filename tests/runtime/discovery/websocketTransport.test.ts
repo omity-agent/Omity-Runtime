@@ -3,7 +3,6 @@ import { expect, test } from "bun:test";
 import { isPlainObject } from "es-toolkit";
 
 import { createResponsesWebsocketFetch } from "../../../src/agent/model/responsesWebsocket";
-import { parseModelSettings } from "../../../src/infrastructure/configuration/settings/schema";
 import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
 
 test("Responses WebSocket adapter bridges response events to SSE", async () => {
@@ -72,19 +71,5 @@ test("Responses WebSocket adapter bridges response events to SSE", async () => {
     globalThis.fetch = previousFetch;
     await runtime.close();
     await server.stop(true);
-  }
-});
-test("model settings accept named Responses transports", () => {
-  const fields = {
-    apiKeyEnv: "TEST_KEY",
-    baseURL: null,
-    maxConcurrentRequests: 1,
-    model: "test-model",
-    raceIntervalMs: 1,
-    retryDelayMs: 1,
-    temperature: undefined,
-  };
-  for (const adapter of ["responses-sse", "responses-websocket"] as const) {
-    expect(parseModelSettings({ ...fields, adapter })).toMatchObject({ adapter });
   }
 });

@@ -2,6 +2,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { DomainError } from "../../errors";
+import { hasErrorCode } from "../../failures/thrownValues";
 import { localize } from "../../i18n/server";
 import { resolveSessionPaths } from "../../infrastructure/configuration/sessionPaths";
 import { claimShortIdAsync } from "../../infrastructure/randomId";
@@ -40,7 +41,7 @@ export async function saveMessageAttachments(
           await writeFile(path, bytes, { flag: "wx" });
           return true;
         } catch (error) {
-          if (isExistsError(error)) {
+          if (hasErrorCode(error, "EEXIST")) {
             return false;
           }
           throw error;
@@ -93,11 +94,4 @@ function validateSelected(
 function replacePlaceholder(content: string, id: string, path: string) {
   const pattern = new RegExp(String.raw`\{\{file:${id}:[^{}\r\n]+\}\}`, "giu");
   return content.replaceAll(pattern, () => path);
-}
-function isExistsError(error: unknown) {
-  return (
-    error instanceof Error &&
-    "code" in error &&
-    (error as Error & { code?: unknown }).code === "EEXIST"
-  );
 }

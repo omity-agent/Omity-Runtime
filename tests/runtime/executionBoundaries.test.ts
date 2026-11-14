@@ -1,17 +1,59 @@
 import { afterEach, expect, test } from "bun:test";
 
-import { ToolMessage } from "@langchain/core/messages";
+import { HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { MockLanguageModelV4 } from "ai/test";
 import { z } from "zod";
 
+import { streamAiModel } from "../../src/agent/model/request";
 import { buildTimeline } from "../../src/app/timeline";
 import { loadTranscript } from "../../src/app/transcript";
 import { processInput } from "../../src/runtime/consumeInputs";
 import { cleanupDatabaseDirs, required, workspace } from "../support/database";
-import { agentFixture, toolResponse } from "./support/agentFixture";
+import { testSettings } from "../support/settings";
+import { agentFixture, textResponse, toolResponse } from "./support/agentFixture";
 
 afterEach(cleanupDatabaseDirs);
+test.each([false, true])(
+  "model cancellation preserves its reason (already aborted: %s)",
+  async (aborted) => {
+    const started = Promise.withResolvers<void>(),
+      released = Promise.withResolvers<void>(),
+      controller = new AbortController(),
+      reason = new Error("generation cancelled"),
+      settings = testSettings(),
+      model = new MockLanguageModelV4({
+        doStream: async () => {
+          started.resolve();
+          await released.promise;
+          return textResponse("late reply");
+        },
+      });
+    settings.model.maxConcurrentRequests = 1;
+    if (aborted) {
+      controller.abort(reason);
+    }
+    const pending = streamAiModel({
+      messages: [new HumanMessage("hello")],
+      model,
+      sessionId: "target",
+      settings,
+      signal: controller.signal,
+      tools: {},
+    });
+    try {
+      if (!aborted) {
+        await started.promise;
+        controller.abort(reason);
+      }
+      await expect(pending).rejects.toBe(reason);
+      expect(model.doStreamCalls).toHaveLength(aborted ? 0 : 1);
+    } finally {
+      released.resolve();
+      await Promise.allSettled([pending]);
+    }
+  },
+);
 test("paused cancellation is visible immediately and survives host reconstruction", async () => {
   let called = 0;
   const echo = tool(

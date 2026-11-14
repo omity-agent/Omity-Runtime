@@ -3,14 +3,14 @@ import { afterEach, beforeAll, expect, mock, spyOn, test } from "bun:test";
 import { MockLanguageModelV4 } from "ai/test";
 import { Hono } from "hono";
 
-import { AppEvents } from "../../../src/app/events";
-import type { SessionFailure, SessionInfo } from "../../../src/app/events/contracts";
-import { i18nReady } from "../../../src/app/frontend/i18n";
-import { subscribeStateEvents } from "../../../src/app/frontend/services/events/reception";
-import { processInput } from "../../../src/runtime/consumeInputs";
-import { setRunStatus } from "../../../src/runtime/run";
-import { agentFixture } from "../../runtime/support/agentFixture";
-import { cleanupDatabaseDirs, required, workspace } from "../../support/database";
+import { AppEvents } from "../../../../src/app/events";
+import type { SessionFailure, SessionInfo } from "../../../../src/app/events/contracts";
+import { i18nReady } from "../../../../src/app/frontend/i18n";
+import { subscribeStateEvents } from "../../../../src/app/frontend/services/events/reception";
+import { processInput } from "../../../../src/runtime/consumeInputs";
+import { setRunStatus } from "../../../../src/runtime/run";
+import { agentFixture } from "../../../runtime/support/agentFixture";
+import { cleanupDatabaseDirs, required, workspace } from "../../../support/database";
 import { nextStateEvent, readStateWire } from "./wireReader";
 
 const storedFailure: SessionInfo = {

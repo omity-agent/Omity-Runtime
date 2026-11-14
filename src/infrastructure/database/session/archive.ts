@@ -1,6 +1,8 @@
 import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { hasErrorCode } from "../../../failures/thrownValues";
+
 export class UserMessageArchive {
   constructor(private readonly directory: string) {}
   append(content: string) {
@@ -13,7 +15,7 @@ export class UserMessageArchive {
           writeFileSync(path, content, { encoding: "utf8", flag: "wx" });
           return path;
         } catch (error) {
-          if (!isExistsError(error)) {
+          if (!hasErrorCode(error, "EEXIST")) {
             throw error;
           }
         }
@@ -42,7 +44,4 @@ export class UserMessageArchive {
   private path(id: number) {
     return resolve(this.directory, `${id.toString()}.txt`);
   }
-}
-function isExistsError(error: unknown) {
-  return error instanceof Error && "code" in error && error.code === "EEXIST";
 }

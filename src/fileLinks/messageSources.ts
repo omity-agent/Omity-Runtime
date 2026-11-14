@@ -8,7 +8,7 @@ import { rawFreeformInput } from "../runtime/freeform";
 import { formatToolInput } from "./toolInput";
 import type { FileLinkSurface } from "./types";
 
-export interface FileLinkSource {
+interface FileLinkSource {
   ownerId: string;
   surface: FileLinkSurface;
   text: string;

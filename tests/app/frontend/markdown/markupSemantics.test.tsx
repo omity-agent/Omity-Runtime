@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { FileLinkProvider } from "../../../../src/app/frontend/components/FileLink/context";
 import { MarkdownInline, MarkdownView } from "../../../../src/app/frontend/components/Markdown";
 import { i18nReady } from "../../../../src/app/frontend/i18n";
+import { elementAttributes } from "../elementAttributes";
 
 const renderers = [
     ["正文", MarkdownView],
@@ -105,14 +106,8 @@ test.each(linkCases)(
           <MarkdownView content={content} fileLinks={matches} />
         </FileLinkProvider>,
       ),
-      linkedPaths: string[] = [],
-      rewriter = new HTMLRewriter().on("strong button[title]", {
-        element(element) {
-          linkedPaths.push(element.getAttribute("title")!);
-        },
-      });
-    await rewriter.transform(new Response(markup)).text();
-    expect(linkedPaths).toEqual([path]);
+      links = await elementAttributes(markup, "strong button[title]");
+    expect(links.map((link) => link["title"])).toEqual([path]);
   },
 );
 test("keeps fenced code literal while rendering GFM tables and preserved line breaks", () => {

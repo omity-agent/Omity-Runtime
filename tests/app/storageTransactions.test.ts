@@ -9,6 +9,7 @@ import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { emptySessionDefinition } from "../../src/infrastructure/database/session/sessionDefinition";
 import { createTestDirectory } from "../support/artifacts";
 import { required, workspace } from "../support/database";
+import { scopedEnvironment } from "../support/scopedEnvironment";
 import { testSettings } from "../support/settings";
 
 const history = [
@@ -16,18 +17,13 @@ const history = [
     { assistant: "second answer", user: "second user" },
   ],
   operations = ["create", "fork"] as const;
-let home: string, previousHome: string | undefined;
+let home: string, environment: DisposableStack;
 beforeEach(() => {
-  previousHome = process.env["OMITY_HOME"];
   home = createTestDirectory("storage-transactions");
-  process.env["OMITY_HOME"] = home;
+  environment = scopedEnvironment({ OMITY_HOME: home });
 });
 afterEach(() => {
-  if (previousHome === undefined) {
-    delete process.env["OMITY_HOME"];
-  } else {
-    process.env["OMITY_HOME"] = previousHome;
-  }
+  environment.dispose();
   rmSync(home, { force: true, recursive: true });
 });
 test.each(operations)(
