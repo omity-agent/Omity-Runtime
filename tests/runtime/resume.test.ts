@@ -41,12 +41,20 @@ test("a paused run resumes from the model boundary without repeating the model c
   expect(db.nextInput("session")?.status).toBe("paused");
   expect(model.doStreamCalls).toHaveLength(1);
   expect(calls).toEqual([]);
+  db.appendUser("session", "follow-up before resuming");
   db.setControl("session", "running");
   context.stopping = undefined;
   await processInput(context, required(db.nextInput("session")));
   expect(db.nextInput("session")).toBeNull();
   expect(model.doStreamCalls).toHaveLength(2);
   expect(calls).toEqual(["tool", "tool"]);
+  expect(
+    model.doStreamCalls[1]?.prompt.filter(({ role }) => role !== "system").map(({ role }) => role),
+  ).toEqual(["user", "assistant", "tool", "user"]);
+  expect(model.doStreamCalls[1]?.prompt.at(-1)).toEqual({
+    content: [{ text: "follow-up before resuming", type: "text" }],
+    role: "user",
+  });
 });
 test("a paused run steps through one model request or a complete tool batch", async () => {
   const calls: string[] = [],

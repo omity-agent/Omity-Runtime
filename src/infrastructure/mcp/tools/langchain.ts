@@ -26,6 +26,7 @@ export function langChainClient(client: McpOperations): LangChainClient {
     listTools: (params, options) => client.listTools(params, options),
     readResource: (params, options) => client.readResource(params, options),
   };
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- loadMcpTools requires the SDK client type but only uses these MCP operations.
   return adapter as LangChainClient;
 }
 function errorMessage(error: unknown) {

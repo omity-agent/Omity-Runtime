@@ -44,7 +44,7 @@ test("Codex WebSocket uses the selected proxy and the official wire protocol", a
       },
     }),
     proxy = await startRecordingProxy(target.port!),
-    runtime = createNetworkRuntime(async (url) => {
+    runtime = createNetworkRuntime((url) => {
       destinations.push(url);
       return proxy.url.replace("://", "://user:pass@");
     }),
@@ -154,7 +154,7 @@ test("WebSocket proxy failures do not open a direct connection", async () => {
       port: 0,
     }),
     proxy = Bun.serve({ fetch: () => new Response(null, { status: 502 }), port: 0 }),
-    runtime = createNetworkRuntime(async () => proxy.url.href),
+    runtime = createNetworkRuntime(() => proxy.url.href),
     previousFetch = globalThis.fetch;
   await proxy.stop(true);
   globalThis.fetch = runtime.fetch;

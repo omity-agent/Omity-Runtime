@@ -49,20 +49,22 @@ test("model, Codex refresh and HTTP MCP requests all use the installed network p
         if (!("id" in body)) {
           return new Response(null, { status: 202 });
         }
-        if (body["method"] === "server/discover") {
+        const { id, method, params }: Record<string, unknown> = body;
+        if (method === "server/discover") {
           return Response.json({
             error: { code: -32_601, message: "Method not found" },
-            id: body["id"],
+            id,
             jsonrpc: "2.0",
           });
         }
-        const { params } = body,
-          protocolVersion = isPlainObject(params) ? params["protocolVersion"] : undefined;
+        const protocolVersion: unknown = isPlainObject(params)
+          ? params["protocolVersion"]
+          : undefined;
         return Response.json({
-          id: body["id"],
+          id,
           jsonrpc: "2.0",
           result:
-            body["method"] === "initialize"
+            method === "initialize"
               ? {
                   capabilities: { tools: {} },
                   protocolVersion,

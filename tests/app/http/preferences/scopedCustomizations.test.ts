@@ -11,6 +11,7 @@ import { createSettingsContext } from "../../../../src/infrastructure/configurat
 import { AgentDatabase } from "../../../../src/infrastructure/database/agentDatabase";
 import { readDefinitionRecord } from "../../../../src/infrastructure/database/records/session/metadata";
 import { AskUserRuntime } from "../../../../src/infrastructure/toolbox/runtime";
+import { containingItems, partialObject } from "../../../support/asymmetric";
 import { writeToolboxConfiguration } from "../../../support/builtins";
 import { liveApplication } from "../liveApplication";
 
@@ -86,8 +87,8 @@ test.each([true, false])(
       }
       expect(app.requests).toHaveLength(1);
       expect(app.requests[0]).toMatchObject({
-        tools: expect.arrayContaining([
-          expect.objectContaining({
+        tools: containingItems([
+          partialObject({
             description: "profile description",
             name: "renamed_tool",
             type: "custom",

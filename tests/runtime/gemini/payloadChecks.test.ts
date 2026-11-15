@@ -8,6 +8,7 @@ import { z } from "zod";
 import { structuredRequestOptions } from "../../../src/agent/model/provider";
 import { streamAiModel } from "../../../src/agent/model/request";
 import { aiModelTools } from "../../../src/agent/model/tools";
+import { anyValue } from "../../support/asymmetric";
 import { echoDefinition, geminiApis, geminiWire } from "./endpointFixture";
 import { replyStream, structuredReply } from "./exchangeSamples";
 
@@ -47,12 +48,12 @@ test.each([...geminiApis])(
       api === "interactions"
         ? {
             response_format: [
-              { mime_type: "application/json", schema: expect.any(Object), type: "text" },
+              { mime_type: "application/json", schema: anyValue(Object), type: "text" },
             ],
           }
         : {
             generationConfig: {
-              responseJsonSchema: expect.any(Object),
+              responseJsonSchema: anyValue(Object),
               responseMimeType: "application/json",
             },
           },
@@ -121,7 +122,7 @@ test("Generate Content maps reasoning to a budget for Gemini 2.5", async () => {
   ).rejects.toThrow("request captured");
   expect(wire.requests[0]?.body).toMatchObject({
     generationConfig: {
-      thinkingConfig: { includeThoughts: true, thinkingBudget: expect.any(Number) },
+      thinkingConfig: { includeThoughts: true, thinkingBudget: anyValue(Number) },
     },
   });
   expect(wire.requests[0]?.body["generationConfig"]).not.toHaveProperty(

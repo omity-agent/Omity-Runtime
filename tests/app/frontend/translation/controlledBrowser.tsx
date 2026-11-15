@@ -14,14 +14,16 @@ interface PendingTranslation {
   source: string;
 }
 declare global {
-  var translationScenario: {
-    calls: string[];
-    complete: (source: string, translated: string) => void;
-    pending: PendingTranslation[];
-    render: (messages: TimelineMessage[], sessionId?: string) => void;
-    reversions: string[];
-    watch: (source: string) => void;
-  };
+  interface Window {
+    translationScenario: {
+      calls: string[];
+      complete: (source: string, translated: string) => void;
+      pending: PendingTranslation[];
+      render: (messages: TimelineMessage[], sessionId?: string) => void;
+      reversions: string[];
+      watch: (source: string) => void;
+    };
+  }
 }
 const pending: PendingTranslation[] = [],
   calls: string[] = [],
@@ -29,41 +31,43 @@ const pending: PendingTranslation[] = [],
   empty: never[] = [],
   client = new QueryClient(),
   noop = async () => {},
-  pickWorkspace = async () => null;
+  pickWorkspace = () => Promise.resolve(null);
 Object.defineProperty(navigator, "languages", { configurable: true, value: ["zh-CN"] });
 Object.defineProperty(globalThis, "LanguageDetector", {
   configurable: true,
   value: {
-    create: async () => ({
-      destroy() {},
-      detect: async () => [{ confidence: 0.99, detectedLanguage: "en" }],
-    }),
+    create: () =>
+      Promise.resolve({
+        destroy() {},
+        detect: () => Promise.resolve([{ confidence: 0.99, detectedLanguage: "en" }]),
+      }),
   },
 });
 Object.defineProperty(globalThis, "Translator", {
   configurable: true,
   value: {
-    availability: async () => "available",
-    create: async () => ({
-      translate(source: string, options?: { signal?: AbortSignal }) {
-        calls.push(source);
-        const { promise, reject, resolve } = Promise.withResolvers<string>(),
-          item = { resolve, source };
-        pending.push(item);
-        options?.signal?.addEventListener(
-          "abort",
-          () => {
-            const index = pending.indexOf(item);
-            if (index !== -1) {
-              pending.splice(index, 1);
-            }
-            reject(options.signal?.reason);
-          },
-          { once: true },
-        );
-        return promise;
-      },
-    }),
+    availability: () => Promise.resolve("available"),
+    create: () =>
+      Promise.resolve({
+        translate(source: string, options?: { signal?: AbortSignal }) {
+          calls.push(source);
+          const { promise, reject, resolve } = Promise.withResolvers<string>(),
+            item = { resolve, source };
+          pending.push(item);
+          options?.signal?.addEventListener(
+            "abort",
+            () => {
+              const index = pending.indexOf(item);
+              if (index !== -1) {
+                pending.splice(index, 1);
+              }
+              reject(options.signal?.reason);
+            },
+            { once: true },
+          );
+          return promise;
+        },
+      }),
   },
 });
 function ControlledChat() {
@@ -71,7 +75,7 @@ function ControlledChat() {
     [sessionId, setSessionId] = useState("translation"),
     draftTarget = useMemo(() => ({ kind: "session" as const, sessionId }), [sessionId]);
   useLayoutEffect(() => {
-    globalThis.translationScenario = {
+    globalThis.window.translationScenario = {
       calls,
       complete(source, translated) {
         const index = pending.findIndex((item) => item.source === source);

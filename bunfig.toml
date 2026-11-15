@@ -29,6 +29,7 @@ style = "warn"
 suspicious = "warn"
 
 [lint.rules]
+
 "import/no-unused-modules" = ["warn", { unusedExports = true }]
 "import/no-unassigned-import" = ["warn", { allow = ["**/*.css"] }]
 "@pandacss/file-not-included" = "error"
@@ -41,7 +42,10 @@ suspicious = "warn"
 "@pandacss/no-physical-properties" = "warn"
 "@pandacss/no-descendant-selectors" = "warn"
 "@pandacss/no-margin-properties" = "warn"
-"@pandacss/no-primitive-token" = "warn"
+"@pandacss/no-primitive-token" = [
+  "warn",
+  { categories = ["colors"], allow = ["colors.transparent", "colors.current"] },
+]
 "@pandacss/no-shorthand-longhand-mix" = "warn"
 "@pandacss/prefer-text-style" = "warn"
 "@pandacss/extraction-diagnostics" = "warn"
@@ -53,6 +57,10 @@ suspicious = "warn"
 "@tanstack/query/no-void-query-fn" = "error"
 "@tanstack/query/mutation-property-order" = "error"
 "@typescript-eslint/no-deprecated" = "warn"
+
+
+"consistent-return" = "off"
+"@typescript-eslint/consistent-return" = "off"
 "react-hooks/memo-dependencies" = "off"
 "jsx-a11y/no-noninteractive-tabindex" = "off"
 "capitalized-comments" = "off"
@@ -74,6 +82,7 @@ suspicious = "warn"
 "no-magic-numbers" = "off"
 "import/no-named-export" = "off"
 "no-nested-ternary" = "off"
+"n/no-sync" = "off"
 "unicorn/no-nested-ternary" = "off"
 "import/no-nodejs-modules" = "off"
 "unicorn/no-null" = "off"

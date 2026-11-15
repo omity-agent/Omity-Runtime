@@ -9,11 +9,11 @@ export function useMessageCandidates(
   messages: readonly string[],
   predictions: readonly string[] = empty,
 ) {
-  const [snapshot, setSnapshot] = useState({ content: value, draft: value, position: 0 });
-  const stateRef = useRef(snapshot);
-  const contentRef = useRef(value);
-  const candidate =
-    snapshot.position < 0 ? messages.at(snapshot.position) : predictions[snapshot.position - 1];
+  const [snapshot, setSnapshot] = useState({ content: value, draft: value, position: 0 }),
+    stateRef = useRef(snapshot),
+    contentRef = useRef(value),
+    candidate =
+      snapshot.position < 0 ? messages.at(snapshot.position) : predictions[snapshot.position - 1];
   if (snapshot.draft !== value || (snapshot.position !== 0 && candidate !== snapshot.content)) {
     setSnapshot({ content: value, draft: value, position: 0 });
   }
@@ -46,7 +46,7 @@ export function useMessageCandidates(
               ? predictions[position - 1]
               : stateRef.current.draft;
       if (content === undefined) {
-        return undefined;
+        return;
       }
       const next = { ...stateRef.current, content, position };
       stateRef.current = next;

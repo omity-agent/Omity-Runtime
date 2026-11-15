@@ -6,6 +6,7 @@ import { createResponsesWebsocketFetch } from "../../../../src/agent/model/respo
 import { captureError, summarizeError } from "../../../../src/failures/details";
 import { createNetworkRuntime } from "../../../../src/infrastructure/network/installNetworking";
 import { isRetryableModelError } from "../../../../src/runtime/transientErrors";
+import { anyValue } from "../../../support/asymmetric";
 import { startRecordingProxy } from "../localProxyFixture";
 import { type FramedOriginMode, startFramedOrigin } from "./framedOrigin";
 
@@ -13,7 +14,7 @@ async function streamFailure(mode: FramedOriginMode, proxied = false) {
   const origin = await startFramedOrigin(mode),
     proxy = proxied ? await startRecordingProxy(origin.port) : undefined,
     proxyUrl = proxy?.url.replace("://", "://private-user:private-password@"),
-    runtime = createNetworkRuntime(async () => proxyUrl),
+    runtime = createNetworkRuntime(() => proxyUrl),
     previousFetch = globalThis.fetch;
   globalThis.fetch = runtime.fetch;
   try {
@@ -71,9 +72,9 @@ test("an unframed remote EOF preserves stream timing and socket closure evidence
   expect(error.details).toMatchObject({
     close: { code: 1006, wasClean: false },
     phase: "stream",
-    runtime: { bun: Bun.version, undici: expect.any(String) },
+    runtime: { bun: Bun.version, undici: anyValue(String) },
     stream: {
-      bytesReceived: expect.any(Number),
+      bytesReceived: anyValue(Number),
       lastEventType: "response.custom_tool_call_input.delta",
       lastItemId: "diagnostic-item",
       lastOutputIndex: 1,
@@ -82,20 +83,20 @@ test("an unframed remote EOF preserves stream timing and socket closure evidence
       responseId: "diagnostic-response",
     },
     timing: {
-      durationMs: expect.any(Number),
-      failedAt: expect.any(String),
-      firstMessageAfterMs: expect.any(Number),
-      handshakeDurationMs: expect.any(Number),
-      lastMessageAgeMs: expect.any(Number),
-      requestSentAfterMs: expect.any(Number),
-      startedAt: expect.any(String),
+      durationMs: anyValue(Number),
+      failedAt: anyValue(String),
+      firstMessageAfterMs: anyValue(Number),
+      handshakeDurationMs: anyValue(Number),
+      lastMessageAgeMs: anyValue(Number),
+      requestSentAfterMs: anyValue(Number),
+      startedAt: anyValue(String),
     },
     transport: {
-      bytesRead: expect.any(Number),
-      bytesWritten: expect.any(Number),
+      bytesRead: anyValue(Number),
+      bytesWritten: anyValue(Number),
       closeHadError: false,
       endReceived: true,
-      peer: { remoteAddress: "127.0.0.1", remotePort: expect.any(Number) },
+      peer: { remoteAddress: "127.0.0.1", remotePort: anyValue(Number) },
     },
   });
   expect(error.details?.["transport"]).not.toHaveProperty("route");

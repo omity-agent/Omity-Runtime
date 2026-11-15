@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+// eslint-disable-next-line import/no-unassigned-import -- Reflection metadata must initialize before decorated dependencies load.
 import "reflect-metadata";
 import { message, text } from "@optique/core/message";
 import { run } from "@optique/run";

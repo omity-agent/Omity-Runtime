@@ -1,7 +1,6 @@
-import { historyInput } from "../../agent/graph/historyInput";
 import { localize } from "../../i18n/server";
 import { recordAiStreamPart, recordToolStarted } from "../aiStream";
-import { consumeBoundaryAppends, recoverConsumedAppends } from "../appends";
+import { prepareGraphInput } from "../appends";
 import { type HostContext, readGraphState, streamGraph } from "../context";
 import { waitBeforeModelRetry } from "../retry";
 import { type ActiveRun, CanceledRunError, cancelRun, finishRun, setRunStatus } from "../run";
@@ -22,37 +21,62 @@ export async function runGraphUntilBoundary(
       interruptAfter: ["request_model", "invoke_tool", "invoke_tool_batch"] as string[],
       interruptBefore: ["model_request", "tools"] as string[],
       recursionLimit: ctx.settings.agent.recursionLimit,
-    },
-    checkpoint = await ctx.checkpointer.getTuple(config);
-  let state = checkpoint ? readGraphState(await ctx.graph.getState(config)) : undefined,
-    input: Parameters<HostContext["graph"]["stream"]>[0] = state
-      ? recoverConsumedAppends(ctx, run, state)
-      : historyInput(ctx.db.history(ctx.sessionId)),
-    retries = 0,
+    };
+  let retries = 0,
     steppedOperation: AgentOperation | undefined,
+    synchronizeHistory = false,
     stepping = initialStepping;
   const streamState = createStreamLogState();
   for (;;) {
     ctx.assertLease?.();
+    const control = ctx.db.control(ctx.sessionId);
+    if (control === "cancel") {
+      cancelRun(ctx, run);
+      return;
+    }
+    const checkpoint = await ctx.checkpointer.getTuple(config),
+      state = checkpoint ? readGraphState(await ctx.graph.getState(config)) : undefined;
+    if (synchronizeHistory && state && state.values.messages.length > 0) {
+      await ctx.db.syncHistory(ctx.sessionId, state.values.messages);
+      completeActiveStream(streamState);
+      ctx.observer?.changed?.(ctx.sessionId);
+    }
     if (pauseForStop(ctx, run)) {
       return;
     }
-    let operation: AgentOperation | undefined;
-    if (input === null && state) {
-      operation = nextOperation(state.next);
-      if (operation && stepIsComplete(steppedOperation, operation)) {
-        const advance = await waitAfterCompletedStep(ctx, run);
-        if (!advance) {
-          return;
-        }
-        stepping = advance === "step";
-        steppedOperation = undefined;
+    if (control === "pause" || control === "pause_cancel") {
+      const advance = await waitIfPaused(ctx, run);
+      if (!advance) {
+        return;
       }
-      if (operation) {
-        await announceOperation(ctx, item.id, operation, state.values.messages);
-      }
+      stepping = advance === "step";
+      steppedOperation = undefined;
+    } else if (control === "running") {
+      stepping = false;
+      steppedOperation = undefined;
+    } else if (!stepping) {
+      stepping = true;
+      steppedOperation = undefined;
     }
-    let reachedBoundary = false;
+    const next = state ? nextOperation(state.next) : undefined;
+    if (next && stepIsComplete(steppedOperation, next)) {
+      const advance = await waitAfterCompletedStep(ctx, run);
+      if (!advance) {
+        return;
+      }
+      stepping = advance === "step";
+      steppedOperation = undefined;
+    }
+    const input = prepareGraphInput(ctx, run, state),
+      operation = input === null ? next : undefined;
+    if (input === null && state?.next.length === 0) {
+      ctx.observer?.activity?.(ctx.sessionId, "idle");
+      finishRun(ctx, run, state.values.messages, state.values.hookPlan);
+      return;
+    }
+    if (operation && state) {
+      await announceOperation(ctx, item.id, operation, state.values.messages);
+    }
     try {
       const stream = await streamGraph(ctx.graph, input, {
         ...config,
@@ -66,9 +90,10 @@ export async function runGraphUntilBoundary(
         steppedOperation ??= operation;
       }
       retries = 0;
-      reachedBoundary = true;
+      synchronizeHistory = true;
     } catch (error) {
       discardActiveStream(ctx, streamState, item.id);
+      synchronizeHistory = false;
       if (!isRetryableModelError(error)) {
         throw error;
       }
@@ -83,48 +108,6 @@ export async function runGraphUntilBoundary(
       });
       if (!retry) {
         return;
-      }
-    }
-    if (reachedBoundary) {
-      ctx.assertLease?.();
-      const control = ctx.db.control(ctx.sessionId);
-      if (control === "cancel") {
-        cancelRun(ctx, run);
-        return;
-      }
-      state = readGraphState(await ctx.graph.getState(config));
-      if (state.values.messages.length > 0) {
-        await ctx.db.syncHistory(ctx.sessionId, state.values.messages);
-        completeActiveStream(streamState);
-        ctx.observer?.changed?.(ctx.sessionId);
-      }
-      if (ctx.stopping?.aborted) {
-        setRunStatus(ctx, run, "paused");
-        return;
-      }
-      if (control === "pause" || control === "pause_cancel") {
-        const advance = await waitIfPaused(ctx, run);
-        if (!advance) {
-          return;
-        }
-        stepping = advance === "step";
-        steppedOperation = undefined;
-      } else if (control === "running") {
-        stepping = false;
-        steppedOperation = undefined;
-      } else if (!stepping) {
-        stepping = true;
-        steppedOperation = undefined;
-      }
-      const appendInput = consumeBoundaryAppends(ctx, run, state);
-      if (appendInput) {
-        input = appendInput;
-      } else if (state.next.length === 0) {
-        ctx.observer?.activity?.(ctx.sessionId, "idle");
-        finishRun(ctx, run, state.values.messages, state.values.hookPlan);
-        return;
-      } else {
-        input = null;
       }
     }
   }

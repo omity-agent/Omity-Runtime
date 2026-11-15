@@ -120,7 +120,7 @@ export class MethodTracing {
           return value;
         }
         return (...args: unknown[]) => {
-          const invoke = () => Reflect.apply(value, target, args);
+          const invoke = (): unknown => Reflect.apply(value, target, args);
           if (property === "all" || property === "get" || property === "values") {
             return this.trace.measure("SQLite 查询", invoke);
           }

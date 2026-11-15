@@ -54,9 +54,7 @@ test("a new state connection restores history while reconnection only synchroniz
 test("a persisted run failure emits an occurrence independently of subsequent state changes", async () => {
   const fatal = new Error("fatal model failure"),
     model = new MockLanguageModelV4({
-      doStream: async () => {
-        throw fatal;
-      },
+      doStream: () => Promise.reject(fatal),
     });
   using fixture = agentFixture({ model });
   const { context, db } = fixture,

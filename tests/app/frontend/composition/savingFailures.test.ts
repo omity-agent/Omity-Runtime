@@ -7,24 +7,24 @@ test("draft flush exposes HTTP failures and subsequent saves remain serialized",
     errors: unknown[] = [];
   let failing = true;
   const server = Bun.serve({
-    async fetch(request) {
-      requests.push(await request.text());
-      return new Response("draft unavailable", { status: failing ? 503 : 200 });
-    },
-    hostname: "127.0.0.1",
-    port: 0,
-  });
-  const saver = new DraftSaver(
-    { kind: "session", sessionId: "editing" },
-    1000,
-    (error) => errors.push(error),
-    async (_target, content) => {
-      const response = await fetch(server.url, { body: content, method: "PUT" });
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-    },
-  );
+      async fetch(request) {
+        requests.push(await request.text());
+        return new Response("draft unavailable", { status: failing ? 503 : 200 });
+      },
+      hostname: "127.0.0.1",
+      port: 0,
+    }),
+    saver = new DraftSaver(
+      { kind: "session", sessionId: "editing" },
+      1000,
+      (error) => errors.push(error),
+      async (_target, content) => {
+        const response = await fetch(server.url, { body: content, method: "PUT" });
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
+      },
+    );
   try {
     saver.schedule("first draft", 1);
     await expect(saver.flush()).rejects.toThrow("draft unavailable");

@@ -11,6 +11,7 @@ import { emptySessionDefinition } from "../../src/infrastructure/database/sessio
 import { hostOwnerId } from "../../src/infrastructure/process/ownership";
 import { recoverHostSession } from "../../src/runtime/execution/recovery";
 import { createTestDirectory } from "../support/artifacts";
+import { containingText } from "../support/asymmetric";
 import { writeTestConfiguration } from "../support/configuration";
 import { required, runOf } from "../support/database";
 
@@ -123,7 +124,7 @@ test("resume reloads the current MCP configuration", async () => {
     expect(String(caught)).toContain("MCP 配置");
     expect(failures).toHaveBeenCalledTimes(1);
     expect(failures.mock.calls[0]?.[0]).toMatchObject({
-      error: { message: expect.stringContaining("MCP 配置") },
+      error: { message: containingText("MCP 配置") },
       sessionId: "resume-failure",
     });
     await controller.close();

@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 
-import matter from "gray-matter";
+import matter, { test as hasFrontMatter } from "gray-matter";
 import untildify from "untildify";
 import { z } from "zod";
 
@@ -66,7 +66,7 @@ function readSkill(skillDir: string): SkillInfo {
   return { ...meta, source };
 }
 function parseSkillMeta(content: string, source: string): SkillMeta {
-  if (!matter.test(content)) {
+  if (!hasFrontMatter(content)) {
     throw new Error(localize("errors:skills.frontMatterMissing", { value0: source }));
   }
   return skillMetaSchema.parse(matter(content).data);

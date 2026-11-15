@@ -9,8 +9,8 @@ import { prepareMagikaAssets } from "./magikaModel";
 import { generateDatabaseSchema } from "./schemaAsset";
 
 const root = resolve(import.meta.dir, ".."),
-  frontendPublicCache = resolve(root, "dist/frontend-public");
-const command = process.argv.at(2);
+  frontendPublicCache = resolve(root, "dist/frontend-public"),
+  command = process.argv.at(2);
 if (command !== undefined && command !== "--test" && command !== "--benchmark-mcp") {
   throw new Error(localize("build:unknownArgument", { command }));
 }

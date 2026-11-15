@@ -130,34 +130,32 @@ export class RestartingStdioClient implements McpOperations {
     }
     return failure;
   }
-  private ensureRecovery() {
-    if (this.controller.signal.aborted) {
-      return Promise.reject(this.controller.signal.reason);
-    }
+  private async ensureRecovery() {
+    this.controller.signal.throwIfAborted();
     if (this.current) {
-      return Promise.resolve(this.current);
+      return this.current;
     }
     if (this.unavailable) {
-      return Promise.reject(this.unavailable);
+      throw this.unavailable;
     }
-    if (this.recovering) {
-      return this.recovering;
-    }
-    this.recovering = this.restart()
-      .catch((error: unknown) => {
-        this.controller.signal.throwIfAborted();
-        if (!(error instanceof McpStdioUnavailableError)) {
-          this.logger.error(localize("mcp:client.recoveryFailed"), {
-            error: error instanceof Error ? error.message : String(error),
-            server: this.serverName,
-          });
-        }
-        throw error;
-      })
-      .finally(() => {
-        this.recovering = undefined;
-      });
+    this.recovering ??= this.recover();
     return this.recovering;
+  }
+  private async recover() {
+    try {
+      return await this.restart();
+    } catch (error) {
+      this.controller.signal.throwIfAborted();
+      if (!(error instanceof McpStdioUnavailableError)) {
+        this.logger.error(localize("mcp:client.recoveryFailed"), {
+          error: error instanceof Error ? error.message : String(error),
+          server: this.serverName,
+        });
+      }
+      throw error;
+    } finally {
+      this.recovering = undefined;
+    }
   }
   private async restart() {
     const { signal } = this.controller;

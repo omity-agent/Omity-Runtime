@@ -44,6 +44,7 @@ export const connectStdioClient: StdioConnector = async (serverName, connection,
         stdout.append(chunk);
       }
     });
+  // eslint-disable-next-line unicorn/prefer-add-event-listener -- MCP transports expose callback properties instead of EventTarget APIs.
   transport.onerror = (error) => {
     evidence.record(error);
   };

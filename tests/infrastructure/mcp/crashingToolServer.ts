@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 const server = new McpServer({ name: "crash-recovery", version: "1" });
-server.registerTool("identity", {}, async () => ({
+server.registerTool("identity", {}, () => ({
   content: [{ text: process.pid.toString(), type: "text" }],
 }));
 server.registerTool("crash", {}, async () => {

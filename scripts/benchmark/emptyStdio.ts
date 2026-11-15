@@ -27,7 +27,7 @@ for (const tool of tools) {
       description: tool.description,
       inputSchema: { input: z.string().optional() },
     },
-    async () => ({ content: [] }),
+    () => ({ content: [] }),
   );
 }
 await server.connect(new StdioServerTransport());

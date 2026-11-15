@@ -68,6 +68,7 @@ function subscriber<Name extends keyof ChannelMessages>(
   return [
     name,
     (message: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Undici owns these channel payloads; repeated validation would add overhead to every request.
       listener(message as ChannelMessages[Name]);
     },
   ] as const;

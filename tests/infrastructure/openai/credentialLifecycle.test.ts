@@ -148,16 +148,17 @@ test("refresh failures propagate without overwriting credentials and permit anot
   }
 });
 test("local credentials honor CODEX_HOME and derive account and FedRamp claims", async () => {
-  using auth = await createOAuthFile({
-    accountId: null,
-    idToken: createTestJwt({
-      "https://api.openai.com/auth": {
-        chatgpt_account_id: "derived-account",
-        chatgpt_account_is_fedramp: true,
-      },
-    }),
-  });
-  using _environment = scopedEnvironment({ CODEX_HOME: auth.directory });
+  using resources = new DisposableStack(),
+    auth = await createOAuthFile({
+      accountId: null,
+      idToken: createTestJwt({
+        "https://api.openai.com/auth": {
+          chatgpt_account_id: "derived-account",
+          chatgpt_account_is_fedramp: true,
+        },
+      }),
+    });
+  resources.use(scopedEnvironment({ CODEX_HOME: auth.directory }));
   const connection = createCodexConnection({ codexVersion: "0.154.4" }),
     session = await connection.websocket();
   expect(session.apiKey).toBe("codex-test-token");

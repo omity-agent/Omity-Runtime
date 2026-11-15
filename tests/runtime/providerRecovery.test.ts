@@ -34,7 +34,10 @@ test.each(modelFailures)("handles $name through the model graph", async (failure
   context.settings.model.temperature = undefined;
   context.observer = {
     token: () => {},
-    warning: (_sessionId, warning) => warnings.push(warning),
+    warning: (_sessionId, warning) => {
+      warnings.push(warning);
+      db.appendUser("target", "follow-up during retry");
+    },
   };
   try {
     db.resetSession("target", workspace);
@@ -44,6 +47,14 @@ test.each(modelFailures)("handles $name through the model graph", async (failure
     if (failure.retryable) {
       expect(db.nextInput("target")).toBeNull();
       expect(db.history("target").at(-1)?.text).toBe("recovered");
+      expect(model.doStreamCalls[0]?.prompt).not.toContainEqual({
+        content: [{ text: "follow-up during retry", type: "text" }],
+        role: "user",
+      });
+      expect(model.doStreamCalls[1]?.prompt).toContainEqual({
+        content: [{ text: "follow-up during retry", type: "text" }],
+        role: "user",
+      });
       expect(loggedError).not.toHaveBeenCalled();
       expect(warnings).toHaveLength(1);
       const warning = required(warnings[0]);

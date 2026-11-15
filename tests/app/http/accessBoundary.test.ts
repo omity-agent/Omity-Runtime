@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 
+import { anyValue } from "../../support/asymmetric";
 import { liveApplication } from "./liveApplication";
 
 test("real HTTP access rejects public reads and cross-site writes while registration tickets are single-use", async () => {
@@ -28,7 +29,7 @@ test("real HTTP access rejects public reads and cross-site writes while registra
   expect(options.status).toBe(200);
   expect(options.headers.get("set-cookie")).toContain("HttpOnly");
   expect(options.headers.get("set-cookie")).toContain("Secure");
-  expect(await options.json()).toMatchObject({ options: { challenge: expect.any(String) } });
+  expect(await options.json()).toMatchObject({ options: { challenge: anyValue(String) } });
   const replay = await request();
   expect(replay.status).toBe(403);
   expect(app.requests).toEqual([]);

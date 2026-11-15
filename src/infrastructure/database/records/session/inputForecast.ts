@@ -35,11 +35,11 @@ export function readPredictionContext(db: Database, sessionId: string) {
     )
     .get(sessionId);
   if (!row) {
-    return undefined;
+    return;
   }
   const message = decodeMessage(row.message_json);
   if (!AIMessage.isInstance(message) || message.tool_calls?.length) {
-    return undefined;
+    return;
   }
   const assistant = messageContentToText(message);
   return assistant.trim()

@@ -34,6 +34,7 @@ export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
       }
       const options: UndiciRequestInit = {
         ...(input instanceof Request ? requestOptions(input) : {}),
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Bun and Undici declare distinct Fetch types; the shared request options pass through without conversion.
         ...(init as UndiciRequestInit),
         dispatcher:
           policy === "explicit"
@@ -46,6 +47,7 @@ export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
             : transport.dispatcher,
         duplex: "half",
       };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Preserve Undici response identity and streaming metadata across Bun's distinct Fetch declaration.
       return (await undiciFetch(url, options)) as unknown as Response;
     },
     fetch = Object.assign(routedFetch, {

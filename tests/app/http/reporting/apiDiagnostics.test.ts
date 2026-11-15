@@ -7,6 +7,7 @@ import {
   configureFailure,
   failingStartupPath,
 } from "../../../infrastructure/mcp/initialization/isolatedCatalog";
+import { containingText, partialObject } from "../../../support/asymmetric";
 import { liveApplication } from "../liveApplication";
 
 test("MCP startup diagnostics survive the API and are reported as one summary and a structured browser record", async () => {
@@ -42,8 +43,8 @@ test("MCP startup diagnostics survive the API and are reported as one summary an
     expect(failure.status).toBe(500);
     expect(structuredClone(failure.details)).toMatchObject({
       failures: [
-        expect.objectContaining({
-          process: expect.objectContaining({ exitCode: 37 }),
+        partialObject({
+          process: partialObject({ exitCode: 37 }),
           server: "broken",
           stage: "initialize",
         }),
@@ -53,13 +54,13 @@ test("MCP startup diagnostics survive the API and are reported as one summary an
     expect(logged).toHaveBeenCalledTimes(1);
     expect(logged).toHaveBeenCalledWith(
       'MCP 启动失败："broken"',
-      expect.objectContaining({
+      partialObject({
         code: "MCP_LOAD_FAILED",
         failures: [
-          expect.objectContaining({
-            connection: expect.objectContaining({ cwd: app.root, transport: "stdio" }),
-            stderr: expect.objectContaining({
-              text: expect.stringContaining("fatal startup failure"),
+          partialObject({
+            connection: partialObject({ cwd: app.root, transport: "stdio" }),
+            stderr: partialObject({
+              text: containingText("fatal startup failure"),
             }),
           }),
         ],

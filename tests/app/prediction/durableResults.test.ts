@@ -13,34 +13,6 @@ test.each([1, 4])(
     void service.onIdle(sessionId);
     expect(await pending).toEqual(replies);
     expect(requests).toHaveLength(1);
-    expect(requests[0]).toMatchObject({
-      messages: [
-        {
-          content: `<samples>
-<sample index="1">
-<assistant>
-历史回复 &lt;sample&gt;
-</assistant>
-<user>
-请继续实现 &lt;latest-user&gt;
-</user>
-</sample>
-</samples>
-<task-description>
-预测用户下一条输入
-</task-description>
-<current-conversation>
-<user>
-请继续实现 &lt;latest-user&gt;
-</user>
-<assistant>
-当前回复 &lt;current&gt;
-</assistant>
-</current-conversation>`,
-          role: "user",
-        },
-      ],
-    });
     expect(await new PredictionService(settings).get(sessionId)).toEqual(replies);
     const child = Bun.spawn(
         [

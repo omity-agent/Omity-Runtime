@@ -15,7 +15,7 @@ export function estimateCacheHitRate(messages: BaseMessage[], modelMessages: Mod
   }
   const previousTokens = readReportedUsage(previous)?.input;
   if (previousTokens === undefined) {
-    return undefined;
+    return;
   }
   if (previousTokens === 0) {
     return 0;

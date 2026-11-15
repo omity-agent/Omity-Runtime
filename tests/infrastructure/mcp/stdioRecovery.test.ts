@@ -6,6 +6,7 @@ import { z } from "zod";
 import { localize } from "../../../src/i18n/server";
 import { Logger } from "../../../src/infrastructure/logging/logger";
 import { RestartingStdioClient } from "../../../src/infrastructure/mcp/client/restarting";
+import { containingText } from "../../support/asymmetric";
 
 test("real MCP process crash rejects the interrupted call and the next call uses a new child", async () => {
   const client = await RestartingStdioClient.create(
@@ -30,7 +31,7 @@ test("real MCP process crash rejects the interrupted call and the next call uses
     }
     expect(failure).toMatchObject({
       code: "MCP_STDIO_PROCESS_EXITED",
-      diagnostics: expect.stringContaining("intentional tool process crash"),
+      diagnostics: containingText("intentional tool process crash"),
     });
     const after = await client.callTool({ arguments: {}, name: "identity" }),
       schema = z.object({ content: z.array(z.object({ text: z.string() })) });
@@ -88,7 +89,7 @@ test("shutdown during restart backoff reports cancellation without a recovery er
   try {
     await failedAttempt.promise;
     await client.close();
-    expect(await interrupted).toHaveProperty("message", expect.stringContaining("正在关闭"));
+    expect(await interrupted).toHaveProperty("message", containingText("正在关闭"));
     expect(errors).not.toHaveBeenCalled();
   } finally {
     await client.close();

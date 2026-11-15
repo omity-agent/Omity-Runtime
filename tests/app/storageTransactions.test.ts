@@ -17,7 +17,7 @@ const history = [
     { assistant: "second answer", user: "second user" },
   ],
   operations = ["create", "fork"] as const;
-let home: string, environment: DisposableStack;
+let environment: DisposableStack, home: string;
 beforeEach(() => {
   home = createTestDirectory("storage-transactions");
   environment = scopedEnvironment({ OMITY_HOME: home });

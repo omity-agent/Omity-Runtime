@@ -3,6 +3,12 @@ import { join } from "node:path";
 
 import { maximumMcpStderrBytes } from "../../../../settings/diagnosticPolicy";
 import { mcpLoadDetailsSchema } from "../../../../src/infrastructure/mcp/failures/wireFormat";
+import {
+  anyValue,
+  containingItems,
+  containingText,
+  partialObject,
+} from "../../../support/asymmetric";
 import { failedCatalog, failingStartupPath } from "./isolatedCatalog";
 
 test("a real stdio startup exit preserves structured process, stderr, and sanitized launch diagnostics", async () => {
@@ -41,13 +47,13 @@ test("a real stdio startup exit preserves structured process, stderr, and saniti
       environmentKeys: ["MCP_TEST_SECRET"],
       transport: "stdio",
     },
-    process: { closedByClient: false, exitCode: 37, exited: true, pid: expect.any(Number) },
+    process: { closedByClient: false, exitCode: 37, exited: true, pid: anyValue(Number) },
     server: "broken",
     stage: "initialize",
     stderr: {
       capturedBytes: maximumMcpStderrBytes,
-      discardedBytes: expect.any(Number),
-      text: expect.stringContaining("fatal startup failure: [REDACTED]"),
+      discardedBytes: anyValue(Number),
+      text: containingText("fatal startup failure: [REDACTED]"),
     },
   });
   expect(entry!.stderr!.discardedBytes).toBeGreaterThan(0);
@@ -73,8 +79,8 @@ test("invalid startup configuration has structured field diagnostics without spa
   expect(failure.code).toBe("MCP_LOAD_FAILED");
   expect(failure.details.failures).toHaveLength(1);
   expect(structuredClone(failure.details.failures[0])).toMatchObject({
-    error: expect.objectContaining({ name: "ZodError" }),
-    issues: expect.arrayContaining([expect.stringContaining("command")]),
+    error: partialObject({ name: "ZodError" }),
+    issues: containingItems([containingText("command")]),
     stage: "configuration",
   });
 });
@@ -98,7 +104,7 @@ test("the transport error channel retains invalid MCP messages separately from c
   expect(structuredClone(entry)).toMatchObject({
     server: "invalid",
     stage: "initialize",
-    transportErrors: expect.arrayContaining([expect.objectContaining({ name: "ZodError" })]),
+    transportErrors: containingItems([partialObject({ name: "ZodError" })]),
   });
 }, 10_000);
 test("an HTTP handshake failure records endpoint and transport causes without leaking credentials", async () => {
@@ -120,7 +126,7 @@ test("an HTTP handshake failure records endpoint and transport causes without le
       connection: {
         headerNames: ["Authorization"],
         transport: "http",
-        url: expect.stringContaining("token=[REDACTED]"),
+        url: containingText("token=[REDACTED]"),
       },
       server: "remote",
       stage: "initialize",

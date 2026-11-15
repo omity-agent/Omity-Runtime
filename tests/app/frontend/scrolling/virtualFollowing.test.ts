@@ -13,7 +13,7 @@ test.each(["tools", "timeline"])(
     const errors: Error[] = [];
     page.on("pageerror", (error) => errors.push(error));
     for (let revision = 9; revision <= 58; revision += 1) {
-      await page.evaluate(() => globalThis.scrolling.advance());
+      await page.evaluate(() => globalThis.window.scrolling.advance());
       await settleLayout(page);
       const positions = await readScrollPositions(page, 4);
       expect(positions.filter(({ gap }) => gap > 1)).toEqual([]);
@@ -31,7 +31,7 @@ test("scrolling up a tool pauses only that panel and returning to the bottom res
   await settleLayout(page);
   const top = await panel.evaluate((element) => element.scrollTop);
   for (let update = 0; update < 5; update += 1) {
-    await page.evaluate(() => globalThis.scrolling.advance());
+    await page.evaluate(() => globalThis.window.scrolling.advance());
     await settleLayout(page);
   }
   expect(await panel.evaluate((element) => element.scrollTop)).toBeCloseTo(top, 0);
@@ -40,7 +40,7 @@ test("scrolling up a tool pauses only that panel and returning to the bottom res
   await panel.hover();
   await page.mouse.wheel(0, 100_000);
   await settleLayout(page);
-  await page.evaluate(() => globalThis.scrolling.advance());
+  await page.evaluate(() => globalThis.window.scrolling.advance());
   await settleLayout(page);
   const resumedPositions = await readScrollPositions(page);
   expect(resumedPositions.every(({ gap }) => gap <= 1)).toBe(true);
@@ -79,7 +79,7 @@ test.each(["wheel", "keyboard", "scrollbar"])(
     const initial = await readScrollPositions(page);
     expect(initial[0]?.gap).toBeGreaterThan(1);
     for (let update = 0; update < 3; update += 1) {
-      await page.evaluate(() => globalThis.scrolling.advance());
+      await page.evaluate(() => globalThis.window.scrolling.advance());
       await settleLayout(page);
     }
     const paused = await readScrollPositions(page);
@@ -87,7 +87,7 @@ test.each(["wheel", "keyboard", "scrollbar"])(
     await page.mouse.move(x, y);
     await page.mouse.wheel(0, 100_000);
     await settleLayout(page);
-    await page.evaluate(() => globalThis.scrolling.advance());
+    await page.evaluate(() => globalThis.window.scrolling.advance());
     await settleLayout(page);
     const resumed = await readScrollPositions(page);
     expect(resumed.filter(({ gap }) => gap > 1)).toEqual([]);

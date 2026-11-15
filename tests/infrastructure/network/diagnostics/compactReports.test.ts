@@ -8,6 +8,7 @@ import { captureError, summarizeError } from "../../../../src/failures/details";
 import type { ResolveOutboundProxy } from "../../../../src/infrastructure/network/dispatchProxied";
 import { createNetworkRuntime } from "../../../../src/infrastructure/network/installNetworking";
 import { isRetryableModelError } from "../../../../src/runtime/transientErrors";
+import { anyValue } from "../../../support/asymmetric";
 import { startRecordingProxy } from "../localProxyFixture";
 
 async function requestFailure(resolveProxy: ResolveOutboundProxy) {
@@ -50,7 +51,7 @@ test("a single proxied TLS failure reports each diagnostic in exactly one place"
   const proxy = await startRecordingProxy(address.port),
     proxyUrl = proxy.url.replace("://", "://private-user:private-password@");
   try {
-    const { error, native, summary } = await requestFailure(async () => proxyUrl),
+    const { error, native, summary } = await requestFailure(() => proxyUrl),
       serialized = JSON.stringify(summary);
     expect(native.cause).toBeInstanceOf(Error);
     expect(error.cause?.details?.["code"]).toBe("ECONNRESET");
@@ -63,7 +64,7 @@ test("a single proxied TLS failure reports each diagnostic in exactly one place"
         },
       ],
       phase: "handshake",
-      timing: { durationMs: expect.any(Number), startedAt: expect.any(String) },
+      timing: { durationMs: anyValue(Number), startedAt: anyValue(String) },
     });
     expect(error.details).not.toHaveProperty("transport");
     expect(error.details).not.toHaveProperty("close");

@@ -13,7 +13,7 @@ test("HTTP requests use the selected proxy including authentication and streamed
       port: 0,
     }),
     proxy = await startRecordingProxy(target.port!),
-    runtime = createNetworkRuntime(async () => proxy.url.replace("://", "://user:pass@"));
+    runtime = createNetworkRuntime(() => proxy.url.replace("://", "://user:pass@"));
   try {
     const response = await runtime.fetch("http://proxy-only.invalid/model", {
       body: "data: model-stream\n\n",
@@ -40,7 +40,7 @@ test("redirect destinations are resolved again and can bypass the original proxy
       port: 0,
     }),
     proxy = await startRecordingProxy(redirect.port!),
-    runtime = createNetworkRuntime(async (url) => {
+    runtime = createNetworkRuntime((url) => {
       urls.push(url);
       return new URL(url).hostname === "first.invalid" ? proxy.url : undefined;
     });
@@ -66,7 +66,7 @@ test("proxy failure never retries the target directly", async () => {
       port: 0,
     }),
     brokenProxy = Bun.serve({ fetch: () => new Response(null, { status: 502 }), port: 0 }),
-    runtime = createNetworkRuntime(async () => brokenProxy.url.href);
+    runtime = createNetworkRuntime(() => brokenProxy.url.href);
   await brokenProxy.stop(true);
   try {
     await expect(runtime.fetch(target.url)).rejects.toThrow();

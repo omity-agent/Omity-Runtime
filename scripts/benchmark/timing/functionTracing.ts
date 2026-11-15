@@ -1,15 +1,28 @@
 import { spyOn } from "bun:test";
 
-import * as aiMessages from "../../../src/agent/aiMessages";
-import * as incomingMessages from "../../../src/agent/fromAiMessages";
-import * as modelProvider from "../../../src/agent/model/provider";
-import * as modelRequests from "../../../src/agent/model/request";
-import * as fileSources from "../../../src/fileLinks/messageSources";
-import * as historySync from "../../../src/infrastructure/database/records/transcript/messages/sync";
-import * as streamEvents from "../../../src/runtime/aiStream";
-import * as largeOutput from "../../../src/runtime/largeOutput";
-import * as tokenizer from "../../../src/runtime/tokenizer";
 import type { SpanRecorder } from "./spanRecorder";
+
+const [
+  aiMessages,
+  incomingMessages,
+  modelProvider,
+  modelRequests,
+  fileSources,
+  historySync,
+  streamEvents,
+  largeOutput,
+  tokenizer,
+] = await Promise.all([
+  import("../../../src/agent/aiMessages"),
+  import("../../../src/agent/fromAiMessages"),
+  import("../../../src/agent/model/provider"),
+  import("../../../src/agent/model/request"),
+  import("../../../src/fileLinks/messageSources"),
+  import("../../../src/infrastructure/database/records/transcript/messages/sync"),
+  import("../../../src/runtime/aiStream"),
+  import("../../../src/runtime/largeOutput"),
+  import("../../../src/runtime/tokenizer"),
+]);
 
 export class FunctionTracing {
   private readonly restorations: { mockRestore: () => void }[] = [];

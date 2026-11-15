@@ -37,11 +37,11 @@ export function liveApplication(adapter: "completions" | "responses-sse" = "comp
       },
       hostname: "127.0.0.1",
       port: 0,
+    }),
+    environment = scopedEnvironment({
+      OMITY_HOME: join(root, "home"),
+      TEST_KEY: "local-workflow",
     });
-  const environment = scopedEnvironment({
-    OMITY_HOME: join(root, "home"),
-    TEST_KEY: "local-workflow",
-  });
   writeTestConfiguration(root, {
     agentYaml: `recursionLimit: 50
 prompts: [system.md]

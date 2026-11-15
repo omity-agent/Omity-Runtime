@@ -95,7 +95,7 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
       );
     this.storage.putWrites({ ...identity, checkpointId }, rows);
   }
-  async deleteThread(threadId: string) {
-    this.storage.delete(checkpointRunId(threadId));
+  deleteThread(threadId: string) {
+    return Promise.try(() => this.storage.delete(checkpointRunId(threadId)));
   }
 }

@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requestBodyLimit } from "../../../settings/networking";
 import { submissionForm } from "../../../src/app/attachments/submission";
 import { sessionPaths } from "../../../src/infrastructure/configuration/sessionPaths";
+import { containingItems, partialObject } from "../../support/asymmetric";
 import { liveApplication } from "./liveApplication";
 
 test("HTTP session creation runs a model then preserves draft revisions and attachments until deletion", async () => {
@@ -37,9 +38,7 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   expect(warnings).toEqual([]);
   const transcript = await fetch(`${endpoint}/transcript`);
   expect(await transcript.json()).toMatchObject({
-    messages: expect.arrayContaining([
-      expect.objectContaining({ content: "workflow answer", role: "assistant" }),
-    ]),
+    messages: containingItems([partialObject({ content: "workflow answer", role: "assistant" })]),
   });
   const control = await fetch(`${endpoint}/control`, json({ control: "pause" })),
     newerDraft = await fetch(
@@ -76,8 +75,8 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   });
   expect(await transcriptAfterMessage.json()).toMatchObject({
     control: "pause",
-    queue: expect.arrayContaining([
-      expect.objectContaining({
+    queue: containingItems([
+      partialObject({
         content: accepted.content,
         id: accepted.inputId,
         status: "paused",

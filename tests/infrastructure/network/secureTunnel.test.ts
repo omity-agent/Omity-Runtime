@@ -30,7 +30,7 @@ test("wss:// retains the HTTP proxy's default CONNECT route", async () => {
   if (!address || typeof address === "string") {
     throw new Error("测试代理未监听 TCP 端口");
   }
-  const runtime = createNetworkRuntime(async () => `http://127.0.0.1:${address.port.toString()}`),
+  const runtime = createNetworkRuntime(() => `http://127.0.0.1:${address.port.toString()}`),
     previousFetch = globalThis.fetch;
   globalThis.fetch = runtime.fetch;
   try {

@@ -71,7 +71,7 @@ export class RoundtripCapture {
           this.calls += 1;
           assert.equal(this.calls, 1, "历史工具不应被重新执行");
           this.trace.mark("mcpStarted");
-          const output: unknown = await this.trace.measure("MCP SDK 请求及结果校验", () =>
+          const output: unknown = await this.trace.measure("MCP SDK 请求及结果校验", (): unknown =>
             Reflect.apply(target, receiver, args),
           );
           this.trace.mark("mcpReturned");

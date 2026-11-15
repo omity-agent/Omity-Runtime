@@ -4,6 +4,7 @@ import { HumanMessage } from "@langchain/core/messages";
 
 import { streamAiModel } from "../../../src/agent/model/request";
 import { aiModelTools } from "../../../src/agent/model/tools";
+import { partialObject } from "../../support/asymmetric";
 import { geminiApis, geminiWire } from "../gemini/endpointFixture";
 import { parameterCases, schemaBoundaries } from "./parameterCases";
 import { wireModel } from "./wireFixtures";
@@ -56,7 +57,7 @@ test.each(["completions", "responses", "messages"] as const)(
         };
         return api === "completions"
           ? { function: { ...definition, parameters: schema }, type: "function" }
-          : expect.objectContaining({
+          : partialObject({
               ...definition,
               [api === "messages" ? "input_schema" : "parameters"]: schema,
             });

@@ -9,7 +9,9 @@ import { i18nReady } from "../../../../src/app/frontend/i18n";
 import type { TimelineMessage } from "../../../../src/app/timeline";
 
 declare global {
-  var scrolling: { advance: () => void; revision: number };
+  interface Window {
+    scrolling: { advance: () => void; revision: number };
+  }
 }
 const mode = new URL(location.href).searchParams.get("mode"),
   longLine = "Text that wraps into several measured lines. ".repeat(6),
@@ -118,7 +120,7 @@ function StreamingHarness() {
     ),
     code = messages.at(-1)?.parts.find((part) => part.type === "tool")?.call.rawInput;
   useLayoutEffect(() => {
-    globalThis.scrolling = {
+    globalThis.window.scrolling = {
       advance: () => {
         flushSync(() => setRevision((current) => current + 1));
       },

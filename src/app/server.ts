@@ -29,8 +29,9 @@ export async function startAppServer(options: AppServerOptions) {
     shutdown = listenForShutdownSignal();
   let access: AccessService | undefined,
     controller: AppController | undefined,
-    server: ReturnType<typeof createHttpServer> | undefined;
-  let failure: Error | undefined, signal: Awaited<typeof shutdown.signal> | undefined;
+    failure: Error | undefined,
+    server: ReturnType<typeof createHttpServer> | undefined,
+    signal: Awaited<typeof shutdown.signal> | undefined;
   try {
     access = new AccessService(settings);
     controller = new AppController(options.root, {

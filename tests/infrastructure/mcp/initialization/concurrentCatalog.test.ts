@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 import { mcpLoadDetailsSchema } from "../../../../src/infrastructure/mcp/failures/wireFormat";
 import { snapshotMcpTools } from "../../../../src/infrastructure/mcp/tools/definitions";
 import { isProcessRunning } from "../../../../src/infrastructure/process/ownership";
+import { containingText, partialObject } from "../../../support/asymmetric";
 import { coordinateStartup } from "./startupCoordinator";
 
 test("session MCP pipelines overlap while preserving tool order and reusing the session pool", async () => {
@@ -83,20 +84,20 @@ test.each([false, true])(
       }
       const details = mcpLoadDetailsSchema.parse(Reflect.get(failure, "details"));
       expect(details.failures).toHaveLength(multipleErrors ? 2 : 1);
-      expect(details.failures).toContainEqual(
-        expect.objectContaining({
-          error: expect.objectContaining({
-            message: expect.stringContaining("broken catalog rejected"),
+      expect(details.failures).toContainEqual<unknown>(
+        partialObject({
+          error: partialObject({
+            message: containingText("broken catalog rejected"),
           }),
           server: "broken",
           stage: "list_tools",
         }),
       );
       if (multipleErrors) {
-        expect(details.failures).toContainEqual(
-          expect.objectContaining({
-            error: expect.objectContaining({
-              message: expect.stringContaining("other catalog rejected"),
+        expect(details.failures).toContainEqual<unknown>(
+          partialObject({
+            error: partialObject({
+              message: containingText("other catalog rejected"),
             }),
             server: "other",
             stage: "list_tools",

@@ -14,7 +14,9 @@ interface LinkedFrame {
   matches: FilePathMatch[];
 }
 declare global {
-  var renderLinkedFrame: (frame: LinkedFrame) => void;
+  interface Window {
+    renderLinkedFrame: (frame: LinkedFrame) => void;
+  }
 }
 function LinkedRendering({ code, html, language, matches }: LinkedFrame) {
   const highlight = useMemo(
@@ -38,7 +40,7 @@ const container = document.createElement("div"),
   root = createRoot(container);
 container.id = "linked-rendering";
 document.body.append(container);
-globalThis.renderLinkedFrame = ({ code, html, language, matches }) => {
+globalThis.window.renderLinkedFrame = ({ code, html, language, matches }) => {
   flushSync(() => {
     root.render(<LinkedRendering code={code} html={html} language={language} matches={matches} />);
   });

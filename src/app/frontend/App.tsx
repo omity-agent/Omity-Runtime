@@ -135,13 +135,14 @@ function AuthenticatedApp() {
       navigate({ kind: "new" });
     }, [activeSession, discardPendingFork, navigate, pendingFork, queryClient, setDeletingId]),
     beginFork = useCallback<ChatPageProps["onFork"]>(
-      async (messageId) => {
-        const sourceSessionId = pendingFork?.sourceSessionId ?? activeSession?.id;
-        if (!sourceSessionId) {
-          return;
-        }
-        beginPendingFork(sourceSessionId, messageId);
-      },
+      (messageId) =>
+        Promise.try(() => {
+          const sourceSessionId = pendingFork?.sourceSessionId ?? activeSession?.id;
+          if (!sourceSessionId) {
+            return;
+          }
+          beginPendingFork(sourceSessionId, messageId);
+        }),
       [activeSession, beginPendingFork, pendingFork],
     ),
     sendSessionMessage = pendingFork ? sendPendingFork : submissions.send;

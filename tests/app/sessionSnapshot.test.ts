@@ -12,6 +12,7 @@ import { removeDatabaseDirectory } from "../../src/infrastructure/database/sqlit
 import { AskUserRuntime } from "../../src/infrastructure/toolbox/runtime";
 import { prepareHostSession } from "../../src/runtime/execution/sessionPreparation";
 import { createTestDirectory } from "../support/artifacts";
+import { containingItems } from "../support/asymmetric";
 import { defaultBuiltIns, writeToolboxConfiguration } from "../support/builtins";
 import { writeTestConfiguration } from "../support/configuration";
 import { scopedEnvironment } from "../support/scopedEnvironment";
@@ -130,7 +131,7 @@ raceIntervalMs: 3500
     delayMs: 4321,
     maxAttempts: 7,
   });
-  expect(restored.tools.map(({ name }) => name)).toEqual(
-    expect.arrayContaining([toolboxes.choice.name, toolboxes.open_ended.name]),
+  expect(restored.tools.map(({ name }) => name)).toEqual<unknown>(
+    containingItems([toolboxes.choice.name, toolboxes.open_ended.name]),
   );
 });

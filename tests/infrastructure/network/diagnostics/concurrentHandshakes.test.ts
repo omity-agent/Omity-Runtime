@@ -40,7 +40,7 @@ test("concurrent handshakes retain independent responses and exclude ordinary HT
       },
     }),
     proxy = await startRecordingProxy(target.port!),
-    transport = createProxyDispatcher(async (url) =>
+    transport = createProxyDispatcher((url) =>
       new URL(url).hostname === "concurrent.invalid" ? proxy.url : undefined,
     ),
     sockets = createSocketTransport(transport.dispatcher);

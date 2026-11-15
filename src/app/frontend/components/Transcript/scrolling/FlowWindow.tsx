@@ -5,6 +5,7 @@ import type { CustomContainerComponentProps, CustomItemComponentProps } from "vi
 import { localize } from "../../../i18n";
 
 const row = css({
+  // eslint-disable-next-line @pandacss/no-margin-properties -- This virtual offset represents unmounted rows, not spacing between rendered items.
   "&:first-child": { marginBlockStart: "var(--window-offset)" },
   flexShrink: 0,
 });

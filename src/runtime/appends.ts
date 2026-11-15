@@ -1,11 +1,30 @@
 import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
 
+import { historyInput } from "../agent/graph/historyInput";
 import { localize } from "../i18n/server";
 import { inputMessageId } from "../infrastructure/database/records/transcript/messages/history";
 import type { HostContext } from "./context";
 import type { ActiveRun } from "./run";
 
-export function consumeBoundaryAppends(ctx: HostContext, run: ActiveRun, state: BoundaryState) {
+export function prepareGraphInput(ctx: HostContext, run: ActiveRun, state?: BoundaryState) {
+  const input = state
+      ? recoverConsumedAppends(ctx, run, state)
+      : historyInput(ctx.db.history(ctx.sessionId)),
+    appends = consumeBoundaryAppends(ctx, run, state ?? { values: input ?? {} });
+  if (!appends) {
+    return input;
+  }
+  if (!input) {
+    return appends;
+  }
+  return {
+    ...input,
+    ...appends,
+    hookPendingUserIds: [...new Set([...input.hookPendingUserIds, ...appends.hookPendingUserIds])],
+    messages: [...input.messages, ...appends.messages],
+  };
+}
+function consumeBoundaryAppends(ctx: HostContext, run: ActiveRun, state: BoundaryState) {
   if (hasPendingTools(state) || blocksAppend(state.values?.hookPlan)) {
     return null;
   }
@@ -34,7 +53,7 @@ export function consumeBoundaryAppends(ctx: HostContext, run: ActiveRun, state: 
     ),
   };
 }
-export function recoverConsumedAppends(ctx: HostContext, run: ActiveRun, state: BoundaryState) {
+function recoverConsumedAppends(ctx: HostContext, run: ActiveRun, state: BoundaryState) {
   const consumedIds = new Set(run.items.map((item) => inputMessageId(ctx.sessionId, item.id)));
   for (const message of state.values?.messages ?? []) {
     if (HumanMessage.isInstance(message) && message.id) {

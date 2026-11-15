@@ -18,12 +18,12 @@ export function useComposerDraft({
   draftSaveDelayMs?: number;
   draftTarget: ComposerDraftTarget;
 }) {
-  const [target] = useReducer((value: ComposerDraftTarget) => value, draftTarget);
-  const [content, setContent] = useState(draft ?? "");
-  const [loading, setLoading] = useState(true);
-  const contentRef = useRef(content);
-  const revisionRef = useRef(0);
-  const saverRef = useRef<DraftSaver | undefined>(undefined);
+  const [target] = useReducer((value: ComposerDraftTarget) => value, draftTarget),
+    [content, setContent] = useState(draft ?? ""),
+    [loading, setLoading] = useState(true),
+    contentRef = useRef(content),
+    revisionRef = useRef(0),
+    saverRef = useRef<DraftSaver | undefined>(undefined);
   useEffect(() => {
     let current = true;
     const load = async () => {
@@ -42,7 +42,7 @@ export function useComposerDraft({
   }, [draft, target]);
   useEffect(() => {
     if (draftSaveDelayMs === undefined) {
-      return undefined;
+      return;
     }
     const saver = new DraftSaver(target, draftSaveDelayMs, reportError);
     saverRef.current = saver;
@@ -63,19 +63,19 @@ export function useComposerDraft({
     };
   }, [target]);
   const flush = useCallback(async () => {
-    await saverRef.current?.flush();
-    if (target.kind !== "session") {
-      await writeComposerDraft(target, contentRef.current, revisionRef.current);
-    }
-  }, [target]);
-  const change = (nextContent: string) => {
-    if (nextContent !== contentRef.current) {
-      contentRef.current = nextContent;
-      setContent(nextContent);
-      revisionRef.current += 1;
-      saverRef.current?.schedule(nextContent, revisionRef.current);
-    }
-  };
+      await saverRef.current?.flush();
+      if (target.kind !== "session") {
+        await writeComposerDraft(target, contentRef.current, revisionRef.current);
+      }
+    }, [target]),
+    change = (nextContent: string) => {
+      if (nextContent !== contentRef.current) {
+        contentRef.current = nextContent;
+        setContent(nextContent);
+        revisionRef.current += 1;
+        saverRef.current?.schedule(nextContent, revisionRef.current);
+      }
+    };
   return {
     change,
     content,

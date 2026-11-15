@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { resolve } from "node:path";
 
 import { submissionForm } from "../../../../src/app/attachments/submission";
+import { containingItems, containingText, partialObject } from "../../../support/asymmetric";
 import { defaultBuiltIns, writeToolboxConfiguration } from "../../../support/builtins";
 import { liveApplication } from "../liveApplication";
 
@@ -29,10 +30,10 @@ test.each(["freeformToolInputs", "toolDescriptionOverrides"] as const)(
       error: {
         code: "MCP_LOAD_FAILED",
         details: {
-          failures: expect.arrayContaining([
-            expect.objectContaining({
-              error: expect.objectContaining({
-                message: expect.stringContaining("不存在的工具：renamed_tool"),
+          failures: containingItems([
+            partialObject({
+              error: partialObject({
+                message: containingText("不存在的工具：renamed_tool"),
               }),
               server: "active",
               stage: "customization",

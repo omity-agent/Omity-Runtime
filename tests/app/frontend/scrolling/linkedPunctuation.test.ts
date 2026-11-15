@@ -49,7 +49,7 @@ test("linked code preserves punctuation through streaming and syntax retokenizat
         streamId: "linked-punctuation",
       });
     for (const html of [undefined, result.lines[0]]) {
-      await page.evaluate((frame) => globalThis.renderLinkedFrame(frame), {
+      await page.evaluate((frame) => globalThis.window.renderLinkedFrame(frame), {
         code,
         html,
         language,
@@ -77,7 +77,7 @@ test("file path underlines follow each syntax fragment's text color", async () =
     url: "/tests/app/frontend/scrolling/punctuationHarness.tsx",
   });
   await page.waitForFunction(() => Object.hasOwn(globalThis, "renderLinkedFrame"));
-  await page.evaluate((frame) => globalThis.renderLinkedFrame(frame), {
+  await page.evaluate((frame) => globalThis.window.renderLinkedFrame(frame), {
     code: path,
     html,
     language: "plaintext",

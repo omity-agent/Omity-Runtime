@@ -1,4 +1,5 @@
 import { once } from "node:events";
+import type { IncomingMessage } from "node:http";
 import { createSecureServer, type ServerHttp2Session, type ServerHttp2Stream } from "node:http2";
 import type { Duplex } from "node:stream";
 import { promisify } from "node:util";
@@ -70,7 +71,7 @@ export async function startRetryOrigin(mode: RetryOriginMode) {
     stream.respond({ ":status": 200 });
     stream.end("ready");
   });
-  server.on("upgrade", (request, socket, head) => {
+  server.on("upgrade", (request: IncomingMessage, socket: Duplex, head: Buffer) => {
     protocols.push("http/1.1");
     if (mode === "reset") {
       socket.destroy();

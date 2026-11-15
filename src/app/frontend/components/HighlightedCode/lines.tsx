@@ -1,4 +1,4 @@
-import DOMPurify from "dompurify";
+import purify from "dompurify";
 import { escape as escapeHtml } from "es-toolkit";
 import { memo } from "react";
 
@@ -37,7 +37,7 @@ function HighlightedLineView({
       line.text
     );
   }
-  const sanitized = DOMPurify.sanitize(html);
+  const sanitized = purify.sanitize(html);
   return line.matches.length > 0 ? (
     <HighlightedText html={sanitized} matches={line.matches} />
   ) : (

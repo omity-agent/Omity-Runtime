@@ -40,76 +40,79 @@ export function Composer({
   askUser,
 }: ComposerProps) {
   "use no memo";
-  const { t } = useTranslation();
-  const [submitting, setSubmitting] = useState(false);
-  const answerState = useQuestionAnswerState(askUser?.callId),
+  const { t } = useTranslation(),
+    [submitting, setSubmitting] = useState(false),
+    answerState = useQuestionAnswerState(askUser?.callId),
     askNote = answerState.note,
-    selectedOptions = answerState.options;
-  const { attachmentValues, clearAttachments, handlePasteFiles } =
-    usePendingAttachments(attachmentSettings);
-  const submittingRef = useRef(false);
-  const {
-    change,
-    content,
-    contentRef,
-    flush,
-    loading,
-    revisionRef,
-    saverRef,
-    setContent,
-    target: stableDraftTarget,
-  } = useComposerDraft({ draft, draftSaveDelayMs, draftTarget });
-  const {
-    change: handleContentChange,
-    content: input,
-    contentRef: inputRef,
-    navigate,
-    reset,
-  } = useMessageCandidates(content, change, userMessages, predictions);
-  const handleControl = useCallback(
-    async (control: Parameters<NonNullable<ComposerProps["onControl"]>>[0]) => {
-      await flush();
-      await onControl?.(control);
-    },
-    [flush, onControl],
-  );
-  const handleDelete = useCallback(async () => {
-    saverRef.current?.discardPending();
-    await onDelete?.();
-  }, [onDelete, saverRef]);
-  const submit = useComposerSubmit({
-    askNote,
-    askUser,
-    attachmentValues,
-    clearAttachments,
-    contentRef,
-    draftTarget: stableDraftTarget,
-    inputRef,
-    onAnswer,
-    onSend,
-    reset,
-    revisionRef,
-    saverRef,
-    selectedOptions,
-    setAskNote: answerState.handleNoteChange,
-    setContent,
-    setSelectedOptions: answerState.handleOptionsChange,
-    setSubmitting,
-    submittingRef,
-  });
-  const handleSubmit = useCallback(() => reportPromiseErrors(submit()), [submit]);
-  const handleFormSubmit = useCallback(
-    (event: SubmitEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      handleSubmit();
-    },
-    [handleSubmit],
-  );
-  const pasteFiles = useCallback(
-    (files: File[]) => handlePasteFiles(files, inputRef.current),
-    [handlePasteFiles, inputRef],
-  );
-  const editorDisabled = disabled || loading || submitting,
+    selectedOptions = answerState.options,
+    { attachmentValues, clearAttachments, handlePasteFiles } =
+      usePendingAttachments(attachmentSettings),
+    submittingRef = useRef(false),
+    {
+      change,
+      content,
+      contentRef,
+      flush,
+      loading,
+      revisionRef,
+      saverRef,
+      setContent,
+      target: stableDraftTarget,
+    } = useComposerDraft({ draft, draftSaveDelayMs, draftTarget }),
+    {
+      change: handleContentChange,
+      content: input,
+      contentRef: inputRef,
+      navigate,
+      reset,
+    } = useMessageCandidates(content, change, userMessages, predictions),
+    handleControl = useCallback(
+      async (control: Parameters<NonNullable<ComposerProps["onControl"]>>[0]) => {
+        await flush();
+        await onControl?.(control);
+      },
+      // eslint-disable-next-line react-hooks/preserve-manual-memoization -- Composer opts out of compilation; keep callback identity stable while draft refs change.
+      [flush, onControl],
+    ),
+    handleDelete = useCallback(async () => {
+      saverRef.current?.discardPending();
+      await onDelete?.();
+      // eslint-disable-next-line react-hooks/preserve-manual-memoization -- Composer opts out of compilation; keep callback identity stable while draft refs change.
+    }, [onDelete, saverRef]),
+    submit = useComposerSubmit({
+      askNote,
+      askUser,
+      attachmentValues,
+      clearAttachments,
+      contentRef,
+      draftTarget: stableDraftTarget,
+      inputRef,
+      onAnswer,
+      onSend,
+      reset,
+      revisionRef,
+      saverRef,
+      selectedOptions,
+      setAskNote: answerState.handleNoteChange,
+      setContent,
+      setSelectedOptions: answerState.handleOptionsChange,
+      setSubmitting,
+      submittingRef,
+    }),
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization -- Composer opts out of compilation; keep the editor's submit callback memoized.
+    handleSubmit = useCallback(() => reportPromiseErrors(submit()), [submit]),
+    handleFormSubmit = useCallback(
+      (event: SubmitEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        handleSubmit();
+      },
+      [handleSubmit],
+    ),
+    pasteFiles = useCallback(
+      (files: File[]) => handlePasteFiles(files, inputRef.current),
+      [handlePasteFiles, inputRef],
+    ),
+    editorDisabled = disabled || loading || submitting,
     submitDisabled = askUser
       ? editorDisabled ||
         (askUser.kind === "choice" && selectedOptions.length === 0 && askNote.trim().length === 0)

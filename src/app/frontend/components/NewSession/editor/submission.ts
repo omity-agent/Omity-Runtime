@@ -33,8 +33,8 @@ export function useSessionCreation({
 }) {
   "use no memo";
   const [submitting, setSubmitting] = useState(false),
-    submittingRef = useRef(false);
-  const submit = async () => {
+    submittingRef = useRef(false),
+    submit = async () => {
       const valid =
         optionsReady &&
         model.trim().length > 0 &&

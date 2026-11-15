@@ -7,8 +7,8 @@ const browser = new BrowserSession();
 beforeAll(() => browser.start(), 60_000);
 afterAll(() => browser.stop());
 test("message selections remain visible through the active line background", async () => {
-  const { errors, page } = await openPreparation(browser);
-  await using _pageScope = page;
+  const { errors, page: openedPage } = await openPreparation(browser);
+  await using page = openedPage;
   const editor = page.locator(".cm-content").first(),
     text = "Select this message without hiding its highlight.";
   await editor.fill(text);

@@ -15,6 +15,7 @@ export async function connectProtocolClient(
     { name: "omity-agent", version: "1.0.0" },
     { versionNegotiation: { mode: "auto" } },
   );
+  // eslint-disable-next-line unicorn/prefer-add-event-listener -- The MCP client exposes a close callback instead of an EventTarget API.
   client.onclose = options.onclose;
   try {
     await client.connect(transport, { signal: options.signal });

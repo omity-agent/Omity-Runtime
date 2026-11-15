@@ -82,7 +82,7 @@ test("Responses request cancellation closes the active WebSocket", async () => {
 });
 test("an already cancelled Responses request never starts a WebSocket handshake", async () => {
   let connections = 0;
-  const runtime = createNetworkRuntime(async () => {
+  const runtime = createNetworkRuntime(() => {
       connections += 1;
       return;
     }),

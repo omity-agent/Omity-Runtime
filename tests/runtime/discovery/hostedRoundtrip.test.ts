@@ -6,6 +6,7 @@ import { toModelMessages } from "../../../src/agent/aiMessages";
 import { streamAiModel } from "../../../src/agent/model/request";
 import { aiModelTools } from "../../../src/agent/model/tools";
 import { modelTokenUsage } from "../../../src/app/timeline/tokenCounts";
+import { anyValue, containingItems, partialObject } from "../../support/asymmetric";
 import { cleanupDatabaseDirs, makeDb, required, workspace } from "../../support/database";
 import {
   deferredDefinition,
@@ -50,24 +51,24 @@ test.each(["responses", "messages"] as const)(
     expect(requests).toHaveLength(2);
     if (api === "responses") {
       expect(requests[0]?.["tools"]).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ defer_loading: true, name: "find_file", type: "function" }),
+        containingItems([
+          partialObject({ defer_loading: true, name: "find_file", type: "function" }),
           { execution: "server", type: "tool_search" },
         ]),
       );
       expect(requests[1]?.["input"]).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
+        containingItems([
+          partialObject({
             arguments: { paths: ["find_file"] },
             execution: "server",
             type: "tool_search_call",
           }),
-          expect.objectContaining({
+          partialObject({
             execution: "server",
-            tools: expect.any(Array),
+            tools: anyValue(Array),
             type: "tool_search_output",
           }),
-          expect.objectContaining({
+          partialObject({
             call_id: "call-1",
             output: "found",
             type: "function_call_output",
@@ -83,15 +84,15 @@ test.each(["responses", "messages"] as const)(
         ],
       });
       expect(requests[1]?.["messages"]).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
+        containingItems([
+          partialObject({
             content: [
-              expect.objectContaining({
+              partialObject({
                 id: "search-1",
                 input: { pattern: "file" },
                 type: "server_tool_use",
               }),
-              expect.objectContaining({
+              partialObject({
                 content: {
                   tool_references: [{ tool_name: "find_file", type: "tool_reference" }],
                   type: "tool_search_tool_search_result",
@@ -99,7 +100,7 @@ test.each(["responses", "messages"] as const)(
                 tool_use_id: "search-1",
                 type: "tool_search_tool_result",
               }),
-              expect.objectContaining({ id: "call-1", type: "tool_use" }),
+              partialObject({ id: "call-1", type: "tool_use" }),
             ],
             role: "assistant",
           }),

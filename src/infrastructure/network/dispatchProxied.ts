@@ -4,7 +4,9 @@ import { outboundAgentOptions } from "../../../settings/networking";
 import { localize } from "../../i18n/server";
 import { connectionContext } from "./connectionEvidence";
 
-export type ResolveOutboundProxy = (url: string) => Promise<string | undefined>;
+export type ResolveOutboundProxy = (
+  url: string,
+) => string | undefined | Promise<string | undefined>;
 export function createProxyDispatcher(resolveProxy: ResolveOutboundProxy) {
   const direct = new Agent(outboundAgentOptions),
     proxies = new Map<string, ProxyAgent>(),

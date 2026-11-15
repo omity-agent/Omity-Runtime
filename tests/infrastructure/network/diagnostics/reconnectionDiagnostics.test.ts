@@ -8,6 +8,7 @@ import {
   registerSocketTransport,
 } from "../../../../src/infrastructure/network/socketTransport";
 import { isRetryableModelError } from "../../../../src/runtime/transientErrors";
+import { anyValue } from "../../../support/asymmetric";
 import { type RetryOriginMode, startRetryOrigin } from "./retryOrigin";
 
 async function runRetriedRequest(mode: RetryOriginMode) {
@@ -67,8 +68,8 @@ test("a rejected HTTP/1.1 retry reports its response instead of the earlier HTTP
   expect(error?.details).not.toHaveProperty("requestId");
   const attempts = error?.details?.["attempts"];
   expect(attempts).toMatchObject([
-    { durationMs: expect.any(Number), startedAfterMs: expect.any(Number) },
-    { durationMs: expect.any(Number), startedAfterMs: expect.any(Number) },
+    { durationMs: anyValue(Number), startedAfterMs: anyValue(Number) },
+    { durationMs: anyValue(Number), startedAfterMs: anyValue(Number) },
   ]);
   expect(JSON.stringify(attempts)).not.toContain('"startedAt":');
 });
@@ -143,12 +144,12 @@ test("an established WebSocket failure is identified as a stream failure", async
     phase: "stream",
     stream: { messagesReceived: 0 },
     timing: {
-      durationMs: expect.any(Number),
-      handshakeDurationMs: expect.any(Number),
-      requestSentAfterMs: expect.any(Number),
+      durationMs: anyValue(Number),
+      handshakeDurationMs: anyValue(Number),
+      requestSentAfterMs: anyValue(Number),
     },
     transport: {
-      tls: { alpnProtocol: "http/1.1", protocol: expect.any(String) },
+      tls: { alpnProtocol: "http/1.1", protocol: anyValue(String) },
     },
   });
   expect(error?.details?.["close"]).not.toHaveProperty("reason");

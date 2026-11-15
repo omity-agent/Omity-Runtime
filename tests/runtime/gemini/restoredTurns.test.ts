@@ -5,6 +5,7 @@ import { HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { toModelMessages } from "../../../src/agent/aiMessages";
 import { type AiStreamEvent, streamAiModel } from "../../../src/agent/model/request";
 import { aiModelTools } from "../../../src/agent/model/tools";
+import { containingItems } from "../../support/asymmetric";
 import { cleanupDatabaseDirs, makeDb, required, workspace } from "../../support/database";
 import { echoDefinition, geminiApis, geminiWire } from "./endpointFixture";
 import { replyStream, toolStream } from "./exchangeSamples";
@@ -29,8 +30,8 @@ test.each([...geminiApis])(
     expect(response.tool_calls).toEqual([
       { args: { text: "hello" }, id: "echo-call", name: "echo", type: "tool_call" },
     ]);
-    expect(events).toEqual(
-      expect.arrayContaining(["reasoning-delta", "tool-input-delta", "tool-call"]),
+    expect(events).toEqual<unknown>(
+      containingItems(["reasoning-delta", "tool-input-delta", "tool-call"]),
     );
     expect(response.response_metadata["usage"]).toMatchObject({
       cacheRead: 3,
@@ -69,7 +70,7 @@ test.each([...geminiApis])(
           thinking_summaries: "auto",
           tool_choice: "validated",
         },
-        input: expect.arrayContaining([
+        input: containingItems([
           {
             signature: "reasoning-signature",
             summary: [{ text: "Need a tool", type: "text" }],
@@ -104,7 +105,7 @@ test.each([...geminiApis])(
     } else {
       expect(request.path).toBe("/v1beta/models/gemini-3-flash-preview:streamGenerateContent");
       expect(request.body).toMatchObject({
-        contents: expect.arrayContaining([
+        contents: containingItems([
           {
             parts: [
               { text: "Need a tool", thought: true, thoughtSignature: "reasoning-signature" },
