@@ -23,6 +23,7 @@ export const controlSchema = z.enum(["running", "step", "pause", "cancel", "paus
     "idle",
     "pausing",
     "paused",
+    "stepping",
     "error",
   ]),
   runStatusSchema = z.enum(["pending", "running", "paused", "done", "canceled"]),
@@ -46,7 +47,11 @@ export type ModelApi =
   "responses" | "completions" | "messages" | "interactions" | "generate-content";
 export function isRunningStatus(status: SessionStatus | undefined) {
   return (
-    status === "waiting" || status === "streaming" || status === "pausing" || status === "tool"
+    status === "waiting" ||
+    status === "streaming" ||
+    status === "pausing" ||
+    status === "stepping" ||
+    status === "tool"
   );
 }
 export interface HostMode {

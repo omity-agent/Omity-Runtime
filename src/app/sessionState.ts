@@ -2,7 +2,6 @@ import type { ErrorDetails } from "../failures/details";
 import type { AskUserRequest } from "../infrastructure/toolbox/askUser";
 import type { HostActivity, SessionStatus } from "../types";
 import type { SessionInfo } from "./events/contracts";
-import { pauseRequested, resolvePausePhase } from "./pauseState";
 import type { RegisteredSession } from "./registry";
 
 export type { SessionInfo } from "./events/contracts";
@@ -12,42 +11,40 @@ export function projectSession(
   hostError: ErrorDetails | null,
   askUser: AskUserRequest | null = null,
 ): SessionInfo {
+  const error = hostError ?? session.error,
+    { control, runStatus } = session;
   return {
     askUser,
     createdAt: session.createdAt,
+    error,
     id: session.id,
+    profile: session.profiles.at(-1),
+    status: resolveSessionStatus(session, activity, error),
+    stepAvailable: runStatus === "paused" && (control === "running" || control === "pause"),
     title: session.title,
     updatedAt: session.updatedAt,
     workspace: session.workspace,
-    ...resolveSessionState(session, activity, hostError),
-  };
-}
-function resolveSessionState(
-  session: Pick<RegisteredSession, "control" | "error" | "paused" | "profiles" | "queueRunning">,
-  activity: HostActivity,
-  hostError: ErrorDetails | null,
-) {
-  return {
-    error: hostError ?? session.error,
-    profile: session.profiles.at(-1),
-    status: resolveSessionStatus(session, activity, hostError),
   };
 }
 function resolveSessionStatus(
-  session: Pick<RegisteredSession, "control" | "paused" | "queueRunning" | "error">,
+  { control, runStatus }: Pick<RegisteredSession, "control" | "runStatus">,
   activity: HostActivity,
-  hostError: ErrorDetails | null,
+  error: ErrorDetails | null,
 ): SessionStatus {
-  if (hostError || session.error) {
+  if (control === "step" && runStatus !== null) {
+    return "stepping";
+  }
+  if (error) {
     return "error";
   }
-  const pausePhase = resolvePausePhase({
-    paused: session.paused,
-    requested: pauseRequested(session.control),
-    running: session.queueRunning,
-  });
-  if (pausePhase !== "active") {
-    return pausePhase;
+  if (control === "pause" || control === "pause_cancel") {
+    return runStatus === "running" ? "pausing" : "paused";
   }
-  return activity;
+  if (runStatus === "paused") {
+    return "paused";
+  }
+  if (runStatus === null) {
+    return "idle";
+  }
+  return runStatus === "pending" || activity === "idle" ? "waiting" : activity;
 }

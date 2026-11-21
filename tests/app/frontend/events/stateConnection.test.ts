@@ -27,6 +27,7 @@ const storedFailure: SessionInfo = {
   },
   id: "stored",
   status: "error",
+  stepAvailable: true,
   title: "Stored failure",
   updatedAt: 1,
   workspace,

@@ -4,7 +4,7 @@ import { css } from "styled-system/css";
 import { type Control, isRunningStatus, type SessionStatus } from "../../../../types";
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
 import type { InitialSessionState } from "../../../initialState";
-import type { DisplayQueue, TimelineMessage } from "../../../timeline";
+import type { TimelineMessage } from "../../../timeline";
 import type { FrontendSettings } from "../../services/client";
 import { composerDraftKey, type ComposerDraftTarget } from "../../services/composerDrafts";
 import type { useNewSessionDraft } from "../../services/preparation/editorState";
@@ -14,7 +14,6 @@ import { useTranslatedTranscript } from "../../services/translation/useTranslate
 import { FileLinkProvider } from "../FileLink/context";
 import { NewSessionPage } from "../NewSession";
 import { Transcript } from "../Transcript";
-import { deriveChatActionState } from "./actionState";
 import { Composer } from "./Composer";
 import type { AskUserAnswer, AskUserQuestion } from "./toolActions";
 
@@ -41,20 +40,18 @@ export function ChatPage({
   allowFork = true,
   attachmentSettings,
   cacheHitWarningRatio,
-  control,
   draft,
   draftSaveDelayMs,
   draftTarget,
   newSession,
-  pausing,
   profileChangePending = false,
   profileEditable = false,
   preparation,
-  queue,
   recentWorkspaces,
   availableProfiles,
   selectedProfile,
   sessionStatus,
+  stepAvailable,
   translationSettings,
   view,
   userMessages,
@@ -74,20 +71,18 @@ export function ChatPage({
   allowFork?: boolean;
   attachmentSettings?: AttachmentSettings;
   cacheHitWarningRatio?: number;
-  control: Control;
   draft?: string;
   draftSaveDelayMs?: number;
   draftTarget: ComposerDraftTarget;
   newSession: boolean;
-  pausing: boolean;
   profileChangePending?: boolean;
   profileEditable?: boolean;
   preparation?: ReturnType<typeof useNewSessionDraft>;
-  queue: DisplayQueue[];
   recentWorkspaces: string[];
   availableProfiles: string[];
   selectedProfile?: string;
   sessionStatus?: SessionStatus;
+  stepAvailable?: boolean;
   translationSettings?: FrontendSettings["reasoningTranslation"];
   view: TimelineMessage[];
   userMessages: readonly string[];
@@ -108,12 +103,7 @@ export function ChatPage({
 }) {
   const { t } = useTranslation(),
     predictionsQuery = usePredictions(activeId, sessionStatus === "idle"),
-    actionState = deriveChatActionState({
-      control,
-      pausing,
-      queue,
-      sessionStatus,
-    }),
+    running = isRunningStatus(sessionStatus),
     latestUsage = view.findLast((item) => item.usage !== undefined)?.usage ?? null,
     translatedView = useTranslatedTranscript(activeId ?? "", view, translationSettings);
   if (!activeId) {
@@ -144,7 +134,7 @@ export function ChatPage({
         ) : (
           <Transcript
             allowFork={allowFork}
-            forkDisabled={actionPending || actionState.sessionActionDisabled}
+            forkDisabled={actionPending || running}
             key={activeId}
             messages={translatedView}
             onFork={onFork}
@@ -156,16 +146,15 @@ export function ChatPage({
         attachmentSettings={attachmentSettings}
         cacheHitWarningRatio={cacheHitWarningRatio}
         askUser={askUser}
-        controlDisabled={actionPending || actionState.controlDisabled}
-        controlState={actionState.controlState}
-        deleteDisabled={actionPending || actionState.sessionActionDisabled}
+        controlDisabled={actionPending}
+        deleteDisabled={actionPending || running}
         disabled={!activeId || actionPending}
         draft={draft}
         draftSaveDelayMs={draftSaveDelayMs}
         draftTarget={draftTarget}
         availableProfiles={profileEditable ? availableProfiles : undefined}
         currentProfile={profileEditable ? selectedProfile : undefined}
-        profileChangeDisabled={profileChangePending || isRunningStatus(sessionStatus)}
+        profileChangeDisabled={profileChangePending || running}
         profileChangePending={profileChangePending}
         key={composerDraftKey(draftTarget)}
         predictions={
@@ -175,7 +164,8 @@ export function ChatPage({
         }
         userMessages={userMessages}
         usage={latestUsage}
-        stepAvailable={actionState.stepAvailable}
+        sessionStatus={sessionStatus}
+        stepAvailable={stepAvailable}
         onControl={onControl}
         onDelete={onDelete}
         onAnswer={onAnswer}

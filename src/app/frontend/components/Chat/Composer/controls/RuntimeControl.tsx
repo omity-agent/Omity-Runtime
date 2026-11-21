@@ -3,22 +3,31 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
-import type { Control } from "../../../../../../types";
+import type { Control, SessionStatus } from "../../../../../../types";
 import { reportPromiseErrors } from "../../../../services/errors";
 import { IconButton } from "../../../ui";
-import type { ChatControlState } from "../../actionState";
 import { runtimeControls } from "../arrangement";
 
 type RequestedControl = Extract<Control, "running" | "step" | "pause">;
-const activeIcon = css({ animationStyle: "activity" });
+const activeIcon = css({ animationStyle: "activity" }),
+  controlStates = {
+    error: "resume",
+    idle: "resume",
+    paused: "resume",
+    pausing: "pausing",
+    stepping: "stepping",
+    streaming: "pause",
+    tool: "pause",
+    waiting: "pause",
+  } as const satisfies Record<SessionStatus, string>;
 export function RuntimeControl({
   controlDisabled,
-  controlState,
+  sessionStatus,
   stepAvailable = false,
   onControl,
 }: {
   controlDisabled: boolean;
-  controlState?: ChatControlState;
+  sessionStatus?: SessionStatus;
   stepAvailable?: boolean;
   onControl?: (control: RequestedControl) => Promise<void>;
 }) {
@@ -40,6 +49,8 @@ export function RuntimeControl({
     step = useCallback(() => {
       requestControl("step");
     }, [requestControl]),
+    controlState = sessionStatus && controlStates[sessionStatus],
+    disabled = controlDisabled || sessionStatus === "idle",
     controlLabel = controlState ? t(controlState) : "",
     resumeLabel = t("resumeContinuous"),
     stepLabel = t("step"),
@@ -49,7 +60,7 @@ export function RuntimeControl({
         <>
           <IconButton
             aria-label={resumeLabel}
-            disabled={controlDisabled}
+            disabled={disabled}
             onClick={resume}
             title={resumeLabel}
             type="button"
@@ -59,7 +70,7 @@ export function RuntimeControl({
           {stepAvailable || controlState === "stepping" ? (
             <IconButton
               aria-label={controlState === "stepping" ? controlLabel : stepLabel}
-              disabled={controlDisabled || controlState === "stepping"}
+              disabled={disabled || controlState === "stepping"}
               onClick={step}
               title={controlState === "stepping" ? controlLabel : stepLabel}
               type="button"
@@ -74,7 +85,7 @@ export function RuntimeControl({
       ) : controlState ? (
         <IconButton
           aria-label={controlState === "pausing" ? cancelPauseLabel : controlLabel}
-          disabled={controlDisabled}
+          disabled={disabled}
           onClick={controlState === "pause" ? pause : resume}
           title={controlState === "pausing" ? cancelPauseLabel : controlLabel}
           type="button"

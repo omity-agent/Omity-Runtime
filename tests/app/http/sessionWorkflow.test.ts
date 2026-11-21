@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 
 import { z } from "zod";
@@ -26,14 +26,8 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   const { session } = z
       .object({ session: z.object({ id: z.string() }) })
       .parse(await created.json()),
-    endpoint = `${app.url}/api/sessions/${session.id}`,
-    deadline = Date.now() + 5000;
-  while (!app.controller.transcript(session.id).queue.every(({ status }) => status === "done")) {
-    if (Date.now() >= deadline) {
-      throw new Error("HTTP 会话未在期限内完成模型调用");
-    }
-    await app.controller.events.wait(session.id, 25);
-  }
+    endpoint = `${app.url}/api/sessions/${session.id}`;
+  await waitForCompletedRun(app, session.id);
   expect(app.requests).toHaveLength(1);
   expect(warnings).toEqual([]);
   const transcript = await fetch(`${endpoint}/transcript`);
@@ -92,6 +86,13 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   });
   expect(invalid.status).toBe(400);
   expect(app.requests).toHaveLength(1);
+  using updates = spyOn(app.controller.events, "notifySession");
+  const step = await fetch(`${endpoint}/control`, json({ control: "step" }));
+  expect(step.status).toBe(200);
+  await waitForCompletedRun(app, session.id);
+  expect(app.controller.transcript(session.id).control).toBe("pause");
+  expect(updates.mock.calls.map(([info]) => info.status)).toContain("stepping");
+  expect(app.controller.sessions()).toMatchObject([{ status: "paused", stepAvailable: false }]);
   const paths = sessionPaths(session.id),
     deleted = await fetch(endpoint, { method: "DELETE" }),
     deletedTranscript = await fetch(`${endpoint}/transcript`),
@@ -179,6 +180,16 @@ test.each(["buffered", "streamed"])(
     }
   },
 );
+async function waitForCompletedRun(app: ReturnType<typeof liveApplication>, sessionId: string) {
+  const { controller } = app;
+  const deadline = Date.now() + 5000;
+  while (!controller.transcript(sessionId).queue.every(({ status }) => status === "done")) {
+    if (Date.now() >= deadline) {
+      throw new Error("HTTP 会话未在期限内完成模型调用");
+    }
+    await controller.events.wait(sessionId, 25);
+  }
+}
 function json(body: unknown): RequestInit {
   return {
     body: JSON.stringify(body),

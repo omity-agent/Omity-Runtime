@@ -2,10 +2,9 @@ import { BrushCleaning, Trash2 } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { Control } from "../../../../../../types";
+import type { Control, SessionStatus } from "../../../../../../types";
 import type { TokenUsage } from "../../../../../timeline";
 import { clearTemporaryFiles } from "../../../../services/client";
-import type { ChatControlState } from "../../actionState";
 import { ContextUsage } from "../../ContextUsage";
 import { ActionPanel } from "./ActionPanel";
 import { ConfirmAction } from "./ConfirmAction";
@@ -17,12 +16,12 @@ export function Actions({
   availableProfiles,
   cacheHitWarningRatio,
   controlDisabled,
-  controlState,
   currentProfile,
   deleteDisabled,
   profileChangeDisabled,
   profileChangePending,
   sessionId,
+  sessionStatus,
   submitDisabled,
   submitLabel,
   stepAvailable = false,
@@ -34,12 +33,12 @@ export function Actions({
   availableProfiles?: string[];
   cacheHitWarningRatio?: number;
   controlDisabled: boolean;
-  controlState?: ChatControlState;
   currentProfile?: string;
   deleteDisabled: boolean;
   profileChangeDisabled?: boolean;
   profileChangePending?: boolean;
   sessionId?: string;
+  sessionStatus?: SessionStatus;
   submitDisabled: boolean;
   submitLabel?: string;
   stepAvailable?: boolean;
@@ -89,8 +88,8 @@ export function Actions({
       {onControl ? (
         <RuntimeControl
           controlDisabled={controlDisabled}
-          controlState={controlState}
           onControl={onControl}
+          sessionStatus={sessionStatus}
           stepAvailable={stepAvailable}
         />
       ) : null}

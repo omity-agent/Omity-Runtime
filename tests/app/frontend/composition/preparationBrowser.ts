@@ -10,6 +10,7 @@ const working: SessionInfo = {
   error: null,
   id: "working",
   status: "streaming",
+  stepAvailable: false,
   title: "Working",
   updatedAt: 3,
   workspace: projectPaths[0]!,

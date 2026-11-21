@@ -11,12 +11,10 @@ const statements = new WeakMap<Database, ReturnType<typeof prepareOverviews>>();
 export function sessionOverviewRows(db: Database, sessionId?: string) {
   const queries = statements.getOrInsertComputed(db, prepareOverviews),
     rows = sessionId === undefined ? queries.all.all() : queries.one.all({ sessionId });
-  return rows.map(({ error, profiles, status, ...session }) =>
+  return rows.map(({ error, profiles, ...session }) =>
     Object.assign(session, {
-      error: status === "paused" ? error : null,
-      paused: status === "paused",
+      error: session.runStatus === "paused" ? error : null,
       profiles: settingsProfileNamesSchema.parse(profiles),
-      queueRunning: status === "running",
     }),
   );
 }
@@ -32,7 +30,7 @@ function prepareOverviews(db: Database) {
       error: runs.error,
       id: sessions.id,
       profiles: sessions.profiles,
-      status: runs.status,
+      runStatus: runs.status,
       updatedAt:
         sql`max(${sessions.updatedAt}, coalesce((${latestMessage}), ${sessions.updatedAt}))`.mapWith(
           Number,

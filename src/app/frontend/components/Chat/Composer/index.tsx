@@ -26,10 +26,10 @@ export function Composer({
   userMessages,
   predictions = emptyPredictions,
   controlDisabled = false,
-  controlState,
   deleteDisabled = false,
   profileChangeDisabled = false,
   profileChangePending = false,
+  sessionStatus,
   stepAvailable = false,
   usage,
   onControl,
@@ -143,12 +143,12 @@ export function Composer({
         availableProfiles={availableProfiles}
         cacheHitWarningRatio={cacheHitWarningRatio}
         controlDisabled={controlDisabled || loading || submitting}
-        controlState={controlState}
         currentProfile={currentProfile}
         deleteDisabled={deleteDisabled}
         profileChangeDisabled={profileChangeDisabled || loading || submitting}
         profileChangePending={profileChangePending}
         sessionId={stableDraftTarget.kind === "session" ? stableDraftTarget.sessionId : undefined}
+        sessionStatus={sessionStatus}
         stepAvailable={stepAvailable}
         submitLabel={askUser ? t("answer") : t("send")}
         submitDisabled={submitDisabled}

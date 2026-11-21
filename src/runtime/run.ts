@@ -2,6 +2,7 @@ import type { BaseMessage } from "@langchain/core/messages";
 
 import type { ErrorDetails } from "../failures/details";
 import { localize } from "../i18n/server";
+import { consumeStepControlRecord } from "../infrastructure/database/records/session/metadata";
 import { runTransaction } from "../infrastructure/database/sqlite/connection";
 import type { QueuedInput } from "../types";
 import type { HostContext } from "./context";
@@ -65,6 +66,8 @@ function finalizeRun(ctx: HostContext, run: ActiveRun, status: "done" | "cancele
     ctx.db.setRunStatus(run.id, status);
     if (status === "canceled") {
       ctx.db.setControl(ctx.sessionId, "running");
+    } else {
+      consumeStepControlRecord(ctx.db.db, ctx.sessionId);
     }
   });
   ctx.db.requestStorageReclaim();

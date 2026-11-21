@@ -1,22 +1,25 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, PanelsTopLeft } from "lucide-react";
-import { type ComponentProps, type ReactNode, useCallback, useId } from "react";
+import { type ComponentProps, type ReactNode, useCallback, useEffect, useId } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { SessionInfo } from "../../services/client";
 import { useSessionAttention } from "../../services/events/attention";
 import { NavigationActions } from "../Access/NavigationActions";
 import { Sidebar } from "../Sidebar";
+import { statusLabelKey } from "../Sidebar/sessions";
 import { IconButton } from "../ui";
 import { usePanelNavigation } from "./navigation";
 import { applicationShell } from "./shell";
 
-type Props = Omit<ComponentProps<typeof Sidebar>, "unreadIds"> & {
+type Props = Omit<ComponentProps<typeof Sidebar>, "activeId" | "unreadIds"> & {
+  activeSession?: SessionInfo;
   children: ReactNode;
   pageKey: string;
   title?: string;
 };
 export function ApplicationFrame({
-  activeId,
+  activeSession,
   children,
   onCreate,
   onSelect,
@@ -27,6 +30,7 @@ export function ApplicationFrame({
 }: Props) {
   const { t } = useTranslation(),
     queryClient = useQueryClient(),
+    activeId = activeSession?.id,
     { buttonRef, showMain, showSessions, toggle } = usePanelNavigation(pageKey),
     classes = applicationShell({ panel: showSessions ? "sessions" : "main" }),
     sidebarId = useId(),
@@ -43,6 +47,15 @@ export function ApplicationFrame({
       },
       [onSelect, showMain],
     );
+  useEffect(() => {
+    const brand = t("brand");
+    document.title = activeSession
+      ? `${t(statusLabelKey(activeSession.status))} · ${activeSession.title} · ${brand}`
+      : brand;
+    return () => {
+      document.title = brand;
+    };
+  }, [activeSession, t]);
   return (
     <div className={classes.root} data-panel={showSessions ? "sessions" : "main"}>
       <header className={classes.toolbar}>

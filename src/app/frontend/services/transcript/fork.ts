@@ -53,5 +53,5 @@ export function useForkableTranscript({
     pendingPreview = page
       ? previewFork(submissions.view, page.beforeMessageId, flow.pendingMessage)
       : undefined;
-  return { busy, draftTarget, flow, pendingPreview, submissions, transcript };
+  return { busy, draftTarget, flow, pendingPreview, submissions };
 }

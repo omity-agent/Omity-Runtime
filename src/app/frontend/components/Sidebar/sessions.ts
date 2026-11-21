@@ -23,6 +23,7 @@ export function statusLabelKey(status: SessionStatus) {
     idle: "statusIdle",
     paused: "statusPaused",
     pausing: "statusPausing",
+    stepping: "stepping",
     streaming: "statusStreaming",
     tool: "statusTool",
     waiting: "statusWaiting",

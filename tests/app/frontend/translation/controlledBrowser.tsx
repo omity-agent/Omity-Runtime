@@ -117,7 +117,6 @@ function ControlledChat() {
       activeId={sessionId}
       askUser={null}
       availableProfiles={empty}
-      control="running"
       draftTarget={draftTarget}
       newSession={false}
       onAnswer={noop}
@@ -128,8 +127,6 @@ function ControlledChat() {
       onPickWorkspace={pickWorkspace}
       onProfileChange={noop}
       onSend={noop}
-      pausing={false}
-      queue={empty}
       recentWorkspaces={empty}
       sessionStatus="streaming"
       translationSettings={translationFixture}

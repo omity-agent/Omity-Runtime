@@ -6,6 +6,7 @@ import {
   LoaderCircle,
   type LucideIcon,
   Pause,
+  StepForward,
   Wrench,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -30,6 +31,7 @@ const indicator = cva({
         idle: { color: "status.idle" },
         paused: { color: "status.paused" },
         pausing: { color: "status.paused" },
+        stepping: { color: "status.model" },
         streaming: { color: "status.model" },
         tool: { color: "status.tool" },
         waiting: { color: "status.model" },
@@ -43,6 +45,7 @@ const indicator = cva({
     idle: { icon: Circle },
     paused: { icon: Pause },
     pausing: { active: true, icon: LoaderCircle },
+    stepping: { active: true, icon: StepForward },
     streaming: { active: true, icon: Bot },
     tool: { active: true, icon: Wrench },
     waiting: { active: true, icon: Hourglass },

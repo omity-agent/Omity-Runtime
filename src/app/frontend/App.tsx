@@ -3,10 +3,8 @@ import { type ComponentProps, useCallback, useMemo, useState } from "react";
 
 import { AccessGate } from "./components/Access/AccessGate";
 import { ApplicationFrame } from "./components/Application";
-import { pauseRequestPending } from "./components/Chat/actionState";
 import { ChatPage } from "./components/Chat/ChatPage";
 import { useSessionToolActions } from "./components/Chat/toolActions";
-import { useSessionPresentation } from "./components/Sidebar/useSessionPresentation";
 import {
   pagePath,
   readPage,
@@ -26,8 +24,7 @@ import { recentWorkspaces } from "./services/recentWorkspaces";
 import { useForkableTranscript } from "./services/transcript/fork";
 
 const emptySessions: SessionInfo[] = [],
-  emptyProfiles: string[] = [],
-  emptyQueue: [] = [];
+  emptyProfiles: string[] = [];
 type ChatPageProps = ComponentProps<typeof ChatPage>;
 export function App() {
   return (
@@ -41,7 +38,6 @@ function AuthenticatedApp() {
     bootstrap = useBootstrap(),
     userMessages = useUserMessages(),
     [page, setPage] = useState(readPage),
-    [pausingSessionId, setPausingSessionId] = useState<string>(),
     [deletingId, setDeletingId] = useState<string>(),
     [profileChangePending, setProfileChangePending] = useState(false),
     navigate = usePageNavigator(setPage),
@@ -68,7 +64,6 @@ function AuthenticatedApp() {
       },
       pendingPreview,
       submissions,
-      transcript,
     } = useForkableTranscript({
       activeSessionId: activeSession?.id,
       navigate,
@@ -90,14 +85,7 @@ function AuthenticatedApp() {
       sourceWorkspace: sourceSession?.workspace,
     });
   usePageNavigation(page, currentPage, setPage);
-  const pausing =
-      !pendingFork && pauseRequestPending(pausingSessionId, activeSession?.id, transcript.queue),
-    { activeSession: displayedActiveSession, sessions: displayedSessions } = useSessionPresentation(
-      sessions,
-      activeSession?.id,
-      pausing,
-    ),
-    workspaces = useMemo(() => recentWorkspaces(sessions), [sessions]),
+  const workspaces = useMemo(() => recentWorkspaces(sessions), [sessions]),
     userMessageContents = useMemo(
       () => userMessages.data?.messages.map(({ content }) => content) ?? [],
       [userMessages.data],
@@ -108,7 +96,6 @@ function AuthenticatedApp() {
       pendingFork: Boolean(pendingFork),
       profileChangePending,
       queryClient,
-      sessionStatus: displayedActiveSession?.status,
       setProfileChangePending,
     }),
     toolActions = useSessionToolActions(activeSession),
@@ -116,7 +103,6 @@ function AuthenticatedApp() {
       activeSessionId: activeSession?.id,
       controlPendingFork,
       pendingFork: Boolean(pendingFork),
-      setPausingSessionId,
     }),
     deleteActiveSession = useCallback(async () => {
       if (pendingFork) {
@@ -148,10 +134,10 @@ function AuthenticatedApp() {
     sendSessionMessage = pendingFork ? sendPendingFork : submissions.send;
   return (
     <ApplicationFrame
-      activeId={activeSession?.id}
+      activeSession={activeSession}
       pageKey={pageKey}
       showCreate={currentPage.kind !== "new"}
-      sessions={displayedSessions}
+      sessions={sessions}
       title={sourceSession?.title}
       onCreate={openNewSession}
       onSelect={selectSession}
@@ -162,20 +148,18 @@ function AuthenticatedApp() {
         allowFork={!pendingFork}
         attachmentSettings={bootstrap.data?.attachments}
         cacheHitWarningRatio={bootstrap.data?.frontend.cacheHitWarningRatio}
-        control={pendingFork ? "running" : transcript.control}
         draft={pendingPreview?.draft}
         draftSaveDelayMs={bootstrap.data?.frontend.draftSaveDelayMs}
         draftTarget={draftTarget}
         newSession={currentPage.kind === "new"}
-        pausing={pausing}
         profileChangePending={profileChangePending}
         profileEditable={Boolean(activeSession && !pendingFork)}
         preparation={preparation}
-        queue={pendingFork ? emptyQueue : transcript.queue}
         recentWorkspaces={workspaces}
         availableProfiles={bootstrap.data?.profiles.available ?? emptyProfiles}
         selectedProfile={activeSession?.profile}
-        sessionStatus={pendingFork ? "paused" : displayedActiveSession?.status}
+        sessionStatus={pendingFork ? "paused" : activeSession?.status}
+        stepAvailable={activeSession?.stepAvailable}
         translationSettings={bootstrap.data?.frontend.reasoningTranslation}
         view={pendingPreview?.view ?? submissions.view}
         userMessages={userMessageContents}

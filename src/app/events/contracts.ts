@@ -11,6 +11,7 @@ export const sessionInfoSchema = z.object({
   id: z.string(),
   profile: z.string().min(1).optional(),
   status: sessionStatusSchema,
+  stepAvailable: z.boolean(),
   title: z.string(),
   updatedAt: z.number().int(),
   workspace: z.string(),
