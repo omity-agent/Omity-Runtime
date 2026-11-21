@@ -24,7 +24,7 @@ export class PredictionService {
   private readonly pending = new Map<string, PredictionTask>();
   private readonly examples = new PredictionExamples();
   private closed = false;
-  constructor(private readonly settings: Settings) {}
+  constructor(private readonly configuration: (sessionId: string) => Settings["prediction"]) {}
   async onIdle(sessionId: string) {
     try {
       await this.get(sessionId);
@@ -33,8 +33,11 @@ export class PredictionService {
     }
   }
   async get(sessionId: string) {
-    const config = this.settings.prediction;
-    if (this.closed || !config?.enabled) {
+    if (this.closed) {
+      return [];
+    }
+    const config = this.configuration(sessionId);
+    if (!config?.enabled) {
       return [];
     }
     let task = this.prepare(sessionId, config);

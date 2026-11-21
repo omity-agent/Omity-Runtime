@@ -32,6 +32,7 @@ test("Codex OAuth preserves explicit tool restrictions and hosted discovery", as
     previousFetch = globalThis.fetch,
     connection = createCodexConnection({ authFilePath: auth.path, codexVersion: "0.154.4" }),
     fetch = restrictedModelFetch("responses", createResponsesWebsocketFetch(connection.websocket)),
+    input = [{ content: "test", role: "developer" }],
     tools = [
       { execution: "server", type: "tool_search" },
       { defer_loading: true, name: "find_file", parameters: { type: "object" }, type: "function" },
@@ -41,8 +42,7 @@ test("Codex OAuth preserves explicit tool restrictions and hosted discovery", as
     for (const declaredTools of [[], tools]) {
       const response = await fetch(new URL("responses", server.url), {
         body: JSON.stringify({
-          input: [],
-          instructions: "test",
+          input,
           model: "test",
           store: false,
           tools: declaredTools,
@@ -54,8 +54,7 @@ test("Codex OAuth preserves explicit tool restrictions and hosted discovery", as
     }
     expect(requests).toEqual([
       {
-        input: [],
-        instructions: "test",
+        input,
         model: "test",
         store: false,
         stream: true,
@@ -64,8 +63,7 @@ test("Codex OAuth preserves explicit tool restrictions and hosted discovery", as
         type: "response.create",
       },
       {
-        input: [],
-        instructions: "test",
+        input,
         model: "test",
         store: false,
         stream: true,

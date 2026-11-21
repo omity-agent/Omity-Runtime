@@ -7,7 +7,7 @@ import { ModelEmptyResponseError } from "../../runtime/transientErrors";
 import type { Settings } from "../../types";
 import { toModelMessages } from "../aiMessages";
 import { fromModelMessages } from "../fromAiMessages";
-import { aiRequestOptions, buildAiModel, modelApi } from "./provider";
+import { buildAiModel, conversationRequestOptions, modelApi } from "./provider";
 import { estimateCacheHitRate } from "./usage/cacheExpectation";
 import { readReportedUsage } from "./usage/reportedTokens";
 
@@ -79,7 +79,8 @@ export async function streamAiModel(options: ModelRequestOptions) {
         abortSignal: options.signal
           ? AbortSignal.any([options.signal, controller.signal])
           : controller.signal,
-        ...aiRequestOptions(options.settings, options.sessionId, turnId),
+        ...conversationRequestOptions(options.settings.model, options.sessionId, turnId),
+        instructions: options.settings.agent.systemPrompt,
         maxRetries: 0,
         messages: modelMessages,
         model,

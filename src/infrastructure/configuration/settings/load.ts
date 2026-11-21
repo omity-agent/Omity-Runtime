@@ -29,29 +29,8 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
   const configRoot = resolve(root),
     cwd = normalizeWorkspacePath(options.cwd ?? configRoot, configRoot),
     context = options.settingsContext ?? createSettingsContext(configRoot, options.userSettingsDir),
-    model = parseModelSettings(
-      requireLayeredYaml(
-        context,
-        "profile",
-        "model.yaml",
-        {},
-        {
-          beforePlaceholders: omitCodexConnectionSettings,
-        },
-      ).value,
-    ),
-    main = parseMainSettings(
-      requireLayeredYaml(
-        context,
-        "global",
-        "main.yaml",
-        {},
-        {
-          beforePlaceholders: (value) => prepareMainSettings(value, model),
-        },
-      ).value,
-      model,
-    ),
+    model = loadModelSettings(context),
+    main = loadMainSettings(context, model),
     agent = parseAgentSettings(requireLayeredYaml(context, "profile", "agent.yaml").value),
     storageDirectory = userDataDirectory(),
     session = options.sessionId
@@ -98,6 +77,29 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
     toolExecution: agent.toolExecution,
     toolOutput: agent.toolOutput,
   };
+}
+export function loadModelSettings(context: SettingsContext) {
+  return parseModelSettings(
+    requireLayeredYaml(
+      context,
+      "profile",
+      "model.yaml",
+      {},
+      { beforePlaceholders: omitCodexConnectionSettings },
+    ).value,
+  );
+}
+export function loadMainSettings(context: SettingsContext, model: Settings["model"]) {
+  return parseMainSettings(
+    requireLayeredYaml(
+      context,
+      "global",
+      "main.yaml",
+      {},
+      { beforePlaceholders: (value) => prepareMainSettings(value, model) },
+    ).value,
+    model,
+  );
 }
 function requireLayeredYaml(
   context: SettingsContext,

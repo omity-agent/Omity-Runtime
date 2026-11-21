@@ -32,7 +32,7 @@ export class FunctionTracing {
       countTokens: tokenizer.countTokens,
       fileSources: fileSources.messageFileLinkSources,
       fromModel: incomingMessages.fromModelMessages,
-      options: modelProvider.aiRequestOptions,
+      options: modelProvider.conversationRequestOptions,
       output: largeOutput.redirectLargeToolOutput,
       request: modelRequests.streamAiModel,
       stream: streamEvents.recordAiStreamPart,
@@ -76,7 +76,7 @@ export class FunctionTracing {
             this.wrap(originals.countTokens, "工具输出 Token 统计"),
           ),
         () =>
-          spyOn(modelProvider, "aiRequestOptions").mockImplementation(
+          spyOn(modelProvider, "conversationRequestOptions").mockImplementation(
             this.wrap(originals.options, "构造模型请求选项"),
           ),
         () =>

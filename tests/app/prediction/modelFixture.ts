@@ -16,6 +16,7 @@ export async function createPredictionFixture(outputCount = 2) {
   const home = createTestDirectory("forecast-home");
   cleanup.defer(() => removeDatabaseDirectory(home));
   const requests: Record<string, unknown>[] = [],
+    connections: { authorization: string | null; url: string }[] = [],
     replies = Array.from(
       { length: outputCount },
       (_, index) => `候选输入 ${(index + 1).toString()}`,
@@ -28,6 +29,10 @@ export async function createPredictionFixture(outputCount = 2) {
   let respond = () => Promise.resolve(Response.json(completion(replies)));
   const server = Bun.serve({
       fetch: async (request) => {
+        connections.push({
+          authorization: request.headers.get("authorization"),
+          url: request.url,
+        });
         requests.push(z.record(z.string(), z.unknown()).parse(await request.json()));
         return respond();
       },
@@ -64,10 +69,11 @@ export async function createPredictionFixture(outputCount = 2) {
     new ToolMessage({ content: "执行结果", id: "work-result", tool_call_id: "work-call" }),
     new AIMessage({ content: "当前回复 <current>", id: "current-assistant" }),
   ]);
-  const service = new PredictionService(settings);
+  const service = new PredictionService(() => settings.prediction);
   cleanup.defer(() => service.close());
   const resources = cleanup.move();
   return {
+    connections,
     database,
     home,
     paths,

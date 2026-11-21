@@ -69,7 +69,7 @@ export function applySessionDefinition(
       ...rule,
       enable: overrides.get(rule.id) ?? rule.enable,
     })),
-    model: restoreModel(settings.model, definition.prefix.model),
+    model: restoreSessionModel(settings.model, definition.prefix.model),
   };
 }
 export function refreshSessionDefinition(
@@ -97,7 +97,10 @@ function snapshotModel(settings: ModelSettings): ModelPrefixSettings {
         baseURL: settings.baseURL,
       };
 }
-function restoreModel(current: ModelSettings, snapshot: ModelPrefixSettings | null): ModelSettings {
+export function restoreSessionModel(
+  current: ModelSettings,
+  snapshot: ModelPrefixSettings | null,
+): ModelSettings {
   if (!snapshot) {
     throw new Error(localize("database:session.modelPrefixSnapshotMissing"));
   }

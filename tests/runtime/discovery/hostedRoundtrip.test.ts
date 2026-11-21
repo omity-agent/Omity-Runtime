@@ -50,6 +50,10 @@ test.each(["responses", "messages"] as const)(
     ).rejects.toThrow("request captured");
     expect(requests).toHaveLength(2);
     if (api === "responses") {
+      for (const request of requests) {
+        expect(request).not.toHaveProperty("instructions");
+        expect(request["input"]).toHaveProperty("0", { content: "test", role: "developer" });
+      }
       expect(requests[0]?.["tools"]).toEqual(
         containingItems([
           partialObject({ defer_loading: true, name: "find_file", type: "function" }),

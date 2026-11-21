@@ -25,44 +25,34 @@ export function buildConfiguredAiModel(model: ModelSettings, codexVersion?: stri
   const provider = createOpenAI(providerOptions(model, codexVersion));
   return api === "completions" ? provider.chat(model.model) : provider.responses(model.model);
 }
-export function aiRequestOptions(
-  settings: Settings,
+export function conversationRequestOptions(
+  model: ModelSettings,
   sessionId: string,
   turnId?: string,
 ): {
   headers?: Record<string, string>;
-  instructions?: string;
   reasoning?: LanguageModelV4CallOptions["reasoning"];
   providerOptions: SharedV4ProviderOptions;
 } {
-  const api = modelApi(settings);
+  const api = configuredModelApi(model);
   if (api === "messages" || api === "interactions" || api === "generate-content") {
-    return {
-      instructions: settings.agent.systemPrompt,
-      ...structuredRequestOptions(settings.model),
-    };
+    return structuredRequestOptions(model);
   }
   const openai = {
-    forceReasoning: settings.model.reasoning_effort !== undefined,
+    forceReasoning: model.reasoning_effort !== undefined,
     promptCacheKey: sessionId,
-    reasoningEffort: settings.model.reasoning_effort,
+    reasoningEffort: model.reasoning_effort,
     store: false,
     textVerbosity: "low" as const,
   };
   return api === "completions"
-    ? {
-        instructions: settings.agent.systemPrompt,
-        providerOptions: { openai },
-      }
+    ? { providerOptions: { openai } }
     : {
-        ...(settings.model.adapter === "codex"
-          ? { headers: conversationHeaders(sessionId, turnId) }
-          : {}),
+        ...(model.adapter === "codex" ? { headers: conversationHeaders(sessionId, turnId) } : {}),
         providerOptions: {
           openai: {
             ...openai,
             include: ["reasoning.encrypted_content"],
-            instructions: settings.agent.systemPrompt,
             reasoningSummary: "detailed",
           },
         },

@@ -17,7 +17,8 @@ import { AppEvents } from "./events";
 import { activateFileLink } from "./fileLinks/launch";
 import { controllerSessionInfo, createControllerHosts } from "./hostCoordination";
 import type { AppHosts } from "./hosts";
-import { PredictionService } from "./prediction/service";
+import type { PredictionService } from "./prediction/service";
+import { createSessionPredictions } from "./prediction/settingsSource";
 import type { AppRegistry, RegisteredSession } from "./registry";
 import { availableSessionOptions } from "./runtime/availableOptions";
 import {
@@ -54,7 +55,7 @@ export class AppController {
     this.registry = prepared.registry;
     this.events = new AppEvents();
     this.askUser = new AskUserRuntime((sessionId) => this.publishChange(sessionId));
-    this.prediction = new PredictionService(this.settings);
+    this.prediction = createSessionPredictions(this.registry, this.settingsContext);
     this.hosts = createControllerHosts({
       askUser: this.askUser,
       changed: (id) => this.publishChange(id),
