@@ -12,7 +12,7 @@ import {
 } from "../../services/access";
 import { reportError } from "../../services/errors";
 import { AccessPage } from "./AccessPage";
-import { AccessNavigationContext } from "./NavigationActions";
+import { AccessNavigationContext } from "./CredentialAction";
 
 export function AccessGate({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient(),

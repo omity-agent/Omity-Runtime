@@ -92,6 +92,7 @@ export async function openPreparation(
                 sessions: fixtureSessions,
               },
               "/api/session-options": {
+                builtInTools: [{ enable: true, id: "choice", name: "ask_choices" }],
                 hooks: [
                   { enable: !alternate, id: "shared-hook" },
                   ...(url.searchParams.get("profile") === "limited"

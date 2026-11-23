@@ -16,7 +16,7 @@ import type { HookRuntime } from "../runtime";
 import { command, finishAgent, hookCommand, modelNode, originalToolsCommand } from "./commands";
 
 type ConsumeHook = (hookId: string, limit: number) => Promise<boolean>;
-type InvokeTool = (call: ToolCall) => Promise<ToolMessage>;
+type InvokeTool = (call: ToolCall, mode: HookRule["mode"]) => Promise<ToolMessage>;
 interface HookNodeOptions {
   parallelToolCalls: boolean;
 }
@@ -119,7 +119,11 @@ function executeRule(
   invoke: InvokeTool,
   toolOutputs: HookState["hookToolOutputs"],
 ) {
-  return hooks.execute(rule, sourceId, threadId, { consume, invoke, toolOutputs });
+  return hooks.execute(rule, sourceId, threadId, {
+    consume,
+    invoke: (call) => invoke(call, rule.mode),
+    toolOutputs,
+  });
 }
 function requireThreadId(configurable: Record<string, unknown> | undefined) {
   const threadId = configurable?.["thread_id"];

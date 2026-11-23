@@ -10,6 +10,7 @@ import { useNewSessionDraft } from "./editorState";
 
 export function useNewSession({
   attachmentSettings,
+  captureNavigation,
   cwd,
   enabled,
   navigate,
@@ -18,6 +19,7 @@ export function useNewSession({
   sourceWorkspace,
 }: {
   attachmentSettings?: AttachmentSettings;
+  captureNavigation: () => () => boolean;
   cwd: string;
   enabled: boolean;
   navigate: (page: Page) => void;
@@ -39,17 +41,21 @@ export function useNewSession({
     },
     create = useCallback(
       async (initialState: InitialSessionState, attachments: PendingAttachment[]) => {
+        const canNavigate = captureNavigation();
+        await preparation.flush();
         const result = await createSession(
           preparation.workspace,
           preparation.draft.profile,
           initialState,
           attachments,
         );
-        await preparation.clear(initialState.draftRevision ?? 0);
         addSession(queryClient, result.session);
-        navigate(sessionPage(result.session.id));
+        await preparation.clear(initialState.draftRevision ?? 0);
+        if (canNavigate()) {
+          navigate(sessionPage(result.session.id));
+        }
       },
-      [navigate, preparation, queryClient],
+      [captureNavigation, navigate, preparation, queryClient],
     );
   return {
     create,

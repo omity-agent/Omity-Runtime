@@ -29,15 +29,18 @@ export function useSessionPreferences({
       queryFn: ({ signal }) => readSessionOptions(profile, signal),
       queryKey: ["sessionOptions", profile ?? null],
     }),
+    builtInTools = resolveCapabilities(query.data?.builtInTools ?? [], draft.builtInOverrides),
     hooks = resolveCapabilities(query.data?.hooks ?? [], draft.hookOverrides),
     mcpServers = resolveCapabilities(query.data?.mcpServers ?? [], draft.mcpOverrides),
     model = draft.models?.[profile ?? ""] ?? query.data?.model ?? "",
     ready = !loading && query.isSuccess && !query.isFetching,
     changeCapability = (
-      kind: keyof Pick<SessionPreparation, "hookOverrides" | "mcpOverrides">,
+      kind: keyof Pick<SessionPreparation, "builtInOverrides" | "hookOverrides" | "mcpOverrides">,
       id: string,
       enable: boolean,
     ) => update((current) => ({ [kind]: { ...current[kind], [id]: enable } })),
+    handleBuiltInChange = (id: string, enable: boolean) =>
+      changeCapability("builtInOverrides", id, enable),
     handleHookChange = (id: string, enable: boolean) =>
       changeCapability("hookOverrides", id, enable),
     handleServerChange = (id: string, enable: boolean) =>
@@ -45,7 +48,10 @@ export function useSessionPreferences({
     handleModelChange = (value: string) =>
       update((current) => ({ models: { ...current.models, [profile ?? ""]: value } }));
   return {
+    builtInOverrides: Object.fromEntries(builtInTools.map(({ id, enable }) => [id, enable])),
+    builtInTools,
     error: query.error,
+    handleBuiltInChange,
     handleHookChange,
     handleModelChange,
     handleServerChange,

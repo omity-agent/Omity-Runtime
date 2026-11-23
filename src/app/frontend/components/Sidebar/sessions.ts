@@ -34,6 +34,16 @@ export function groupSessions(sessions: SessionInfo[]): WorkspaceGroup[] {
     .map(toGroup)
     .toSorted(compareGroups);
 }
+export function recentSessions(sessions: SessionInfo[], unreadIds: ReadonlySet<string>) {
+  const needsAttention = (session: SessionInfo) => isRunning(session) || unreadIds.has(session.id);
+  return sessions
+    .toSorted(
+      (left, right) =>
+        Number(needsAttention(right)) - Number(needsAttention(left)) ||
+        compareSessions(left, right),
+    )
+    .slice(0, 5);
+}
 export function workspaceLabel(workspace: string) {
   const parts = workspace.split(/[\\/]+/u).filter(Boolean);
   return parts.at(-1) ?? workspace;

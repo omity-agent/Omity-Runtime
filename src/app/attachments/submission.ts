@@ -11,6 +11,7 @@ export const messageSubmissionSchema = z.strictObject({
   submissionId: z.string().regex(/^[0-9a-z]{8}$/u),
 });
 export const sessionSubmissionSchema = z.strictObject({
+  builtInOverrides: z.record(z.string().min(1), z.boolean()).optional(),
   draftRevision: z.number().int().positive().optional(),
   history: z.array(initialPair),
   hookOverrides: z.record(z.string().min(1), z.boolean()).optional(),

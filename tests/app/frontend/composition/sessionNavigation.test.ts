@@ -24,7 +24,7 @@ test.each([1440, 390])(
       projects = page.getByRole("region", { exact: true, name: "项目" }),
       history = page.getByRole("region", { name: "项目会话" }),
       selectedProject = projects.locator('button[aria-pressed="true"]');
-    await browserExpect(running.getByRole("link")).toHaveCount(2);
+    await browserExpect(running.getByRole("link")).toHaveCount(3);
     expect(
       await page
         .locator("aside")
@@ -48,7 +48,7 @@ test.each([1440, 390])(
     await running.getByRole("link", { name: /Working/u }).click();
     await browserExpect(page).toHaveURL(/#\/sessions\/working$/u);
     await showSessions();
-    await browserExpect(running.getByRole("link")).toHaveCount(1);
+    await browserExpect(running.getByRole("link")).toHaveCount(3);
     await browserExpect(history.getByRole("link", { name: "Other" })).toBeVisible();
     await browserExpect(selectedProject).toHaveAttribute("title", projectPaths[1]!);
     await history.getByRole("link", { name: "Other" }).click();
@@ -89,7 +89,7 @@ test("setup adapts from side-by-side columns to a narrow screen with accessible 
   expect(directory!.x + directory!.width).toBeLessThan(configuration!.x);
   expect((await recent.boundingBox())!.y).toBeLessThan((await next.boundingBox())!.y);
   await browserExpect(
-    page.locator("aside footer").getByRole("link", { name: "管理通行密钥" }),
+    page.locator("aside header").getByRole("link", { name: "管理通行密钥" }),
   ).toBeVisible();
   await page.setViewportSize({ height: 844, width: 390 });
   expect((await workspace.boundingBox())!.y).toBeLessThan((await profile.boundingBox())!.y);

@@ -1,7 +1,6 @@
 import { resolve } from "node:path";
 
 import { isPlainObject as isRecord } from "es-toolkit";
-import { z } from "zod";
 
 import { localize } from "../../../i18n/server";
 import { applicationAssetPath } from "../../applicationAssets";
@@ -13,7 +12,13 @@ import type { BuiltInPreferences } from "../../toolbox/metadata";
 import type { McpToolSnapshot } from "../tools/definitions";
 import { enableConfiguredMcpServers, omitDisabledToolboxConfiguration } from "./activation";
 import { toolboxSchema } from "./declaration";
-import { applyServerOverrides, describeMcpServers } from "./selection";
+import {
+  applyServerOverrides,
+  applyToolboxOverrides,
+  describeToolbox,
+  toolboxOptionsSchema,
+  type ToolboxOverrides,
+} from "./selection";
 
 export function readMcpConfiguration(path: string) {
   const parsed = resolvePlaceholders(
@@ -24,9 +29,9 @@ export function readMcpConfiguration(path: string) {
 }
 export function readProfileMcpConfiguration(
   context: SettingsContext,
-  serverOverrides?: Record<string, boolean>,
+  overrides: ToolboxOverrides = {},
 ) {
-  return readToolboxConfiguration(context, (value) => applyServerOverrides(value, serverOverrides));
+  return readToolboxConfiguration(context, (value) => applyToolboxOverrides(value, overrides));
 }
 export function readSessionMcpConfiguration(
   context: SettingsContext,
@@ -52,7 +57,7 @@ export function readSessionMcpConfiguration(
 }
 function readToolboxConfiguration(
   context: SettingsContext,
-  selectServers: (value: unknown) => unknown,
+  selectTools: (value: unknown) => unknown,
 ) {
   const file = readLayeredSettingsYaml(
     context,
@@ -60,25 +65,23 @@ function readToolboxConfiguration(
     "toolbox.yaml",
     {},
     {
-      beforePlaceholders: (value) => omitDisabledToolboxConfiguration(selectServers(value)),
+      beforePlaceholders: (value) => omitDisabledToolboxConfiguration(selectTools(value)),
       override: resolveProfilePaths,
     },
   );
   return file ? parseMcpConfiguration(file.value, file.path) : undefined;
 }
-export function readProfileMcpServerOptions(context: SettingsContext) {
+export function readProfileToolboxOptions(context: SettingsContext) {
   const file = readLayeredSettingsYaml(
     context,
     "profile",
     "toolbox.yaml",
     {},
     {
-      beforePlaceholders: describeMcpServers,
+      beforePlaceholders: describeToolbox,
     },
   );
-  return file
-    ? z.array(z.object({ enable: z.boolean(), id: z.string().min(1) })).parse(file.value)
-    : [];
+  return file ? toolboxOptionsSchema.parse(file.value) : { builtInTools: [], mcpServers: [] };
 }
 function parseMcpConfiguration(parsed: unknown, path: string) {
   return toolboxSchema.parse(omitDisabledToolboxConfiguration(parsed), {

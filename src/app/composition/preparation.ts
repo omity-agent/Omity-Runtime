@@ -4,6 +4,7 @@ import { localize } from "../../i18n/server";
 import { settingsProfileNameSchema } from "../../infrastructure/configuration/settings/profileNames";
 
 const sessionPreparationSchema = z.strictObject({
+  builtInOverrides: z.record(z.string().min(1), z.boolean()).optional(),
   hookOverrides: z.record(z.string().min(1), z.boolean()).optional(),
   mcpOverrides: z.record(z.string().min(1), z.boolean()).optional(),
   message: z.string(),

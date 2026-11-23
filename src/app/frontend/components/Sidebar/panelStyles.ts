@@ -1,26 +1,21 @@
 import { css } from "styled-system/css";
 
-export const panel = css({
+export const toolbar = css({
+  "&:empty": { display: "none" },
   alignItems: "center",
   background: "bg.panel",
   borderBlockEndWidth: "hairline",
   borderBottomColor: "border.default",
-  display: "grid",
-  gap: "2",
-  gridTemplateColumns: "minmax(0, 1fr) auto",
-  minHeight: { _coarse: "14", _compact: "14", base: "12" },
-  paddingInline: "3",
+  display: "flex",
+  flexShrink: 0,
+  gap: "1",
+  padding: "2",
 });
-export const brand = css({ color: "fg.default", textStyle: "sidebarBrand" });
 export const total = css({ color: "fg.subtle", textStyle: "sidebarCount" });
-export const newButton = css({
-  borderColor: "border.default",
-  height: "controlTarget",
-  paddingInline: "2.5",
-});
 export const collections = css({
   alignContent: "start",
   display: "grid",
+  flexGrow: 1,
   minHeight: "0",
   minWidth: "0",
   overflowX: "hidden",

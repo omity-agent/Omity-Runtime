@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 
 import type { SessionInfo } from "../../services/client";
 import { useSessionAttention } from "../../services/events/attention";
-import { NavigationActions } from "../Access/NavigationActions";
 import { Sidebar } from "../Sidebar";
 import { statusLabelKey } from "../Sidebar/sessions";
 import { IconButton } from "../ui";
@@ -83,7 +82,6 @@ export function ApplicationFrame({
           onCreate={create}
           onSelect={select}
         />
-        <NavigationActions />
       </aside>
       <main className={classes.main}>{children}</main>
     </div>

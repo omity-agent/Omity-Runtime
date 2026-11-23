@@ -5,14 +5,7 @@ import { AccessGate } from "./components/Access/AccessGate";
 import { ApplicationFrame } from "./components/Application";
 import { ChatPage } from "./components/Chat/ChatPage";
 import { useSessionToolActions } from "./components/Chat/toolActions";
-import {
-  pagePath,
-  readPage,
-  resolvePage,
-  transcriptSessionId,
-  usePageNavigation,
-  usePageNavigator,
-} from "./route";
+import { pagePath, transcriptSessionId, usePageRouting } from "./route";
 import { deleteSession, pickWorkspacePath, type SessionInfo } from "./services/client";
 import {
   createControlChangeHandler,
@@ -37,13 +30,15 @@ function AuthenticatedApp() {
   const queryClient = useQueryClient(),
     bootstrap = useBootstrap(),
     userMessages = useUserMessages(),
-    [page, setPage] = useState(readPage),
     [deletingId, setDeletingId] = useState<string>(),
     [profileChangePending, setProfileChangePending] = useState(false),
-    navigate = usePageNavigator(setPage),
     sessions = bootstrap.data?.sessions ?? emptySessions,
     cwd = bootstrap.data?.cwd ?? "",
-    currentPage = resolvePage(page, sessions, bootstrap.data !== undefined),
+    {
+      captureNavigation,
+      navigate,
+      page: currentPage,
+    } = usePageRouting(sessions, bootstrap.data !== undefined),
     pageKey = pagePath(currentPage),
     pendingFork = currentPage.kind === "fork" ? currentPage : undefined,
     activeSession =
@@ -77,6 +72,7 @@ function AuthenticatedApp() {
       preparation,
     } = useNewSession({
       attachmentSettings: bootstrap.data?.attachments,
+      captureNavigation,
       cwd,
       enabled: bootstrap.data !== undefined,
       navigate,
@@ -84,7 +80,6 @@ function AuthenticatedApp() {
       saveDelayMs: bootstrap.data?.frontend.draftSaveDelayMs,
       sourceWorkspace: sourceSession?.workspace,
     });
-  usePageNavigation(page, currentPage, setPage);
   const workspaces = useMemo(() => recentWorkspaces(sessions), [sessions]),
     userMessageContents = useMemo(
       () => userMessages.data?.messages.map(({ content }) => content) ?? [],

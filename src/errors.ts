@@ -1,6 +1,7 @@
 import { localize } from "./i18n/server";
 
 export type DomainErrorCode =
+  | "BUILT_IN_SELECTION_INVALID"
   | "HOOK_SELECTION_INVALID"
   | "MCP_SELECTION_INVALID"
   | "ASK_USER_ANSWER_INVALID"

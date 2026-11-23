@@ -7,7 +7,7 @@ import { findToolStreamIdentity } from "../infrastructure/database/records/trans
 import { appendReasoningDelta, flushReasoning } from "./content";
 import type { HostContext } from "./context";
 import type { StreamLogState } from "./stream";
-import { recordInvocation } from "./stream/invocations";
+import { emitToolStarted, recordInvocation } from "./stream/invocations";
 import { sequentialPart } from "./stream/parts";
 
 type AiStreamContext = Pick<
@@ -79,12 +79,6 @@ export async function recordToolStarted(
         partId: callId,
       };
     ctx.toolExecutions?.announce(callId);
-    await ctx.db.appendStream(ctx.sessionId, {
-      inputId,
-      kind: "tool_started",
-      messageId: identity.messageId,
-      partId: identity.partId,
-      value: callId,
-    });
+    await emitToolStarted(ctx, inputId, callId, identity);
   }
 }

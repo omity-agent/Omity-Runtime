@@ -21,7 +21,9 @@ const classes = switchRecipe({ size: "sm" }),
     gap: "2",
     paddingInline: "1",
   }),
+  stack = css({ display: "grid", gap: "4" }),
   list = css({ display: "grid", gap: "3" }),
+  caption = css({ color: "fg.muted", fontSize: "metadata" }),
   row = css({
     alignItems: "start",
     colorPalette: "neutral",
@@ -32,19 +34,24 @@ const classes = switchRecipe({ size: "sm" }),
   }),
   details = css({ display: "grid", gap: "1", minWidth: "0", overflowWrap: "anywhere" }),
   description = css({ color: "fg.muted", fontSize: "editor", whiteSpace: "pre-wrap" });
-export function CapabilityGroup({
+interface CapabilitySection {
+  label?: string;
+  onChange: (id: string, enable: boolean) => void;
+  options: CapabilityOption[];
+}
+export function CapabilityPanel({
   disabled,
   emptyLabel,
   label,
-  onChange,
-  options,
+  sections,
 }: {
   disabled: boolean;
   emptyLabel: string;
   label: string;
-  onChange: (id: string, enable: boolean) => void;
-  options: CapabilityOption[];
+  sections: CapabilitySection[];
 }) {
+  const available = sections.filter(({ options }) => options.length > 0),
+    options = available.flatMap((section) => section.options);
   return (
     <Field.Group className={group}>
       <Field.Legend className={legend}>
@@ -56,14 +63,24 @@ export function CapabilityGroup({
       {options.length === 0 ? (
         <span className={description}>{emptyLabel}</span>
       ) : (
-        <div className={list}>
-          {options.map((option) => (
-            <CapabilityToggle
-              disabled={disabled}
-              key={option.id}
-              onChange={onChange}
-              option={option}
-            />
+        <div className={stack}>
+          {available.map(({ label: captionText, onChange, options: entries }) => (
+            <div
+              aria-label={captionText}
+              className={list}
+              key={captionText ?? label}
+              role={captionText ? "group" : undefined}
+            >
+              {captionText ? <p className={caption}>{captionText}</p> : null}
+              {entries.map((option) => (
+                <CapabilityToggle
+                  disabled={disabled}
+                  key={option.id}
+                  onChange={onChange}
+                  option={option}
+                />
+              ))}
+            </div>
           ))}
         </div>
       )}
@@ -77,7 +94,7 @@ function CapabilityToggle({
 }: {
   option: CapabilityOption;
   disabled: boolean;
-  onChange: (id: string, enable: boolean) => void;
+  onChange: CapabilitySection["onChange"];
 }) {
   const descriptionId = useId(),
     handleCheckedChange = useCallback(
@@ -95,7 +112,7 @@ function CapabilityToggle({
         <Switch.Thumb className={classes.thumb} />
       </Switch.Control>
       <span className={details}>
-        <Switch.Label className={classes.label}>{option.id}</Switch.Label>
+        <Switch.Label className={classes.label}>{option.name ?? option.id}</Switch.Label>
         {option.description && (
           <span className={description} id={descriptionId}>
             {option.description}

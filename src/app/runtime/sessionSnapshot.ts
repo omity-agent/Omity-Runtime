@@ -31,14 +31,12 @@ export async function createSnapshotSession(options: {
       (sessionId, workspace) => {
         reservedSessionId = sessionId;
         return captureSessionSnapshot({
-          hookOverrides: options.submission.hookOverrides,
           mcp: options.mcp,
-          mcpOverrides: options.submission.mcpOverrides,
-          model: options.submission.model,
           profiles,
           root: options.root,
           sessionId,
           settingsContext,
+          submission: options.submission,
           workspace,
         });
       },
@@ -50,31 +48,28 @@ export async function createSnapshotSession(options: {
   }
 }
 async function captureSessionSnapshot(options: {
-  hookOverrides?: Record<string, boolean>;
-  mcpOverrides?: Record<string, boolean>;
   mcp: AppMcp;
-  model?: string;
   profiles: string[];
   root: string;
   sessionId: string;
   settingsContext: SettingsContext;
+  submission: SessionSubmission;
   workspace: string;
 }) {
-  const configured = loadSettings(options.root, {
+  const { builtInOverrides, hookOverrides, mcpOverrides, model } = options.submission,
+    configured = loadSettings(options.root, {
       cwd: options.workspace,
       sessionId: options.sessionId,
       settingsContext: options.settingsContext,
     }),
     settings = {
       ...configured,
-      model: { ...configured.model, model: options.model ?? configured.model.model },
+      model: { ...configured.model, model: model ?? configured.model.model },
     },
-    mcp = await options.mcp.createSession(
-      options.sessionId,
-      options.profiles,
-      options.workspace,
-      options.mcpOverrides,
-    ),
+    mcp = await options.mcp.createSession(options.sessionId, options.profiles, options.workspace, {
+      builtInOverrides,
+      serverOverrides: mcpOverrides,
+    }),
     definition = createSessionDefinition(
       settings,
       mcp,
@@ -82,7 +77,7 @@ async function captureSessionSnapshot(options: {
         cwd: options.workspace,
         session: resolveSessionPaths(options.sessionId).dir,
       },
-      { hooks: options.hookOverrides, servers: options.mcpOverrides },
+      { hooks: hookOverrides, servers: mcpOverrides },
     );
   return { definition, settings };
 }

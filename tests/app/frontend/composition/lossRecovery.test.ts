@@ -20,6 +20,7 @@ test("new session restores all edits and pasted file bytes after navigation and 
     hook = page.getByRole("switch", { exact: true, name: "shared-hook" }),
     optional = page.getByRole("switch", { exact: true, name: "optional-hook" }),
     server = page.getByRole("switch", { exact: true, name: "shared-server" }),
+    builtIn = page.getByRole("group", { name: "内置工具" }).getByRole("switch"),
     users = page.locator(".cm-content"),
     assistant = users.nth(1),
     customWorkspace = `${projectPaths[1]}/unsent`;
@@ -31,6 +32,7 @@ test("new session restores all edits and pasted file bytes after navigation and 
   await model.fill("custom-alternate");
   await hook.locator("..").click();
   await server.locator("..").click();
+  await builtIn.locator("..").click();
   await page.getByRole("button", { name: "增加消息对" }).click();
   await users.first().fill("prepared question");
   await assistant.fill("prepared answer");
@@ -51,6 +53,7 @@ test("new session restores all edits and pasted file bytes after navigation and 
   await browserExpect(model).toHaveValue("custom-alternate");
   await browserExpect(hook).toBeChecked();
   await browserExpect(server).toBeChecked();
+  await browserExpect(builtIn).not.toBeChecked();
   await profile.selectOption("limited");
   await browserExpect(optional).toHaveCount(0);
   await profile.selectOption("alternate");
@@ -82,6 +85,7 @@ test("new session restores all edits and pasted file bytes after navigation and 
     fileKey = [...submissions[0]!.keys()].find((key) => key.startsWith("file:")),
     file = z.file().parse(submissions[0]!.get(fileKey!));
   expect(submission).toMatchObject({
+    builtInOverrides: { choice: false },
     history: [{ assistant: "prepared answer", user: "prepared question" }],
     hookOverrides: { "shared-hook": true },
     mcpOverrides: { "shared-server": true },

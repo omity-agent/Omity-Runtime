@@ -1,4 +1,5 @@
 import { toUIMessageChunk } from "ai";
+import { z } from "zod";
 
 import type { AiStreamEvent } from "../../agent/model/request";
 import { captureError } from "../../failures/details";
@@ -10,6 +11,56 @@ import { displayToolInput, textOutputSnapshot, toolOutputText, toolValueText } f
 import { toolPart } from "./parts";
 
 type InvocationContext = Pick<HostContext, "db" | "sessionId" | "toolExecutions">;
+interface ToolIdentity {
+  messageId: string;
+  partId: string;
+}
+export const hookInvocationSchema = z.object({
+  argumentsText: z.string(),
+  callId: z.string().min(1),
+  freeform: z.boolean(),
+  kind: z.literal("hook_tool_started"),
+  name: z.string().min(1),
+});
+export type HookInvocation = z.infer<typeof hookInvocationSchema>;
+
+export async function recordHookToolStarted(
+  ctx: InvocationContext,
+  inputId: number,
+  { argumentsText, callId, freeform, name }: HookInvocation,
+) {
+  const existing = findToolStreamIdentity(ctx.db.db, ctx.sessionId, callId),
+    identity = existing ?? { messageId: callId, partId: callId };
+  if (!existing) {
+    await ctx.db.appendStream(ctx.sessionId, {
+      ...identity,
+      inputId,
+      kind: "tool_call_delta",
+      value: {
+        argumentsText,
+        ...(freeform ? { freeform: true } : {}),
+        idDelta: callId,
+        index: 0,
+        nameDelta: name,
+      },
+    });
+  }
+  await emitToolStarted(ctx, inputId, callId, identity);
+}
+export function emitToolStarted(
+  ctx: InvocationContext,
+  inputId: number,
+  callId: string,
+  { messageId, partId }: ToolIdentity,
+) {
+  return ctx.db.appendStream(ctx.sessionId, {
+    inputId,
+    kind: "tool_started",
+    messageId,
+    partId,
+    value: callId,
+  });
+}
 export async function recordInvocation(
   ctx: InvocationContext,
   inputId: number,
@@ -57,13 +108,7 @@ export async function recordInvocation(
         providerExecuted: true,
       },
     });
-    await ctx.db.appendStream(ctx.sessionId, {
-      inputId,
-      kind: "tool_started",
-      messageId: identity.messageId,
-      partId: identity.partId,
-      value: chunk.toolCallId,
-    });
+    await emitToolStarted(ctx, inputId, chunk.toolCallId, identity);
   } else if (
     (chunk?.type === "tool-output-available" || chunk?.type === "tool-output-error") &&
     chunk.providerExecuted

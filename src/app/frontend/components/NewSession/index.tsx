@@ -35,7 +35,6 @@ export function NewSessionPage({
       attachmentsRef,
       changePair,
       draft: { message, pairs },
-      flush: flushDraft,
       loading: draftLoading,
       pasteFiles,
       removePair,
@@ -47,24 +46,11 @@ export function NewSessionPage({
     scrollRef = useRef<HTMLDivElement>(null),
     previousPairCountRef = useRef(pairs.length);
   useLayoutEffect(() => {
-    const pairAdded = pairs.length > previousPairCountRef.current;
-    previousPairCountRef.current = pairs.length;
-    const keepLastMessageInPlace = () => {
-      const node = scrollRef.current;
-      if (node) {
-        node.scrollTop = node.scrollHeight;
-      }
-    };
-    let frame: number | undefined;
-    if (pairAdded) {
-      keepLastMessageInPlace();
-      frame = requestAnimationFrame(keepLastMessageInPlace);
+    const node = scrollRef.current;
+    if (node && pairs.length > previousPairCountRef.current) {
+      node.scrollTop = node.scrollHeight;
     }
-    return () => {
-      if (frame !== undefined) {
-        cancelAnimationFrame(frame);
-      }
-    };
+    previousPairCountRef.current = pairs.length;
   }, [pairs.length]);
   const {
       change,
@@ -73,8 +59,8 @@ export function NewSessionPage({
     } = useMessageCandidates(message, updateMessage, userMessages),
     { handleFormSubmit, handleSubmit, submitting } = useSessionCreation({
       attachmentsRef,
+      builtInOverrides: selection.builtInOverrides,
       draftRevision,
-      flushDraft,
       hookOverrides: selection.hookOverrides,
       mcpOverrides: selection.mcpOverrides,
       message: input,
@@ -110,28 +96,26 @@ export function NewSessionPage({
               selection={selection}
             />
           </div>
-          <div>
-            <MessageStack
-              disabled={draftLoading || submitting}
-              pairs={pairs}
-              onPairChange={changePair}
-              onRemove={removePair}
-              onSubmit={handleSubmit}
-            />
-            <LatestMessage
-              disabled={draftLoading || submitting}
-              message={input}
-              submitDisabled={draftLoading || !selection.valid || !complete || submitting}
-              submitting={submitting}
-              onAddPair={addPair}
-              onChange={change}
-              onNavigate={navigate}
-              onPasteFiles={pasteFiles}
-              onSubmit={handleSubmit}
-            />
-          </div>
+          <MessageStack
+            disabled={draftLoading || submitting}
+            pairs={pairs}
+            onPairChange={changePair}
+            onRemove={removePair}
+            onSubmit={handleSubmit}
+          />
         </div>
       </div>
+      <LatestMessage
+        disabled={draftLoading || submitting}
+        message={input}
+        submitDisabled={draftLoading || !selection.valid || !complete || submitting}
+        submitting={submitting}
+        onAddPair={addPair}
+        onChange={change}
+        onNavigate={navigate}
+        onPasteFiles={pasteFiles}
+        onSubmit={handleSubmit}
+      />
     </form>
   );
 }

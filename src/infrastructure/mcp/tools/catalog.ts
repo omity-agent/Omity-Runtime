@@ -14,6 +14,7 @@ import {
   readProfileMcpConfiguration,
   readSessionMcpConfiguration,
 } from "../configuration";
+import type { ToolboxOverrides } from "../configuration/selection";
 import { createMcpLoadError, McpLoadError, reportMcpFailure } from "../failures/reportConstruction";
 import { loadServerTools } from "../loadServers";
 import { applyMcpToolSnapshot, emptyMcp, type McpToolSnapshot } from "./definitions";
@@ -27,9 +28,8 @@ export interface LoadedMcp {
   modelTools: (session: Required<SessionPlaceholders>) => ReturnType<typeof sessionModelTools>;
   tools: StructuredToolInterface[];
 }
-export interface LoadMcpOptions extends BuiltInToolOptions {
+export interface LoadMcpOptions extends BuiltInToolOptions, ToolboxOverrides {
   cwd?: string;
-  serverOverrides?: Record<string, boolean>;
 }
 export function loadMcp(
   root: string,
@@ -56,7 +56,7 @@ async function initializeCatalog(
   try {
     const configuration = snapshot
       ? readSessionMcpConfiguration(context, snapshot)
-      : readProfileMcpConfiguration(context, options.serverOverrides);
+      : readProfileMcpConfiguration(context, options);
     if (!configuration) {
       logger.info(localize("mcp:catalog.configurationMissing"));
       return emptyMcp(emptyMcpConfiguration(), snapshot);

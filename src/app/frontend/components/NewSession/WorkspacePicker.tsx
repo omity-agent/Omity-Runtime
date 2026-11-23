@@ -30,6 +30,9 @@ const row = css({
     minWidth: "0",
   }),
   recentButton = css({
+    "&:nth-child(n + 3)": { _short: { display: "none" } },
+    "&:nth-child(n + 4)": { _compact: { display: "none" } },
+    "&:nth-child(n + 6)": { "@media (height < 64rem)": { display: "none" } },
     justifyContent: "flex-start",
     maxWidth: "full",
     minWidth: "0",

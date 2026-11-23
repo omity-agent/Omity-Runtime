@@ -5,6 +5,7 @@ import { type HostContext, readGraphState, streamGraph } from "../context";
 import { waitBeforeModelRetry } from "../retry";
 import { type ActiveRun, CanceledRunError, cancelRun, finishRun, setRunStatus } from "../run";
 import { completeActiveStream, createStreamLogState, discardActiveStream } from "../stream";
+import { hookInvocationSchema, recordHookToolStarted } from "../stream/invocations";
 import { isRetryableModelError } from "../transientErrors";
 import { pauseForStop, waitIfPaused } from "./pause";
 import { waitAfterCompletedStep } from "./step";
@@ -149,6 +150,16 @@ async function handleGraphEvent(
     return;
   }
   const part: unknown = event[1];
+  if (
+    typeof part === "object" &&
+    part !== null &&
+    "kind" in part &&
+    part.kind === "hook_tool_started"
+  ) {
+    ctx.observer?.activity?.(ctx.sessionId, "tool");
+    await recordHookToolStarted(ctx, inputId, hookInvocationSchema.parse(part));
+    return;
+  }
   if (!isAiStreamEvent(part)) {
     throw new Error(localize("runtime:boundary.customEventInvalid"));
   }

@@ -1,5 +1,5 @@
 import { isEqual } from "es-toolkit";
-import { type MouseEvent, startTransition, useCallback, useEffect } from "react";
+import { type MouseEvent, startTransition, useCallback, useEffect, useRef, useState } from "react";
 
 export function navigateLink(
   event: Pick<
@@ -29,7 +29,7 @@ export interface ForkPage {
 export type Page = ForkPage | { kind: "new" } | { kind: "session"; id: string };
 const forkPrefix = "/fork/",
   sessionPrefix = "/sessions/";
-export function readPage(): Page {
+function readPage(): Page {
   return pageFromHash(globalThis.location.hash);
 }
 function pageFromHash(hash: string): Page {
@@ -78,16 +78,6 @@ function writePage(page: Page, replace = false) {
   const method = replace ? "replaceState" : "pushState";
   globalThis.history[method](null, "", path);
 }
-export function usePageNavigator(setPage: (page: Page) => void) {
-  "use no memo";
-  return useCallback(
-    (nextPage: Page, replace = false) => {
-      writePage(nextPage, replace);
-      startTransition(() => setPage(nextPage));
-    },
-    [setPage],
-  );
-}
 export function sessionPage(id: string): Page {
   return { id, kind: "session" };
 }
@@ -106,7 +96,7 @@ export function transcriptSessionId(
 ) {
   return sessionId === deletingSessionId ? undefined : sessionId;
 }
-export function resolvePage(page: Page, sessions: { id: string }[], ready: boolean) {
+function resolvePage(page: Page, sessions: { id: string }[], ready: boolean) {
   if (!ready) {
     return page;
   }
@@ -116,20 +106,38 @@ export function resolvePage(page: Page, sessions: { id: string }[], ready: boole
   const sessionId = pageSessionId(page);
   return sessions.some((session) => session.id === sessionId) ? page : ({ kind: "new" } as const);
 }
-export function usePageNavigation(page: Page, currentPage: Page, setPage: (page: Page) => void) {
+export function usePageRouting(sessions: { id: string }[], ready: boolean) {
+  "use no memo";
+  const [requestedPage, setRequestedPage] = useState(readPage),
+    revision = useRef<symbol>(undefined),
+    page = resolvePage(requestedPage, sessions, ready),
+    updatePage = useCallback((nextPage: Page) => {
+      revision.current = Symbol();
+      startTransition(() => setRequestedPage(nextPage));
+    }, []),
+    navigate = useCallback(
+      (nextPage: Page, replace = false) => {
+        writePage(nextPage, replace);
+        updatePage(nextPage);
+      },
+      [updatePage],
+    ),
+    captureNavigation = useCallback(() => {
+      const currentRevision = revision.current,
+        { hash } = globalThis.location;
+      return () => revision.current === currentRevision && globalThis.location.hash === hash;
+    }, []);
   useEffect(() => {
-    const syncPage = () => {
-      startTransition(() => setPage(readPage()));
-    };
+    const syncPage = () => updatePage(readPage());
     globalThis.addEventListener("popstate", syncPage);
     return () => {
       globalThis.removeEventListener("popstate", syncPage);
     };
-  }, [setPage]);
+  }, [updatePage]);
   useEffect(() => {
-    if (isEqual(page, currentPage)) {
-      return;
+    if (requestedPage !== page && isEqual(readPage(), requestedPage)) {
+      navigate(page, true);
     }
-    writePage(currentPage, true);
-  }, [currentPage, page]);
+  }, [navigate, page, requestedPage]);
+  return { captureNavigation, navigate, page };
 }

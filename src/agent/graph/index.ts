@@ -19,14 +19,16 @@ import type { LanguageModel } from "ai";
 import { BunSqliteSaver } from "../../checkpointer/saver";
 import { hookNode, modelNode, toolsNode } from "../../hooks/graph/commands";
 import { createHookNode } from "../../hooks/graph/node";
-import { agentPlan, type HookPlan, toolPlan } from "../../hooks/plan";
+import { agentPlan, type HookPlan, requireCallId, toolPlan } from "../../hooks/plan";
 import type { HookRuntime } from "../../hooks/runtime";
 import type { HookToolOutput } from "../../hooks/storage/outputs";
 import {
   type ModelToolDefinition,
   modelToolDefinitions,
 } from "../../infrastructure/mcp/tools/definitions";
-import type { Settings } from "../../types";
+import type { HookInvocation } from "../../runtime/stream/invocations";
+import { toolValueText } from "../../runtime/toolOutput";
+import type { HookRule, Settings } from "../../types";
 import { buildAiModel, modelApi } from "../model/provider";
 import { streamAiModel } from "../model/request";
 import { aiModelTools } from "../model/tools";
@@ -104,7 +106,20 @@ export function createAgentGraph(options: GraphOptions) {
         write: getWriter(),
       }),
     ),
-    invokeToolTask = task("invoke_tool", (call: ToolCall) => invokeTool(call, getConfig())),
+    invokeToolTask = task("invoke_tool", (call: ToolCall, mode: HookRule["mode"]) => {
+      if (mode === "takeover") {
+        const input: unknown = call.args["input"],
+          raw = freeform.has(call.name) && typeof input === "string" ? input : undefined;
+        getWriter()?.({
+          argumentsText: raw ?? toolValueText(call.args),
+          callId: requireCallId(call),
+          freeform: raw !== undefined,
+          kind: "hook_tool_started",
+          name: call.name,
+        } satisfies HookInvocation);
+      }
+      return invokeTool(call, getConfig());
+    }),
     invokeToolBatchTask = task("invoke_tool_batch", (calls: ToolCall[]) => {
       const config = getConfig();
       return invokeToolBatch(calls, (call) => invokeTool(call, config));
@@ -118,7 +133,7 @@ export function createAgentGraph(options: GraphOptions) {
         const result = await consumeHookTask(hookId, limit);
         return result.consumed;
       },
-      (call) => Promise.resolve(invokeToolTask(call)),
+      (call, mode) => Promise.resolve(invokeToolTask(call, mode)),
       { parallelToolCalls: options.settings.toolExecution.parallel },
     ),
     routeResult = createResultRouter(

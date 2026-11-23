@@ -53,7 +53,8 @@
     "agentNameForbidden": "MCP 工具不能命名为 agent",
     "entryMustBeObject": "MCP 配置 {{value0}} 必须是对象",
     "defaultsMustBeObject": "MCP 默认配置 {{value0}} 必须是对象",
-    "serverMissing": "MCP 服务器不存在：{{value0}}"
+    "serverMissing": "MCP 服务器不存在：{{value0}}",
+    "builtInMissing": "内置工具不存在：{{value0}}"
   },
   "client": {
     "processExited": "MCP stdio 子进程意外退出",

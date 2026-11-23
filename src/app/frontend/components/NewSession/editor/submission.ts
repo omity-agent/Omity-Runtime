@@ -8,8 +8,8 @@ import type { PendingAttachments } from "../../Chat/Composer/attachments";
 
 export function useSessionCreation({
   attachmentsRef,
+  builtInOverrides,
   draftRevision,
-  flushDraft,
   hookOverrides,
   mcpOverrides,
   message,
@@ -20,8 +20,8 @@ export function useSessionCreation({
   workspace,
 }: {
   attachmentsRef: RefObject<PendingAttachments>;
+  builtInOverrides: Record<string, boolean>;
   draftRevision: number;
-  flushDraft: () => Promise<void>;
   hookOverrides: Record<string, boolean>;
   mcpOverrides: Record<string, boolean>;
   message: string;
@@ -47,9 +47,9 @@ export function useSessionCreation({
       submittingRef.current = true;
       setSubmitting(true);
       try {
-        await flushDraft();
         await onCreate(
           {
+            builtInOverrides,
             draftRevision,
             history: pairs.map(({ user, assistant }) => ({ assistant, user })),
             hookOverrides,

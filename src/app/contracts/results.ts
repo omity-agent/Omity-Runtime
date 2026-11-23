@@ -16,6 +16,7 @@ const integer = z.number().int(),
     description: z.string().optional(),
     enable: z.boolean(),
     id: z.string().min(1),
+    name: z.string().min(1).optional(),
   });
 export const bootstrapResponseSchema = z.object({
   attachments: attachmentSettingsSchema,
@@ -27,6 +28,7 @@ export const bootstrapResponseSchema = z.object({
   sessions: z.array(sessionInfoSchema),
 });
 export const sessionOptionsSchema = z.object({
+  builtInTools: z.array(capabilitySchema.required({ name: true })),
   hooks: z.array(capabilitySchema),
   mcpServers: z.array(capabilitySchema),
   model: z.string().min(1),

@@ -9,7 +9,7 @@ import {
   omitCodexConnectionSettings,
   parseModelSettings,
 } from "../../infrastructure/configuration/settings/models";
-import { readProfileMcpServerOptions } from "../../infrastructure/mcp/configuration";
+import { readProfileToolboxOptions } from "../../infrastructure/mcp/configuration";
 import type { SessionOptions } from "../contracts/results";
 
 export function availableSessionOptions(
@@ -30,12 +30,12 @@ export function availableSessionOptions(
     throw new Error(localize("application:runtime.modelConfigMissing"));
   }
   return {
+    ...readProfileToolboxOptions(selected),
     hooks: loadConfiguredHookRules(selected).map(({ id, enable, description }) => ({
       description,
       enable: enable ?? true,
       id,
     })),
-    mcpServers: readProfileMcpServerOptions(selected),
     model: parseModelSettings(modelFile.value).model,
   };
 }

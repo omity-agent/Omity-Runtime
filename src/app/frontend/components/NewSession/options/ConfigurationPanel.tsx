@@ -5,7 +5,7 @@ import { reportPromiseErrors } from "../../../services/errors";
 import { Button } from "../../ui";
 import { configuration, setupFirst } from "../preparationGrid";
 import { ProfilePicker } from "../ProfilePicker";
-import { CapabilityGroup } from "./CapabilityGroup";
+import { CapabilityPanel } from "./CapabilityPanel";
 import { ModelInput } from "./ModelInput";
 import type { useSessionPreferences } from "./preferences";
 
@@ -23,7 +23,30 @@ export function ConfigurationPanel({
   selection: ReturnType<typeof useSessionPreferences>;
 }) {
   const { t } = useTranslation(),
-    handleRetry = useCallback(() => reportPromiseErrors(selection.reload()), [selection]);
+    handleRetry = useCallback(() => reportPromiseErrors(selection.reload()), [selection]),
+    panels = [
+      {
+        emptyLabel: t("noHooks"),
+        label: t("hooks"),
+        sections: [{ onChange: selection.handleHookChange, options: selection.hooks }],
+      },
+      {
+        emptyLabel: t("noTools"),
+        label: t("tool"),
+        sections: [
+          {
+            label: t("builtInTools"),
+            onChange: selection.handleBuiltInChange,
+            options: selection.builtInTools,
+          },
+          {
+            label: t("mcpServers"),
+            onChange: selection.handleServerChange,
+            options: selection.mcpServers,
+          },
+        ],
+      },
+    ];
   return (
     <div className={configuration}>
       <ProfilePicker
@@ -45,22 +68,15 @@ export function ConfigurationPanel({
           </Button>
         </div>
       ) : selection.ready ? (
-        <>
-          <CapabilityGroup
+        panels.map(({ emptyLabel, label, sections }) => (
+          <CapabilityPanel
             disabled={disabled}
-            emptyLabel={t("noHooks")}
-            label={t("hooks")}
-            onChange={selection.handleHookChange}
-            options={selection.hooks}
+            emptyLabel={emptyLabel}
+            key={label}
+            label={label}
+            sections={sections}
           />
-          <CapabilityGroup
-            disabled={disabled}
-            emptyLabel={t("noMcpServers")}
-            label={t("mcpServers")}
-            onChange={selection.handleServerChange}
-            options={selection.mcpServers}
-          />
-        </>
+        ))
       ) : (
         <output className={setupFirst}>{t("loadingOptions")}</output>
       )}

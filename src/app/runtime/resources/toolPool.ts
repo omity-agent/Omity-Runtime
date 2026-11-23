@@ -4,6 +4,7 @@ import {
   type SettingsContext,
 } from "../../../infrastructure/configuration/settings/context";
 import { Logger } from "../../../infrastructure/logging/logger";
+import type { ToolboxOverrides } from "../../../infrastructure/mcp/configuration/selection";
 import { AsyncResourceCache } from "../../../infrastructure/mcp/lifecycle";
 import {
   type LoadedMcp,
@@ -24,18 +25,18 @@ export function createAppMcp(
   const options: LoadMcpOptions = {
       askUser: (request, sessionId, signal) => askUser.ask(request, sessionId, signal),
     },
-    sessionOptions = (cwd = root, serverOverrides?: Record<string, boolean>): LoadMcpOptions => ({
+    sessionOptions = (cwd = root, overrides?: ToolboxOverrides): LoadMcpOptions => ({
       ...options,
+      ...overrides,
       cwd,
-      serverOverrides,
     });
   return new AppMcp(
-    (profiles, cwd, serverOverrides) =>
+    (profiles, cwd, overrides) =>
       loadMcp(
         root,
         new Logger(level, true),
         selectSettingsProfiles(context, profiles),
-        sessionOptions(cwd, serverOverrides),
+        sessionOptions(cwd, overrides),
       ),
     (profiles, snapshot, cwd) =>
       loadSessionMcp(
@@ -52,7 +53,7 @@ export class AppMcp {
     private readonly initialize: (
       profiles: string[],
       cwd?: string,
-      serverOverrides?: Record<string, boolean>,
+      overrides?: ToolboxOverrides,
     ) => Promise<LoadedMcp>,
     private readonly initializeSnapshot: (
       profiles: string[],
@@ -69,17 +70,12 @@ export class AppMcp {
       this.initializeSnapshot(profiles, snapshot, cwd),
     );
   }
-  createSession(
-    sessionId: string,
-    profiles: string[],
-    cwd: string,
-    serverOverrides?: Record<string, boolean>,
-  ) {
+  createSession(sessionId: string, profiles: string[], cwd: string, overrides?: ToolboxOverrides) {
     const key = `session:${sessionId}`;
     if (this.resources.has(key)) {
       throw new Error(localize("application:resources.sessionAlreadyBound", { value0: sessionId }));
     }
-    return this.resources.load(key, () => this.initialize(profiles, cwd, serverOverrides));
+    return this.resources.load(key, () => this.initialize(profiles, cwd, overrides));
   }
   discardSession(sessionId: string) {
     return this.resources.discard(`session:${sessionId}`);

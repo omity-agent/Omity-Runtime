@@ -4,21 +4,12 @@ import { useTranslation } from "react-i18next";
 
 import { navigateLink, pagePath } from "../../route";
 import type { SessionInfo } from "../../services/client";
+import { CredentialAction } from "../Access/CredentialAction";
 import { LinkButton } from "../ui";
 import { ConversationList } from "./entries/ConversationList";
-import {
-  brand,
-  collections,
-  heading,
-  list,
-  newButton,
-  panel,
-  section,
-  title,
-  total,
-} from "./panelStyles";
+import { collections, heading, list, section, title, toolbar, total } from "./panelStyles";
 import { ProjectPicker } from "./ProjectPicker";
-import { compareSessions, groupSessions, isRunning, workspaceLabel } from "./sessions";
+import { groupSessions, recentSessions, workspaceLabel } from "./sessions";
 
 interface SidebarProps {
   sessions: SessionInfo[];
@@ -46,9 +37,7 @@ export function Sidebar({
         projectSessions.some(({ id }) => id === activeId),
       ) ??
       groups[0],
-    attentionSessions = sessions
-      .filter((session) => isRunning(session) || unreadIds.has(session.id))
-      .toSorted(compareSessions),
+    recent = recentSessions(sessions, unreadIds),
     handleCreate = useCallback(
       (event: MouseEvent<HTMLAnchorElement>) => navigateLink(event, onCreate),
       [onCreate],
@@ -58,36 +47,34 @@ export function Sidebar({
   }
   return (
     <>
-      <header className={panel}>
-        <h1 className={brand}>
-          {t("brand")} <span className={total}>/ {sessions.length}</span>
-        </h1>
+      <header className={toolbar}>
         {showCreate && (
           <LinkButton
             aria-label={t("newSession")}
-            className={newButton}
             href={pagePath({ kind: "new" })}
+            iconOnly
             onClick={handleCreate}
             title={t("newSession")}
+            visual="ghost"
           >
-            <Plus size={14} />
-            {t("new")}
+            <Plus aria-hidden size={16} />
           </LinkButton>
         )}
+        <CredentialAction />
       </header>
       <nav aria-label={t("sessions")} className={collections}>
-        <section aria-label={t("runningAndUnread")} className={section}>
+        <section aria-label={t("recentSessions")} className={section}>
           <h2 className={heading}>
             <Activity aria-hidden size={14} />
-            <span className={title}>{t("runningAndUnread")}</span>
-            <span className={total}>{attentionSessions.length}</span>
+            <span className={title}>{t("recentSessions")}</span>
+            <span className={total}>{recent.length}</span>
           </h2>
           <div className={list}>
-            {attentionSessions.length > 0 ? (
+            {recent.length > 0 ? (
               <ConversationList
                 activeId={activeId}
                 onSelect={onSelect}
-                sessions={attentionSessions}
+                sessions={recent}
                 unreadIds={unreadIds}
               />
             ) : null}

@@ -22,9 +22,6 @@ export const textStyles = defineTextStyles({
     },
   },
   selectedCaption: { value: { fontWeight: "bold", letterSpacing: "selected" } },
-  sidebarBrand: {
-    value: { fontSize: "interface", fontWeight: "medium", letterSpacing: "selected" },
-  },
   sidebarCount: { value: { fontSize: "metadata", fontWeight: "normal", letterSpacing: "0" } },
   sourceCode: { value: { fontFamily: "mono", fontSize: "inherit", lineHeight: "inherit" } },
 });

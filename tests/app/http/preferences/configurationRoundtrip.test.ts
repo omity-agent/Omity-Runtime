@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import type { SessionSubmission } from "../../../../src/app/attachments/contract";
 import { submissionForm } from "../../../../src/app/attachments/submission";
+import { sessionOptionsSchema } from "../../../../src/app/contracts/results";
 import { type AppMcp, createAppMcp } from "../../../../src/app/runtime/resources/toolPool";
 import { sessionPaths } from "../../../../src/infrastructure/configuration/sessionPaths";
 import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
@@ -15,12 +16,7 @@ import { AskUserRuntime } from "../../../../src/infrastructure/toolbox/runtime";
 import { writeToolboxConfiguration } from "../../../support/builtins";
 import { liveApplication } from "../liveApplication";
 
-const sessionResponse = z.object({ session: z.object({ id: z.string() }) }),
-  optionsResponse = z.object({
-    hooks: z.array(z.object({ enable: z.boolean(), id: z.string() })),
-    mcpServers: z.array(z.object({ enable: z.boolean(), id: z.string() })),
-    model: z.string(),
-  });
+const sessionResponse = z.object({ session: z.object({ id: z.string() }) });
 function createSubmission(
   root: string,
   overrides: Partial<Omit<SessionSubmission, "attachments">>,
@@ -38,7 +34,11 @@ test("HTTP session preferences list disabled servers without resolving secrets a
     profileDirectory = join(app.root, "home", "settings", "profiles", "alternate");
   writeToolboxConfiguration(app.root, {
     mcpServers: { optional: optionalServer, unavailable: unavailableServer },
-    toolNameOverrides: { unavailable__identity: "unavailable_identity" },
+    toolNameOverrides: {
+      ask_user__choice: "prompt_choices",
+      unavailable__identity: "unavailable_identity",
+    },
+    toolboxes: { choice: { enabled: false } },
   });
   mkdirSync(profileDirectory, { recursive: true });
   writeFileSync(join(profileDirectory, "model.yaml"), "model: alternate-model\n");
@@ -51,7 +51,12 @@ test("HTTP session preferences list disabled servers without resolving secrets a
   expect(response.status).toBe(200);
   expect(responseText).not.toContain("OMITY_UNCONFIGURED_COMMAND");
   expect(responseText).not.toContain(process.execPath);
-  expect(optionsResponse.parse(JSON.parse(responseText))).toEqual({
+  const options = sessionOptionsSchema.parse(JSON.parse(responseText));
+  expect(options.builtInTools.find(({ id }) => id === "choice")).toMatchObject({
+    enable: false,
+    name: "prompt_choices",
+  });
+  expect(options).toMatchObject({
     hooks: [],
     mcpServers: [
       { enable: false, id: "optional" },
@@ -60,7 +65,7 @@ test("HTTP session preferences list disabled servers without resolving secrets a
     model: "test",
   });
   const profileOptions = await fetch(`${app.url}/api/session-options?profile=alternate`);
-  expect(optionsResponse.parse(await profileOptions.json())).toEqual({
+  expect(sessionOptionsSchema.parse(await profileOptions.json())).toMatchObject({
     hooks: [],
     mcpServers: [
       { enable: true, id: "optional" },
@@ -85,7 +90,11 @@ test("HTTP session preferences list disabled servers without resolving secrets a
   });
   const overrides = { optional: true, unavailable: false },
     created = await fetch(`${app.url}/api/sessions`, {
-      body: createSubmission(app.root, { mcpOverrides: overrides, model: " chosen-model " }),
+      body: createSubmission(app.root, {
+        builtInOverrides: { choice: true, open_ended: false },
+        mcpOverrides: overrides,
+        model: " chosen-model ",
+      }),
       method: "POST",
     });
   expect(created.status).toBe(200);
@@ -126,7 +135,8 @@ test("HTTP session preferences list disabled servers without resolving secrets a
     );
     expect(Object.keys(restored.configuration.mcpServers)).toEqual(["optional"]);
     expect(restored.tools.map(({ name }) => name)).toContain("optional__identity");
-    expect(restored.tools.map(({ name }) => name)).toContain("ask_user__open_ended");
+    expect(restored.tools.map(({ name }) => name)).toContain("prompt_choices");
+    expect(restored.tools.map(({ name }) => name)).not.toContain("ask_user__open_ended");
   } finally {
     await restoredMcp?.close();
     database.close();

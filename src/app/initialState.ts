@@ -5,6 +5,7 @@ export interface InitialMessagePair {
   assistant: string;
 }
 export interface InitialSessionState {
+  builtInOverrides?: Record<string, boolean>;
   draftRevision?: number;
   history: InitialMessagePair[];
   hookOverrides?: Record<string, boolean>;
