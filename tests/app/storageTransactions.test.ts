@@ -85,6 +85,25 @@ test("attachment initialization only discards its own files on a session conflic
   expect(readFileSync(join(paths.userMessagesDir, "0.txt"), "utf8")).toBe("existing message");
   expect(readdirSync(join(paths.dir, "attachments"))).toEqual([]);
 });
+test("an attachment shared by initial history and the pending message is written once", async () => {
+  const message = "read {{file:a1b2c3d4:notes.txt}}";
+  await createSessionWithAttachments({
+    attachments: [{ file: new File(["attachment"], "notes.txt"), id: "a1b2c3d4" }],
+    definition: emptySessionDefinition(),
+    history: [{ assistant: "received", user: message }],
+    message,
+    profiles: [],
+    sessionId: "target",
+    settings: testSettings(),
+    workspace,
+  });
+  const paths = sessionPaths("target");
+  using db = new AgentDatabase(paths.dbPath);
+  const first = required(db.history("target")[0]).text;
+  expect(db.nextInput("target")?.content).toBe(first);
+  expect(readFileSync(first.slice("read ".length), "utf8")).toBe("attachment");
+  expect(readdirSync(join(paths.dir, "attachments"))).toHaveLength(1);
+});
 test("appending queued inputs preserves archive files and reuses missing sequence numbers", () => {
   createSessionStorage("target", workspace, [], history, "pending message");
   const paths = sessionPaths("target");

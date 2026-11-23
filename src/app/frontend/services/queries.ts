@@ -20,6 +20,7 @@ export function useUserMessages() {
   return useQuery({
     queryFn: ({ signal }) => loadUserMessages(signal),
     queryKey: userMessagesKey,
+    select: ({ messages }) => messages.map(({ content }) => content),
   });
 }
 export function usePredictions(sessionId: string | undefined, idle: boolean) {

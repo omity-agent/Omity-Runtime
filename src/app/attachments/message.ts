@@ -1,7 +1,7 @@
 import { submitSessionMessage } from "../../client";
 import type { Settings } from "../../types";
 import type { PendingAttachment } from "./contract";
-import { saveMessageAttachments } from "./storage";
+import { saveAttachments } from "./storage";
 
 export async function enqueueMessageWithAttachments(
   settings: Settings,
@@ -12,11 +12,12 @@ export async function enqueueMessageWithAttachments(
   attachments: PendingAttachment[],
   ensureHost: () => Promise<void>,
 ) {
-  const saved = await saveMessageAttachments(settings, sessionId, content, attachments);
+  const saved = await saveAttachments(settings, sessionId, [content], attachments);
   try {
+    const resolved = saved.rewrite(content);
     await ensureHost();
-    const result = submitSessionMessage(sessionId, saved.content, draftRevision, submissionId);
-    return { ...result, content: saved.content };
+    const result = submitSessionMessage(sessionId, resolved, draftRevision, submissionId);
+    return { ...result, content: resolved };
   } catch (error) {
     await saved.discard();
     throw error;

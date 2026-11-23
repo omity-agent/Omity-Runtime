@@ -14,19 +14,19 @@ export class PendingAttachments {
   configure(settings?: AttachmentSettings) {
     this.settings = settings;
   }
-  paste(files: File[], content: string) {
+  paste(files: File[], contents: readonly string[]) {
     try {
-      return this.add(files, content);
+      return this.add(files, contents);
     } catch (error) {
       reportError(error);
       return;
     }
   }
-  private add(files: File[], content: string) {
+  private add(files: File[], contents: readonly string[]) {
     if (!this.settings) {
       return;
     }
-    const retained = this.values(content).map(({ file }) => file);
+    const retained = this.values(contents).map(({ file }) => file);
     validateAttachmentBatch([...retained, ...files], this.settings);
     return files
       .map((file) => {
@@ -41,8 +41,8 @@ export class PendingAttachments {
       })
       .join("\n");
   }
-  values(content: string) {
-    const referenced = attachmentIds(content);
+  values(contents: readonly string[]) {
+    const referenced = attachmentIds(contents);
     return [...this.entries.values()].filter(({ id }) => referenced.has(id));
   }
   restore(attachments: PendingAttachment[]) {

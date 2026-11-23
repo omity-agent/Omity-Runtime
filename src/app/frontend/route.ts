@@ -111,33 +111,30 @@ export function usePageRouting(sessions: { id: string }[], ready: boolean) {
   const [requestedPage, setRequestedPage] = useState(readPage),
     revision = useRef<symbol>(undefined),
     page = resolvePage(requestedPage, sessions, ready),
-    updatePage = useCallback((nextPage: Page) => {
+    navigate = useCallback((nextPage: Page, replace: boolean | "history" = false) => {
+      if (replace !== "history") {
+        writePage(nextPage, replace);
+      }
       revision.current = Symbol();
       startTransition(() => setRequestedPage(nextPage));
     }, []),
-    navigate = useCallback(
-      (nextPage: Page, replace = false) => {
-        writePage(nextPage, replace);
-        updatePage(nextPage);
-      },
-      [updatePage],
-    ),
+    selectSession = useCallback((id: string) => navigate(sessionPage(id)), [navigate]),
     captureNavigation = useCallback(() => {
       const currentRevision = revision.current,
         { hash } = globalThis.location;
       return () => revision.current === currentRevision && globalThis.location.hash === hash;
     }, []);
   useEffect(() => {
-    const syncPage = () => updatePage(readPage());
+    const syncPage = () => navigate(readPage(), "history");
     globalThis.addEventListener("popstate", syncPage);
     return () => {
       globalThis.removeEventListener("popstate", syncPage);
     };
-  }, [updatePage]);
+  }, [navigate]);
   useEffect(() => {
     if (requestedPage !== page && isEqual(readPage(), requestedPage)) {
       navigate(page, true);
     }
   }, [navigate, page, requestedPage]);
-  return { captureNavigation, navigate, page };
+  return { captureNavigation, navigate, page, selectSession };
 }

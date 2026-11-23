@@ -1,10 +1,9 @@
-import { useCallback, useLayoutEffect, useRef } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 
 import type { PendingAttachment } from "../../../attachments/contract";
 import type { InitialSessionState } from "../../../initialState";
 import type { useNewSessionDraft } from "../../services/preparation/editorState";
-import { useMessageCandidates } from "../Chat/MarkdownEditor/candidateBrowsing";
-import { LatestMessage } from "./editor/LatestMessage";
+import { usePreparationCandidates } from "./editor/historyCandidates";
 import { useSessionCreation } from "./editor/submission";
 import { MessageStack } from "./MessageStack";
 import { ConfigurationPanel } from "./options/ConfigurationPanel";
@@ -31,12 +30,13 @@ export function NewSessionPage({
 }) {
   const selection = useSessionPreferences(preparation),
     {
-      addPair,
+      appendPair,
       attachmentsRef,
       changePair,
       draft: { message, pairs },
       loading: draftLoading,
       pasteFiles,
+      pendingPairId,
       removePair,
       revision: draftRevision,
       update,
@@ -46,34 +46,61 @@ export function NewSessionPage({
     scrollRef = useRef<HTMLDivElement>(null),
     previousPairCountRef = useRef(pairs.length);
   useLayoutEffect(() => {
-    const node = scrollRef.current;
-    if (node && pairs.length > previousPairCountRef.current) {
-      node.scrollTop = node.scrollHeight;
-    }
+    const appended = pairs.length > previousPairCountRef.current,
+      node = scrollRef.current;
     previousPairCountRef.current = pairs.length;
+    if (!node || !appended) {
+      return;
+    }
+    const followTail = () => {
+      node.scrollTop = node.scrollHeight;
+    };
+    followTail();
+    const frame = requestAnimationFrame(followTail);
+    return () => cancelAnimationFrame(frame);
   }, [pairs.length]);
-  const {
-      change,
-      content: input,
-      navigate,
-    } = useMessageCandidates(message, updateMessage, userMessages),
-    { handleFormSubmit, handleSubmit, submitting } = useSessionCreation({
+  const { bind, reset } = usePreparationCandidates(userMessages),
+    latest = bind(pendingPairId, message, updateMessage),
+    { content: input } = latest,
+    editors = useMemo(
+      () =>
+        pairs.map(({ assistant, id, user }) => ({
+          assistant: bind(`${id}:assistant`, assistant, (content) =>
+            changePair(id, { assistant: content }),
+          ),
+          id,
+          user: bind(id, user, (content) => changePair(id, { user: content })),
+        })),
+      [bind, changePair, pairs],
+    ),
+    handleAppend = useCallback(() => {
+      appendPair(input);
+      reset(pendingPairId);
+    }, [appendPair, input, pendingPairId, reset]),
+    handleRemove = useCallback(
+      (id: string) => {
+        removePair(id);
+        reset(id);
+        reset(`${id}:assistant`);
+      },
+      [removePair, reset],
+    ),
+    { handleFormSubmit, handleSubmit, submitDisabled, submitting } = useSessionCreation({
       attachmentsRef,
       builtInOverrides: selection.builtInOverrides,
       draftRevision,
+      history: editors.map(({ assistant, user }) => ({
+        assistant: assistant.content,
+        user: user.content,
+      })),
       hookOverrides: selection.hookOverrides,
       mcpOverrides: selection.mcpOverrides,
       message: input,
       model: selection.model,
       onCreate,
-      optionsReady: !draftLoading && selection.ready,
-      pairs,
+      optionsReady: !draftLoading && selection.valid,
       workspace,
     }),
-    complete =
-      workspace.trim().length > 0 &&
-      input.trim().length > 0 &&
-      pairs.every(({ user, assistant }) => user.trim().length > 0 && assistant.trim().length > 0),
     changeWorkspace = useCallback((value: string) => update({ workspace: value }), [update]),
     changeProfile = useCallback((profile?: string) => update({ profile }), [update]);
   return (
@@ -98,24 +125,17 @@ export function NewSessionPage({
           </div>
           <MessageStack
             disabled={draftLoading || submitting}
-            pairs={pairs}
-            onPairChange={changePair}
-            onRemove={removePair}
+            latest={latest}
+            onAppend={handleAppend}
+            onPasteFiles={pasteFiles}
+            onRemove={handleRemove}
             onSubmit={handleSubmit}
+            pairs={editors}
+            submitDisabled={submitDisabled}
+            submitting={submitting}
           />
         </div>
       </div>
-      <LatestMessage
-        disabled={draftLoading || submitting}
-        message={input}
-        submitDisabled={draftLoading || !selection.valid || !complete || submitting}
-        submitting={submitting}
-        onAddPair={addPair}
-        onChange={change}
-        onNavigate={navigate}
-        onPasteFiles={pasteFiles}
-        onSubmit={handleSubmit}
-      />
     </form>
   );
 }

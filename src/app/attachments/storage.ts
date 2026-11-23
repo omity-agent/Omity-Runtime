@@ -10,28 +10,28 @@ import type { Settings } from "../../types";
 import {
   attachmentIds,
   fileSuffix,
+  materializeAttachmentPaths,
+  missingAttachment,
   type PendingAttachment,
   validateAttachmentBatch,
 } from "./contract";
 
-export async function saveMessageAttachments(
+export async function saveAttachments(
   settings: Settings,
   sessionId: string,
-  content: string,
+  contents: readonly string[],
   attachments: PendingAttachment[],
 ) {
-  const referenced = attachmentIds(content),
-    selected = attachments.filter(({ id }) => referenced.has(id));
+  const referenced = attachmentIds(contents),
+    selected = attachments.filter(({ id }) => referenced.has(id)),
+    paths = new Map<string, string>(),
+    discard = () => Promise.all([...paths.values()].map((path) => rm(path, { force: true })));
   validateSelected(selected, referenced, settings);
-  if (selected.length === 0) {
-    return saved(content, []);
-  }
-  const session = resolveSessionPaths(sessionId),
-    directory = join(session.dir, "attachments");
-  await mkdir(directory, { recursive: true });
-  const written: string[] = [];
-  let resolved = content;
   try {
+    const directory = join(resolveSessionPaths(sessionId).dir, "attachments");
+    if (selected.length > 0) {
+      await mkdir(directory, { recursive: true });
+    }
     for (const { id, file } of selected) {
       const bytes = new Uint8Array(await file.arrayBuffer());
       let path = "";
@@ -47,21 +47,16 @@ export async function saveMessageAttachments(
           throw error;
         }
       });
-      written.push(path);
-      const displayPath = path.replaceAll("\\", "/");
-      resolved = replacePlaceholder(resolved, id, displayPath);
+      paths.set(id, path);
     }
-    return saved(resolved, written);
+    return {
+      discard,
+      rewrite: (content: string) => materializeAttachmentPaths(content, paths),
+    };
   } catch (error) {
-    await Promise.all(written.map((path) => rm(path, { force: true })));
+    await discard();
     throw error;
   }
-}
-function saved(content: string, paths: string[]) {
-  return {
-    content,
-    discard: () => Promise.all(paths.map((path) => rm(path, { force: true }))),
-  };
 }
 function validateSelected(
   selected: PendingAttachment[],
@@ -84,14 +79,7 @@ function validateSelected(
   );
   for (const id of referenced) {
     if (!ids.has(id)) {
-      throw new DomainError(
-        "ATTACHMENT_INVALID",
-        localize("application:attachments.referencedFileMissing", { value0: id }),
-      );
+      throw missingAttachment(id);
     }
   }
-}
-function replacePlaceholder(content: string, id: string, path: string) {
-  const pattern = new RegExp(String.raw`\{\{file:${id}:[^{}\r\n]+\}\}`, "giu");
-  return content.replaceAll(pattern, () => path);
 }

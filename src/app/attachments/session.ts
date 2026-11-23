@@ -2,8 +2,8 @@ import type { SessionDefinition } from "../../infrastructure/database/session/se
 import type { Settings } from "../../types";
 import type { InitialMessagePair } from "../initialState";
 import { createSessionStorage } from "../runtime/sessionStorage";
-import type { PendingAttachment } from "./contract";
-import { saveMessageAttachments } from "./storage";
+import { initialAttachmentTexts, type PendingAttachment } from "./contract";
+import { saveAttachments } from "./storage";
 
 export async function createSessionWithAttachments(options: {
   settings: Settings;
@@ -15,10 +15,10 @@ export async function createSessionWithAttachments(options: {
   message: string;
   attachments: PendingAttachment[];
 }) {
-  const saved = await saveMessageAttachments(
+  const saved = await saveAttachments(
     options.settings,
     options.sessionId,
-    options.message,
+    initialAttachmentTexts(options.history, options.message),
     options.attachments,
   );
   try {
@@ -26,8 +26,11 @@ export async function createSessionWithAttachments(options: {
       options.sessionId,
       options.workspace,
       options.profiles,
-      options.history,
-      saved.content,
+      options.history.map(({ assistant, user }) => ({
+        assistant: saved.rewrite(assistant),
+        user: saved.rewrite(user),
+      })),
+      saved.rewrite(options.message),
       options.definition,
     );
   } catch (error) {

@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { type ComponentProps, useCallback, useMemo, useState } from "react";
+import { type ComponentProps, useCallback, useState } from "react";
 
 import { AccessGate } from "./components/Access/AccessGate";
 import { ApplicationFrame } from "./components/Application";
@@ -17,6 +17,7 @@ import { recentWorkspaces } from "./services/recentWorkspaces";
 import { useForkableTranscript } from "./services/transcript/fork";
 
 const emptySessions: SessionInfo[] = [],
+  emptyMessages: readonly string[] = [],
   emptyProfiles: string[] = [];
 type ChatPageProps = ComponentProps<typeof ChatPage>;
 export function App() {
@@ -29,7 +30,7 @@ export function App() {
 function AuthenticatedApp() {
   const queryClient = useQueryClient(),
     bootstrap = useBootstrap(),
-    userMessages = useUserMessages(),
+    { data: userMessages = emptyMessages } = useUserMessages(),
     [deletingId, setDeletingId] = useState<string>(),
     [profileChangePending, setProfileChangePending] = useState(false),
     sessions = bootstrap.data?.sessions ?? emptySessions,
@@ -38,6 +39,7 @@ function AuthenticatedApp() {
       captureNavigation,
       navigate,
       page: currentPage,
+      selectSession,
     } = usePageRouting(sessions, bootstrap.data !== undefined),
     pageKey = pagePath(currentPage),
     pendingFork = currentPage.kind === "fork" ? currentPage : undefined,
@@ -80,12 +82,7 @@ function AuthenticatedApp() {
       saveDelayMs: bootstrap.data?.frontend.draftSaveDelayMs,
       sourceWorkspace: sourceSession?.workspace,
     }),
-    workspaces = useMemo(() => recentWorkspaces(sessions), [sessions]),
-    userMessageContents = useMemo(
-      () => userMessages.data?.messages.map(({ content }) => content) ?? [],
-      [userMessages.data],
-    ),
-    selectSession = useCallback((id: string) => navigate({ id, kind: "session" }), [navigate]),
+    workspaces = recentWorkspaces(sessions),
     changeProfile = createProfileChangeHandler({
       activeSession,
       pendingFork: Boolean(pendingFork),
@@ -157,7 +154,7 @@ function AuthenticatedApp() {
         stepAvailable={activeSession?.stepAvailable}
         translationSettings={bootstrap.data?.frontend.reasoningTranslation}
         view={pendingPreview?.view ?? submissions.view}
-        userMessages={userMessageContents}
+        userMessages={userMessages}
         onCreate={createNewSession}
         onCancelTool={toolActions.handleCancel}
         askUser={activeSession?.askUser ?? null}

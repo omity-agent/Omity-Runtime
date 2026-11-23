@@ -1,151 +1,104 @@
-import { Bot, Trash2, UserRound } from "lucide-react";
-import { useCallback, useMemo } from "react";
-import { css } from "styled-system/css";
+import { Plus, Trash2 } from "lucide-react";
+import { useCallback } from "react";
 
-import type { EditablePair } from "../../../composition/preparation";
-import type { InitialMessagePair } from "../../../initialState";
 import { useTranslation } from "../../i18n";
-import { composerFrame, composerRole } from "../Chat/Composer/arrangement";
-import { ActionPanel } from "../Chat/Composer/controls/ActionPanel";
-import { MarkdownEditor } from "../Chat/MarkdownEditor";
+import { SubmitButton } from "../Chat/Composer/controls/SubmitButton";
 import { IconButton } from "../ui";
+import type { PreparationInput } from "./editor/historyCandidates";
+import { MessageEditor } from "./editor/MessageEditor";
 
-const stack = css({ alignSelf: "stretch" });
+interface PairInputs {
+  assistant: PreparationInput;
+  id: string;
+  user: PreparationInput;
+}
 export function MessageStack({
   disabled,
+  latest,
+  onAppend,
+  onPasteFiles,
   pairs,
-  onPairChange,
   onRemove,
   onSubmit,
+  submitDisabled,
+  submitting,
 }: {
   disabled: boolean;
-  pairs: EditablePair[];
-  onPairChange: (id: string, pair: InitialMessagePair) => void;
+  latest: PreparationInput;
+  onAppend: () => void;
+  onPasteFiles: (files: File[]) => string | undefined;
+  pairs: PairInputs[];
   onRemove: (id: string) => void;
   onSubmit: () => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <div className={stack}>
-      {pairs.map((item) => (
-        <MessagePairEditor
-          assistantLabel={t("conversation:assistant")}
-          disabled={disabled}
-          item={item}
-          key={item.id}
-          userLabel={t("conversation:user")}
-          onPairChange={onPairChange}
-          onRemove={onRemove}
-          onSubmit={onSubmit}
-        />
-      ))}
-    </div>
-  );
-}
-function MessagePairEditor({
-  assistantLabel,
-  disabled,
-  item,
-  userLabel,
-  onPairChange,
-  onRemove,
-  onSubmit,
-}: {
-  assistantLabel: string;
-  disabled: boolean;
-  item: EditablePair;
-  userLabel: string;
-  onPairChange: (id: string, pair: InitialMessagePair) => void;
-  onRemove: (id: string) => void;
-  onSubmit: () => void;
-}) {
-  const changeUser = useCallback(
-      (user: string) => {
-        onPairChange(item.id, { ...item, user });
-      },
-      [item, onPairChange],
-    ),
-    changeAssistant = useCallback(
-      (assistant: string) => {
-        onPairChange(item.id, { ...item, assistant });
-      },
-      [item, onPairChange],
-    ),
-    remove = useCallback(() => {
-      onRemove(item.id);
-    }, [item.id, onRemove]);
-  return (
-    <section>
-      <MessageEditor
-        disabled={disabled}
-        label={userLabel}
-        speaker="user"
-        value={item.user}
-        onChange={changeUser}
-        onSubmit={onSubmit}
-      />
-      <MessageEditor
-        disabled={disabled}
-        label={assistantLabel}
-        speaker="assistant"
-        value={item.assistant}
-        onChange={changeAssistant}
-        onRemove={remove}
-        onSubmit={onSubmit}
-      />
-    </section>
-  );
-}
-function MessageEditor({
-  disabled,
-  label,
-  speaker,
-  value,
-  onChange,
-  onRemove,
-  onSubmit,
-}: {
-  disabled: boolean;
-  label: string;
-  speaker: "user" | "assistant";
-  value: string;
-  onChange: (value: string) => void;
-  onRemove?: () => void;
-  onSubmit: () => void;
+  submitDisabled: boolean;
+  submitting: boolean;
 }) {
   const { t } = useTranslation(),
-    RoleIcon = speaker === "user" ? UserRound : Bot,
-    footer = useMemo(
-      () => (
-        <span aria-label={label} className={composerRole} title={label}>
-          <RoleIcon aria-hidden size={20} />
-        </span>
-      ),
-      [label, RoleIcon],
-    );
-  return (
-    <div className={composerFrame}>
-      <MarkdownEditor
+    editors = pairs.flatMap(({ assistant, id, user }) => [
+      <MessageEditor
         disabled={disabled}
-        label={label}
-        onChange={onChange}
+        input={user}
+        key={user.id}
         onSubmit={onSubmit}
-        placeholder=""
-        value={value}
+        speaker="user"
+      />,
+      <MessageEditor
+        disabled={disabled}
+        input={assistant}
+        key={assistant.id}
+        onSubmit={onSubmit}
+        speaker="assistant"
+      >
+        <RemovePair disabled={disabled} id={id} onRemove={onRemove} />
+      </MessageEditor>,
+    ]);
+  editors.push(
+    <MessageEditor
+      disabled={disabled}
+      input={latest}
+      key={latest.id}
+      onPasteFiles={onPasteFiles}
+      onSubmit={onSubmit}
+      pending
+      speaker="user"
+    >
+      <IconButton
+        aria-label={t("preparation:addMessagePair")}
+        disabled={disabled}
+        onClick={onAppend}
+        title={t("preparation:addMessagePair")}
+        type="button"
+      >
+        <Plus aria-hidden size={16} />
+      </IconButton>
+      <SubmitButton
+        disabled={submitDisabled}
+        label={submitting ? t("preparation:creating") : t("preparation:createAndSend")}
       />
-      <ActionPanel footer={footer}>
-        {onRemove ? (
-          <IconButton
-            aria-label={t("preparation:removeMessagePair")}
-            disabled={disabled}
-            onClick={onRemove}
-            title={t("preparation:removeMessagePair")}
-            type="button"
-          >
-            <Trash2 aria-hidden size={16} />
-          </IconButton>
-        ) : null}
-      </ActionPanel>
-    </div>
+    </MessageEditor>,
+  );
+  return <div>{editors}</div>;
+}
+function RemovePair({
+  disabled,
+  id,
+  onRemove,
+}: {
+  disabled: boolean;
+  id: string;
+  onRemove: (id: string) => void;
+}) {
+  const { t } = useTranslation(),
+    remove = useCallback(() => onRemove(id), [id, onRemove]);
+  return (
+    <IconButton
+      aria-label={t("preparation:removeMessagePair")}
+      disabled={disabled}
+      onClick={remove}
+      title={t("preparation:removeMessagePair")}
+      type="button"
+    >
+      <Trash2 aria-hidden size={16} />
+    </IconButton>
   );
 }

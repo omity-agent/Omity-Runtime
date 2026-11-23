@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { claimShortId } from "../../../../infrastructure/randomId";
-import type { AttachmentSettings } from "../../../attachments/contract";
+import { type AttachmentSettings, initialAttachmentTexts } from "../../../attachments/contract";
 import {
   type EditablePair,
   emptyPreparation,
@@ -18,6 +18,12 @@ import { restorePreparation, retainFiles, retainPreparation } from "./browserSna
 const target = { kind: "new" } as const;
 type DraftUpdate =
   Partial<SessionPreparation> | ((current: SessionPreparation) => Partial<SessionPreparation>);
+function draftEditor(draft: SessionPreparation) {
+  return {
+    draft,
+    pendingPairId: claimShortId((candidate) => !draft.pairs.some(({ id }) => id === candidate)),
+  };
+}
 export function useNewSessionDraft({
   attachmentSettings,
   defaultWorkspace,
@@ -30,10 +36,11 @@ export function useNewSessionDraft({
   saveDelayMs?: number;
 }) {
   "use no memo";
-  const [draft, setDraft] = useState(emptyPreparation),
+  const [editor, setEditor] = useState(() => draftEditor(emptyPreparation())),
+    { draft } = editor,
     [loading, setLoading] = useState(true),
     [revision, setRevision] = useState(0),
-    draftRef = useRef(draft),
+    editorRef = useRef(editor),
     revisionRef = useRef(0),
     saverRef = useRef<DraftSaver | undefined>(undefined),
     attachmentsRef = useRef(new PendingAttachments()),
@@ -49,9 +56,9 @@ export function useNewSessionDraft({
         return;
       }
       attachmentsRef.current.restore(loaded.attachments);
-      draftRef.current = loaded.draft;
+      editorRef.current = draftEditor(loaded.draft);
       revisionRef.current = loaded.revision;
-      setDraft(loaded.draft);
+      setEditor(editorRef.current);
       setRevision(loaded.revision);
       setLoading(false);
       if (loaded.revision > 0) {
@@ -80,7 +87,9 @@ export function useNewSessionDraft({
       if (revisionRef.current === 0) {
         return;
       }
-      if (!flushComposerDraft(target, JSON.stringify(draftRef.current), revisionRef.current)) {
+      if (
+        !flushComposerDraft(target, JSON.stringify(editorRef.current.draft), revisionRef.current)
+      ) {
         reportError(new Error(localize("diagnostics:newSession.draftSaveFailed")));
       }
     };
@@ -96,48 +105,48 @@ export function useNewSessionDraft({
       document.removeEventListener("visibilitychange", visibility);
     };
   }, []);
-  const update = (change: DraftUpdate) => {
+  const update = (change: DraftUpdate, append = false) => {
       if (revisionRef.current >= Number.MAX_SAFE_INTEGER) {
         throw new Error(localize("diagnostics:newSession.draftRevisionUnsafe"));
       }
-      const next = {
-        ...draftRef.current,
-        workspace: draftRef.current.workspace ?? defaultWorkspace,
-        ...(typeof change === "function" ? change(draftRef.current) : change),
-      };
-      draftRef.current = next;
+      const current = editorRef.current.draft,
+        next = {
+          ...current,
+          workspace: current.workspace ?? defaultWorkspace,
+          ...(typeof change === "function" ? change(current) : change),
+        };
+      editorRef.current = append ? draftEditor(next) : { ...editorRef.current, draft: next };
       revisionRef.current += 1;
       retainPreparation(next, revisionRef.current);
-      setDraft(next);
+      setEditor(editorRef.current);
       setRevision(revisionRef.current);
       saverRef.current?.schedule(JSON.stringify(next), revisionRef.current);
     },
     updateMessage = (message: string) => {
-      if (message !== draftRef.current.message) {
+      if (message !== editorRef.current.draft.message) {
         update({ message });
       }
     },
-    changePair = (id: string, next: InitialMessagePair) => {
-      update({
-        pairs: draftRef.current.pairs.map((item) => (item.id === id ? { ...next, id } : item)),
-      });
+    changePair = (id: string, next: Partial<InitialMessagePair>) => {
+      update(({ pairs }) => ({
+        pairs: pairs.map((item) => (item.id === id ? { ...item, ...next } : item)),
+      }));
     },
     removePair = (id: string) => {
-      update({
-        pairs: draftRef.current.pairs.filter((item) => item.id !== id),
-      });
+      update(({ pairs }) => ({ pairs: pairs.filter((item) => item.id !== id) }));
     },
-    addPair = () => {
-      const { current } = draftRef,
-        id = claimShortId((candidate) => !current.pairs.some((item) => item.id === candidate)),
-        pair: EditablePair = { assistant: "", id, user: "" };
-      update({ pairs: [...current.pairs, pair] });
+    appendPair = (user: string) => {
+      const { draft: current, pendingPairId: id } = editorRef.current,
+        pair: EditablePair = { assistant: "", id, user };
+      update({ message: "", pairs: [...current.pairs, pair] }, true);
     },
     pasteFiles = (files: File[]) => {
-      const placeholders = attachmentsRef.current.paste(files, draftRef.current.message);
+      const { pairs, message } = editorRef.current.draft,
+        texts = initialAttachmentTexts(pairs, message),
+        placeholders = attachmentsRef.current.paste(files, texts);
       if (placeholders) {
         filesPendingRef.current = retainFiles(
-          attachmentsRef.current.values(`${draftRef.current.message}\n${placeholders}`),
+          attachmentsRef.current.values([...texts, placeholders]),
         );
         reportPromiseErrors(filesPendingRef.current);
       }
@@ -145,7 +154,7 @@ export function useNewSessionDraft({
     },
     flush = async () => {
       if (revisionRef.current > 0) {
-        saverRef.current?.schedule(JSON.stringify(draftRef.current), revisionRef.current);
+        saverRef.current?.schedule(JSON.stringify(editorRef.current.draft), revisionRef.current);
       }
       await Promise.all([saverRef.current?.flush(), filesPendingRef.current]);
     },
@@ -154,14 +163,14 @@ export function useNewSessionDraft({
         return;
       }
       saverRef.current?.discardPending();
-      draftRef.current = emptyPreparation(draftRef.current);
-      retainPreparation(draftRef.current, revisionRef.current);
-      setDraft(draftRef.current);
+      editorRef.current = draftEditor(emptyPreparation(editorRef.current.draft));
+      retainPreparation(editorRef.current.draft, revisionRef.current);
+      setEditor(editorRef.current);
       attachmentsRef.current.clear();
       await retainFiles([]);
     };
   return {
-    addPair,
+    appendPair,
     attachmentsRef,
     changePair,
     clear,
@@ -169,6 +178,7 @@ export function useNewSessionDraft({
     flush,
     loading,
     pasteFiles,
+    pendingPairId: editor.pendingPairId,
     removePair,
     revision,
     update,

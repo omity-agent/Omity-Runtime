@@ -1,6 +1,7 @@
 import { DomainError } from "../../errors";
 import { localize } from "../../i18n/server";
 import type { Settings } from "../../types";
+import type { InitialMessagePair } from "../initialState";
 
 export type { MessageSubmission, SessionSubmission } from "./submission";
 export interface PendingAttachment {
@@ -16,12 +17,30 @@ const placeholderPattern = /\{\{file:(?<id>[0-9a-z]{8}):(?<name>[^{}\r\n]+)\}\}/
 export function attachmentPlaceholder(id: string, name: string) {
   return `{{file:${id}:${name.replaceAll(/[{}\r\n]/gu, "_")}}}`;
 }
-export function attachmentIds(content: string) {
+export function initialAttachmentTexts(history: readonly InitialMessagePair[], message: string) {
+  return [...history.flatMap(({ assistant, user }) => [user, assistant]), message];
+}
+export function attachmentIds(contents: readonly string[]) {
   return new Set(
-    [...content.matchAll(placeholderPattern)].map((match) =>
-      (match.groups?.["id"] ?? "").toLowerCase(),
+    contents.flatMap((content) =>
+      Array.from(content.matchAll(placeholderPattern), (match) => match[1]!.toLowerCase()),
     ),
   );
+}
+export function missingAttachment(id: string) {
+  return new DomainError(
+    "ATTACHMENT_INVALID",
+    localize("application:attachments.referencedFileMissing", { value0: id }),
+  );
+}
+export function materializeAttachmentPaths(content: string, paths: ReadonlyMap<string, string>) {
+  return content.replaceAll(placeholderPattern, (_match: string, id: string) => {
+    const path = paths.get(id.toLowerCase());
+    if (path === undefined) {
+      throw missingAttachment(id);
+    }
+    return path.replaceAll("\\", "/");
+  });
 }
 export function fileSuffix(name: string) {
   const index = name.lastIndexOf(".");

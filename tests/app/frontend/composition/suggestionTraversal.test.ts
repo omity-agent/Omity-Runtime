@@ -108,10 +108,19 @@ test.each(["new", "session"])(
     if (kind === "session") {
       await page.goto(`${page.url().split("#")[0]}#/sessions/history`);
     }
-    const editor = page.locator(".cm-content"),
-      submitted: string[] = [],
+    const editors = page.locator(".cm-content"),
+      editor = editors.last(),
+      submitted: unknown[] = [],
       candidate = kind === "session" ? predictions[0]! : messages[1]!;
     await browserExpect(editor).toBeEditable();
+    if (kind === "new") {
+      await page.getByRole("button", { name: "增加消息对" }).click();
+      await editors.nth(0).press("ArrowUp");
+      await editors.nth(0).press("ArrowUp");
+      await editors.nth(1).press("ArrowUp");
+      await browserExpect(editors.nth(0)).toHaveText(messages[0]!);
+      await browserExpect(editors.nth(1)).toHaveText(messages[1]!);
+    }
     await editor.fill(draft);
     await editor.press(kind === "session" ? "ControlOrMeta+End" : "ControlOrMeta+Home");
     await editor.press(kind === "session" ? "ArrowDown" : "ArrowUp");
@@ -127,7 +136,7 @@ test.each(["new", "session"])(
         submitted.push(
           kind === "session"
             ? messageSubmissionSchema.parse(value).content
-            : sessionSubmissionSchema.parse(value).message,
+            : sessionSubmissionSchema.parse(value),
         );
         await route.fulfill({
           json:
@@ -138,7 +147,13 @@ test.each(["new", "session"])(
       },
     );
     await editor.press("ControlOrMeta+Enter");
-    await browserExpect.poll(() => submitted).toEqual([candidate]);
+    await browserExpect
+      .poll(() => submitted)
+      .toMatchObject(
+        kind === "session"
+          ? [candidate]
+          : [{ history: [{ assistant: messages[1], user: messages[0] }], message: candidate }],
+      );
     await browserExpect(page.locator(".cm-content .cm-placeholder")).toBeVisible();
     expect(fixture.errors).toEqual([]);
   },

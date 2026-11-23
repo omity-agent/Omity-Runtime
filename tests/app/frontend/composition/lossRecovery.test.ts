@@ -33,17 +33,19 @@ test("new session restores all edits and pasted file bytes after navigation and 
   await hook.locator("..").click();
   await server.locator("..").click();
   await builtIn.locator("..").click();
-  await page.getByRole("button", { name: "增加消息对" }).click();
-  await users.first().fill("prepared question");
-  await assistant.fill("prepared answer");
-  await users.last().fill("latest question");
+  await users.last().fill("prepared question");
   await users.last().evaluate((element) => {
     const transfer = new DataTransfer();
     transfer.items.add(new File(["retained file bytes"], "notes.txt", { type: "text/plain" }));
     element.dispatchEvent(new ClipboardEvent("paste", { bubbles: true, clipboardData: transfer }));
   });
-  const message = (await users.last().textContent())!;
-  expect(message).toContain("{{file:");
+  const question = (await users.last().textContent())!;
+  expect(question).toContain("{{file:");
+  await page.getByRole("button", { name: "增加消息对" }).click();
+  await browserExpect(users.first()).toHaveText(question);
+  await browserExpect(users.last().locator(".cm-placeholder")).toBeVisible();
+  await assistant.fill("prepared answer");
+  await users.last().fill("latest question");
   await page
     .getByRole("region", { name: "项目会话" })
     .getByRole("link", { name: "Working" })
@@ -61,9 +63,9 @@ test("new session restores all edits and pasted file bytes after navigation and 
   await browserExpect(optional).toHaveCount(0);
   await profile.selectOption("alternate");
   await browserExpect(optional).toBeChecked();
-  await browserExpect(users.first()).toHaveText("prepared question");
+  await browserExpect(users.first()).toHaveText(question);
   await browserExpect(assistant).toHaveText("prepared answer");
-  await browserExpect(users.last()).toHaveText(message);
+  await browserExpect(users.last()).toHaveText("latest question");
   await profile.selectOption("");
   await browserExpect(model).toHaveValue("custom-default");
   await profile.selectOption("alternate");
@@ -89,18 +91,19 @@ test("new session restores all edits and pasted file bytes after navigation and 
     file = z.file().parse(submissions[0]!.get(fileKey!));
   expect(submission).toMatchObject({
     builtInOverrides: { choice: false },
-    history: [{ assistant: "prepared answer", user: "prepared question" }],
     hookOverrides: { "shared-hook": true },
     mcpOverrides: { "shared-server": true },
     model: "custom-alternate",
     profile: "alternate",
     workspace: customWorkspace,
   });
-  expect(submission.message).toContain("latest question");
+  expect(submission.history[0]?.assistant).toBe("prepared answer");
+  expect(submission.history[0]?.user.replaceAll("\n", "")).toBe(question);
+  expect(submission.message).toBe("latest question");
   expect(file.name).toBe("notes.txt");
   expect(await file.text()).toBe("retained file bytes");
   await page.reload({ waitUntil: "networkidle" });
-  await browserExpect(users.last()).toHaveText(message);
+  await browserExpect(users.first()).toHaveText(question);
   expect(errors).toEqual([]);
 }, 30_000);
 test("refresh recovers edits before their pending server save finishes", async () => {

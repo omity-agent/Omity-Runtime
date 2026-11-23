@@ -9,14 +9,14 @@ export function usePendingAttachments(settings?: AttachmentSettings) {
     attachmentsRef.current.configure(settings);
   }, [settings]);
   const attachmentValues = useCallback(
-      (submittedContent: string) => attachmentsRef.current.values(submittedContent),
+      (submittedContent: string) => attachmentsRef.current.values([submittedContent]),
       [attachmentsRef],
     ),
     clearAttachments = useCallback(() => {
       attachmentsRef.current.clear();
     }, [attachmentsRef]),
     handlePasteFiles = useCallback(
-      (files: File[], content: string) => attachmentsRef.current.paste(files, content),
+      (files: File[], content: string) => attachmentsRef.current.paste(files, [content]),
       [attachmentsRef],
     );
   return { attachmentValues, clearAttachments, handlePasteFiles };
