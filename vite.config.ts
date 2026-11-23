@@ -4,8 +4,8 @@ import babel from "@rolldown/plugin-babel";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-import { frontendBuild, frontendPlugins, highlightWorker } from "./scripts/distribution";
-import { yamlAssets } from "./scripts/yamlAssets";
+import { frontendBuild, frontendPlugins, highlightWorker } from "./scripts/distribution.ts";
+import { yamlAssets } from "./scripts/yamlAssets.ts";
 
 const root = import.meta.dirname;
 export default defineConfig({

@@ -1,6 +1,6 @@
 import type { Database } from "bun:sqlite";
 
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 import { hookUsage } from "../../infrastructure/database/schema";
 import { sessionDatabase } from "../../infrastructure/database/sqlite/connection";
@@ -30,21 +30,10 @@ export function consumeHookUsage(
       .get(),
   );
 }
-export function copyHookUsage(
-  source: Database,
-  sourceSessionId: string,
-  target: Database,
-  targetSessionId: string,
-) {
-  const rows = sessionDatabase(source)
-    .select({ hookId: hookUsage.hookId, usedCount: hookUsage.usedCount })
-    .from(hookUsage)
-    .where(eq(hookUsage.sessionId, sourceSessionId))
-    .all();
-  if (rows.length > 0) {
-    sessionDatabase(target)
-      .insert(hookUsage)
-      .values(rows.map((row) => Object.assign(row, { sessionId: targetSessionId })))
-      .run();
-  }
+export function copyHookUsage(db: Database, sourceSessionId: string, targetSessionId: string) {
+  db.run(
+    `INSERT INTO hook_usage (session_id, hook_id, used_count)
+     SELECT ?, hook_id, used_count FROM hook_usage WHERE session_id = ?`,
+    [targetSessionId, sourceSessionId],
+  );
 }

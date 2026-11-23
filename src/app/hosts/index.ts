@@ -6,7 +6,7 @@ import { runHostSession } from "../../host";
 import { localize } from "../../i18n/server";
 import type { SettingsContext } from "../../infrastructure/configuration/settings/context";
 import type { ProcessOwner } from "../../infrastructure/process/ownership";
-import type { HostActivity, HostMode } from "../../types";
+import type { HostActivity } from "../../types";
 import type { AppMcp } from "../runtime/resources/toolPool";
 import { type AppHostEvents, createHostObserver, type RunningHost } from "./observation";
 
@@ -28,9 +28,6 @@ export class AppHosts {
   has(sessionId: string) {
     return this.running.has(sessionId);
   }
-  isBound(sessionId: string) {
-    return this.running.has(sessionId) || this.scheduled.has(sessionId);
-  }
   error(sessionId: string) {
     return this.errors.get(sessionId) ?? null;
   }
@@ -40,25 +37,14 @@ export class AppHosts {
   clearError(sessionId: string) {
     this.errors.delete(sessionId);
   }
-  ensure(sessionId: string, root: string) {
-    const ready = this.running.get(sessionId)?.ready;
-    if (ready) {
-      return ready;
-    }
-    this.cancelScheduledStart(sessionId);
-    return this.start(sessionId, root, "load");
-  }
-  startDetached(sessionId: string, root: string, kind: HostMode["kind"]) {
-    if (this.running.has(sessionId) || this.scheduled.has(sessionId)) {
+  scheduleStart(sessionId: string, workspace: string) {
+    if (this.closing || this.isBound(sessionId)) {
       return;
     }
-    const timer = setTimeout(() => {
-      this.scheduled.delete(sessionId);
-      void this.startDetachedHost(sessionId, root, kind);
-    }, 0);
+    const timer = setTimeout(() => void this.startScheduled(sessionId, workspace), 0);
     this.scheduled.set(sessionId, timer);
   }
-  start(sessionId: string, root: string, kind: HostMode["kind"]) {
+  ensure(sessionId: string, workspace: string) {
     this.cancelScheduledStart(sessionId);
     if (this.closing) {
       return Promise.reject(new Error(localize("application:hosts.appClosing")));
@@ -73,11 +59,11 @@ export class AppHosts {
       ready = Promise.withResolvers<undefined>();
     let initialized = false,
       cancelTool = noToolCancellation;
-    const hostPromise = runHostSession({ kind, sessionId }, this.appRoot, {
+    const hostPromise = runHostSession({ kind: "load", sessionId }, this.appRoot, {
         controller: force,
-        cwd: root,
+        cwd: workspace,
         mcp: (id, profiles, definition) =>
-          this.mcp.loadSession(id, profiles, definition.prefix.tools, root),
+          this.mcp.loadSession(id, profiles, definition.prefix.tools, workspace),
         observer: createHostObserver(this.events, this.running, force),
         onReady: (controls) => {
           cancelTool = (callId) => controls.cancelTool(callId);
@@ -115,8 +101,21 @@ export class AppHosts {
     this.events.changed(sessionId);
     await host.done;
   }
+  async withStoppedHost(sessionId: string, workspace: string, operation: () => void) {
+    const restart = this.isBound(sessionId);
+    await this.stop(sessionId);
+    try {
+      operation();
+    } finally {
+      if (restart) {
+        this.scheduleStart(sessionId, workspace);
+      }
+    }
+  }
   close = once(async () => {
     this.closing = true;
+    await using resources = new AsyncDisposableStack();
+    resources.defer(() => this.mcp.close());
     for (const timer of this.scheduled.values()) {
       clearTimeout(timer);
     }
@@ -126,16 +125,7 @@ export class AppHosts {
       host.stopping.abort(new Error(localize("application:hosts.appClosed")));
       this.events.changed(sessionId);
     }
-    await pMap(
-      [
-        () => pMap(hosts, ([, host]) => this.stopAtDeadline(host), { stopOnError: false }),
-        () => this.mcp.close(),
-      ],
-      async (close) => {
-        await close();
-      },
-      { concurrency: 1, stopOnError: false },
-    );
+    await pMap(hosts, ([, host]) => this.stopAtDeadline(host), { stopOnError: false });
   });
   private async finishHost(
     hostPromise: Promise<unknown>,
@@ -187,9 +177,13 @@ export class AppHosts {
       clearTimeout(timer);
     }
   }
-  private async startDetachedHost(sessionId: string, root: string, kind: HostMode["kind"]) {
+  private isBound(sessionId: string) {
+    return this.running.has(sessionId) || this.scheduled.has(sessionId);
+  }
+  private async startScheduled(sessionId: string, workspace: string) {
+    this.scheduled.delete(sessionId);
     try {
-      await this.start(sessionId, root, kind);
+      await this.ensure(sessionId, workspace);
     } catch {
       this.events.changed(sessionId);
     }

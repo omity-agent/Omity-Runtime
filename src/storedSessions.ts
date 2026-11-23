@@ -5,7 +5,7 @@ import { resolveSessionPaths } from "./infrastructure/configuration/sessionPaths
 import { AgentDatabase } from "./infrastructure/database/agentDatabase";
 import { removeDatabaseDirectory } from "./infrastructure/database/sqlite/connection";
 
-export function deleteHostSession(sessionId: string) {
+export function deleteStoredSession(sessionId: string) {
   const paths = resolveSessionPaths(sessionId);
   if (!existsSync(paths.dir)) {
     throw sessionNotFound(sessionId);

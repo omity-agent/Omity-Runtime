@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, open, rm } from "node:fs/promises";
 import { join } from "node:path";
 
 import { DomainError } from "../../errors";
@@ -6,9 +6,9 @@ import { hasErrorCode } from "../../failures/thrownValues";
 import { localize } from "../../i18n/server";
 import { resolveSessionPaths } from "../../infrastructure/configuration/sessionPaths";
 import { claimShortIdAsync } from "../../infrastructure/randomId";
-import type { Settings } from "../../types";
 import {
   attachmentIds,
+  type AttachmentSettings,
   fileSuffix,
   materializeAttachmentPaths,
   missingAttachment,
@@ -16,52 +16,50 @@ import {
   validateAttachmentBatch,
 } from "./contract";
 
-export async function saveAttachments(
-  settings: Settings,
+export async function withSavedAttachments<Result>(
+  settings: AttachmentSettings,
   sessionId: string,
   contents: readonly string[],
   attachments: PendingAttachment[],
+  consume: (rewrite: (content: string) => string) => Result | Promise<Result>,
 ) {
+  await using rollback = new AsyncDisposableStack();
   const referenced = attachmentIds(contents),
     selected = attachments.filter(({ id }) => referenced.has(id)),
-    paths = new Map<string, string>(),
-    discard = () => Promise.all([...paths.values()].map((path) => rm(path, { force: true })));
+    paths = new Map<string, string>();
   validateSelected(selected, referenced, settings);
-  try {
-    const directory = join(resolveSessionPaths(sessionId).dir, "attachments");
-    if (selected.length > 0) {
-      await mkdir(directory, { recursive: true });
-    }
-    for (const { id, file } of selected) {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      let path = "";
-      await claimShortIdAsync(async (fileId) => {
-        path = join(directory, `${fileId}${fileSuffix(file.name)}`);
+  const directory = join(resolveSessionPaths(sessionId).dir, "attachments");
+  if (selected.length > 0) {
+    await mkdir(directory, { recursive: true });
+  }
+  for (const { id, file } of selected) {
+    const bytes = new Uint8Array(await file.arrayBuffer()),
+      suffix = fileSuffix(file.name),
+      pathFor = (fileId: string) => join(directory, `${fileId}${suffix}`),
+      fileId = await claimShortIdAsync(async (candidate) => {
+        const path = pathFor(candidate);
         try {
-          await writeFile(path, bytes, { flag: "wx" });
-          return true;
+          await using target = await open(path, "wx");
+          rollback.defer(() => rm(path, { force: true }));
+          await target.writeFile(bytes);
         } catch (error) {
           if (hasErrorCode(error, "EEXIST")) {
             return false;
           }
           throw error;
         }
+        return true;
       });
-      paths.set(id, path);
-    }
-    return {
-      discard,
-      rewrite: (content: string) => materializeAttachmentPaths(content, paths),
-    };
-  } catch (error) {
-    await discard();
-    throw error;
+    paths.set(id, pathFor(fileId));
   }
+  const result = await consume((content) => materializeAttachmentPaths(content, paths));
+  rollback.move();
+  return result;
 }
 function validateSelected(
   selected: PendingAttachment[],
   referenced: Set<string>,
-  settings: Settings,
+  settings: AttachmentSettings,
 ) {
   const ids = new Set<string>();
   for (const attachment of selected) {
@@ -75,7 +73,7 @@ function validateSelected(
   }
   validateAttachmentBatch(
     selected.map(({ file }) => file),
-    settings.attachments,
+    settings,
   );
   for (const id of referenced) {
     if (!ids.has(id)) {

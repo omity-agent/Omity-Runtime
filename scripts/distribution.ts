@@ -2,8 +2,8 @@ import { resolve } from "node:path";
 
 import type { UserConfig } from "vite";
 
-import { proxyAddon } from "./proxyAddon";
-import { vocabularyChunks, vocabularyModulePrefix } from "./vocabularyChunks";
+import { proxyAddon } from "./proxyAddon.ts";
+import { vocabularyChunks, vocabularyModulePrefix } from "./vocabularyChunks.ts";
 
 const root = resolve(import.meta.dirname, "..");
 export const frontendOutput = resolve(root, "dist/frontend");

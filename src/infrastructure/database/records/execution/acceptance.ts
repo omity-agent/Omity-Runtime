@@ -10,43 +10,34 @@ import { enqueueInputRecord } from "./queue/admission";
 export class InputSubmissionStore {
   constructor(private readonly db: Database) {}
   appendUser(sessionId: string, content: string) {
-    requireSessionRecord(this.db, sessionId);
-    return this.saveUserMessage(sessionId, content, (save) => {
-      const inputId = enqueueInputRecord(this.db, sessionId, content);
-      save();
-      touchSessionRecord(this.db, sessionId);
-      return inputId;
-    });
+    return this.accept(sessionId, content);
   }
   submitUser(sessionId: string, content: string, draftRevision: number, submissionId: string) {
-    requireSessionRecord(this.db, sessionId);
-    return this.saveUserMessage(sessionId, content, (save) => {
-      const inputId = enqueueInputRecord(this.db, sessionId, content, submissionId);
-      clearComposerDraftRecord(this.db, sessionId, draftRevision);
-      save();
-      touchSessionRecord(this.db, sessionId);
-      return inputId;
-    });
+    return this.accept(sessionId, content, { draftRevision, submissionId });
   }
-  private saveUserMessage<T>(
+  private accept(
     sessionId: string,
     content: string,
-    operation: (save: () => void) => T,
+    submission?: { draftRevision: number; submissionId: string },
   ) {
-    let savedPath: string | undefined;
-    try {
-      return runTransaction(this.db, () =>
-        operation(() => {
-          savedPath = new UserMessageArchive(resolveSessionPaths(sessionId).userMessagesDir).append(
-            content,
-          );
-        }),
-      );
-    } catch (error) {
-      if (savedPath) {
-        new UserMessageArchive(resolveSessionPaths(sessionId).userMessagesDir).remove(savedPath);
-      }
-      throw error;
-    }
+    using rollback = new DisposableStack();
+    const inputId = runTransaction(
+      this.db,
+      () => {
+        requireSessionRecord(this.db, sessionId);
+        const id = enqueueInputRecord(this.db, sessionId, content, submission?.submissionId);
+        if (submission) {
+          clearComposerDraftRecord(this.db, sessionId, submission.draftRevision);
+        }
+        const archive = new UserMessageArchive(resolveSessionPaths(sessionId).userMessagesDir),
+          saved = archive.append(content);
+        rollback.defer(() => archive.remove(saved));
+        touchSessionRecord(this.db, sessionId);
+        return id;
+      },
+      "immediate",
+    );
+    rollback.move();
+    return inputId;
   }
 }

@@ -4,11 +4,12 @@ import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { forkDatabaseBeforeMessage } from "../../src/app/fork";
+import { forkConversation } from "../../src/app/runtime/sessions/branch";
 import {
   readComposerDraftRecord,
   writeComposerDraftRecord,
 } from "../../src/infrastructure/database/records/session/composerDrafts";
+import { runTransaction } from "../../src/infrastructure/database/sqlite/connection";
 import { processInput } from "../../src/runtime/consumeInputs";
 import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
 import { agentFixture } from "./support/agentFixture";
@@ -17,9 +18,8 @@ afterEach(cleanupDatabaseDirs);
 test.each(["", "unsent draft"])(
   "fork continues without submitting the composer: %j",
   async (draft) => {
-    using source = makeDb(),
-      target = makeDb();
-    await prepareFork(source, target, new AIMessage("previous answer"));
+    using target = makeDb();
+    await prepareFork(target, new AIMessage("previous answer"));
     writeComposerDraftRecord(target.db, "target", draft, 2);
     using fixture = agentFixture({ db: target });
     const before = target.history("target").filter((message) => HumanMessage.isInstance(message));
@@ -36,8 +36,7 @@ test.each(["", "unsent draft"])(
   },
 );
 test("fork resumes pending tools before requesting the model", async () => {
-  using source = makeDb(),
-    target = makeDb();
+  using target = makeDb();
   let called = 0;
   const echo = tool(
     () => {
@@ -51,7 +50,6 @@ test("fork resumes pending tools before requesting the model", async () => {
     },
   );
   await prepareFork(
-    source,
     target,
     new AIMessage({
       content: "",
@@ -68,24 +66,20 @@ test("fork resumes pending tools before requesting the model", async () => {
     target.history("target").filter((message) => ToolMessage.isInstance(message)),
   ).toHaveLength(1);
 });
-async function prepareFork(
-  source: ReturnType<typeof makeDb>,
-  target: ReturnType<typeof makeDb>,
-  response: AIMessage,
-) {
-  source.resetSession("source", workspace);
-  source.appendUser("source", "first user");
-  source.consumeInput("source", required(source.nextInput("source")));
-  await source.syncHistory("source", [...source.history("source"), response]);
-  source.appendUser("source", "deleted fork message");
-  const messageId = source.consumeInput("source", required(source.pendingInputs("source")[0]));
-  forkDatabaseBeforeMessage({
-    beforeMessageId: messageId,
-    profiles: [],
-    source,
-    sourceSessionId: "source",
-    target,
-    targetSessionId: "target",
-    workspace,
-  });
+async function prepareFork(db: ReturnType<typeof makeDb>, response: AIMessage) {
+  db.resetSession("source", workspace);
+  db.appendUser("source", "first user");
+  db.consumeInput("source", required(db.nextInput("source")));
+  await db.syncHistory("source", [...db.history("source"), response]);
+  db.appendUser("source", "deleted fork message");
+  const messageId = db.consumeInput("source", required(db.pendingInputs("source")[0]));
+  runTransaction(db.db, () =>
+    forkConversation(db.db, {
+      beforeMessageId: messageId,
+      profiles: [],
+      sourceSessionId: "source",
+      targetSessionId: "target",
+      workspace,
+    }),
+  );
 }

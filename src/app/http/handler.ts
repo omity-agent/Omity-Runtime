@@ -4,6 +4,7 @@ import { compress } from "hono/compress";
 import { localize } from "../../i18n/server";
 import type { Settings } from "../../types";
 import type { AccessService } from "../access/service";
+import { readPreparationDraft, writePreparationDraft } from "../composition/draftStorage";
 import {
   answerToolBody,
   cancelToolBody,
@@ -17,6 +18,8 @@ import {
 } from "../contracts/commands";
 import type { AppController } from "../controller";
 import { writeReasoningTranslation } from "../reasoningTranslation";
+import { loadUserMessages } from "../userMessages";
+import { pickWorkspaceDirectory } from "../workspaceDialog/bridge";
 import { type AccessEnvironment, mountAccess } from "./access";
 import { errorResponse, HttpError } from "./errors";
 import { messageForm, sessionForm } from "./multipart";
@@ -45,11 +48,11 @@ export function createApi(
   app.onError(handleApiError);
   return routes
     .get("/api/bootstrap", (c) => c.json(controller.bootstrap()))
-    .get("/api/user-messages", (c) => c.json(controller.userMessages()))
-    .get("/api/session-preparation", (c) => c.json(controller.preparationDraft()))
+    .get("/api/user-messages", (c) => c.json({ messages: loadUserMessages() }))
+    .get("/api/session-preparation", (c) => c.json(readPreparationDraft()))
     .on(["PUT", "POST"], "/api/session-preparation", ...jsonBody(preparationDraftBody), (c) => {
       const body = c.req.valid("json");
-      return c.json(controller.savePreparationDraft(body.content, body.revision));
+      return c.json(writePreparationDraft(body.content, body.revision));
     })
     .get("/api/session-options", validate("query", profileBody), (c) =>
       c.json(controller.sessionOptions(c.req.valid("query").profile)),
@@ -57,7 +60,7 @@ export function createApi(
     .get("/api/sessions", (c) => c.json({ sessions: controller.sessions() }))
     .get("/api/events/state", (c) => controller.events.streamState(c, () => controller.sessions()))
     .post("/api/workspace-picker", async (c) =>
-      c.json({ workspace: await controller.pickWorkspace() }),
+      c.json({ workspace: await pickWorkspaceDirectory() }),
     )
     .post("/api/sessions", attachmentRequestLimit, sessionForm, async (c) =>
       c.json({

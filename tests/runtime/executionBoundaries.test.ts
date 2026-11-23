@@ -89,11 +89,10 @@ test("paused cancellation is visible immediately and survives host reconstructio
   expect(called).toBe(0);
   expect(db.nextInput("target")?.status).toBe("paused");
   db.requestToolCancellation("target", "echo-call");
-  const snapshot = loadTranscript(db.db, "target"),
-    parts = buildTimeline(snapshot.messages, snapshot.queue, snapshot.events).flatMap(
-      (message) => message.parts,
-    );
-  expect(parts.find((part) => part.type === "tool")).toMatchObject({
+  const timelineParts = buildTimeline(loadTranscript(db.db, "target")).flatMap(
+    ({ parts }) => parts,
+  );
+  expect(timelineParts.find((part) => part.type === "tool")).toMatchObject({
     output: { content: "工具运行 0 毫秒后被用户手动终止。" },
     phase: "completed",
   });
@@ -124,7 +123,7 @@ test("responses reusing provider block ids keep separate tool streams", async ()
   fixture.context.observer = {
     changed: () => {
       const snapshot = loadTranscript(db.db, "target");
-      buildTimeline(snapshot.messages, snapshot.queue, snapshot.events);
+      buildTimeline(snapshot);
       if (snapshot.messages.some((message) => message.toolCallId === "second")) {
         stopping.abort();
       }

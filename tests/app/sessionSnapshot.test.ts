@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { createAppMcp } from "../../src/app/runtime/resources/toolPool";
-import { createSnapshotSession } from "../../src/app/runtime/sessionSnapshot";
+import { provisionAppSession } from "../../src/app/runtime/sessions/provision";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { settingsProfileNames } from "../../src/infrastructure/configuration/settings/context";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
@@ -44,7 +44,7 @@ test("session snapshots lock only the model prefix while runtime configuration c
   mkdirSync(workspacePath);
   const mcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => {}));
   resources.defer(() => mcp.close());
-  const created = await createSnapshotSession({
+  const created = await provisionAppSession({
       baseContext: context,
       mcp,
       root,

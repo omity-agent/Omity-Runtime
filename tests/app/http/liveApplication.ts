@@ -2,6 +2,9 @@ import { rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { AccessService } from "../../../src/app/access/service";
+import type { SessionSubmission } from "../../../src/app/attachments/contract";
+import { submissionForm } from "../../../src/app/attachments/submission";
+import { sessionResponseSchema } from "../../../src/app/contracts/results";
 import { AppController } from "../../../src/app/controller";
 import { createHttpServer } from "../../../src/app/http/transport";
 import { closeAppResources } from "../../../src/app/runtime/shutdown";
@@ -74,15 +77,45 @@ export function liveApplication({
       port: 0,
       settings,
       staticRoot: join(root, "frontend"),
+    }),
+    url = server.url.origin;
+  function submitSession(overrides: Partial<Omit<SessionSubmission, "attachments">> = {}) {
+    return fetch(`${url}/api/sessions`, {
+      body: submissionForm({ history: [], message: "hello", workspace: root, ...overrides }, []),
+      method: "POST",
     });
+  }
   return {
     context,
     controller,
+    async createSession(overrides?: Parameters<typeof submitSession>[0]) {
+      const response = await submitSession(overrides);
+      if (response.status !== 200) {
+        throw new Error(`Session creation failed (${response.status}): ${await response.text()}`);
+      }
+      return sessionResponseSchema.parse(await response.json()).session;
+    },
     profileDirectory,
     requests,
     root,
     settings,
-    url: server.url.origin,
+    submitSession,
+    url,
+    async waitForRun(sessionId: string) {
+      const deadline = Date.now() + 5000;
+      while (Date.now() < deadline) {
+        const failure = controller.sessions().find(({ id }) => id === sessionId)?.error,
+          { queue } = controller.transcript(sessionId);
+        if (failure) {
+          throw new Error(failure.message, { cause: failure });
+        }
+        if (queue.length > 0 && queue.every(({ status }) => status === "done")) {
+          return;
+        }
+        await controller.events.wait(sessionId, 25);
+      }
+      throw new Error(`Session did not finish: ${sessionId}`);
+    },
     async [Symbol.asyncDispose]() {
       try {
         await closeAppResources(

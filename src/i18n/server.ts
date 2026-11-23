@@ -1,6 +1,6 @@
 import { createInstance, type ParseKeys, type TOptions } from "i18next";
 
-import { serverCatalog } from "./serverCatalog";
+import { serverCatalog } from "./serverCatalog.ts";
 
 type ServerNamespace = keyof typeof serverCatalog;
 const instance = createInstance(),

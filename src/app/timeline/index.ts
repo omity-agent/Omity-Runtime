@@ -3,13 +3,12 @@ import { persistedTimelineMessage } from "./build/message";
 import { syntheticMessage } from "./build/synthetic";
 import type {
   DisplayEvent,
-  DisplayMessage,
-  DisplayQueue,
   DisplayToolCall,
   DisplayToolOutput,
   ReasoningTranslation,
   TimelineMessage,
 } from "./contracts/projection";
+import type { TranscriptSnapshot } from "./contracts/records";
 import { groupAssistantMessages } from "./grouping";
 import { streamTimelineMessages, toolCallLifecycle } from "./streamEvents";
 import { sameToolCall } from "./tool/correlation";
@@ -27,14 +26,13 @@ export type {
   ToolCallPhase,
 } from "./contracts/projection";
 export { canCancelToolCall } from "./contracts/projection";
-export function buildTimeline(
-  messages: DisplayMessage[],
-  queue: DisplayQueue[],
-  events: DisplayEvent[],
-  optimistic: TimelineMessage[] = [],
-  fileLinks: FileLinkSet[] = [],
-  reasoningTranslations: ReasoningTranslation[] = [],
-): TimelineMessage[] {
+export function buildTimeline({
+  events,
+  fileLinks,
+  messages,
+  queue,
+  reasoningTranslations,
+}: TranscriptSnapshot): TimelineMessage[] {
   const outputs = new Map(
       messages.flatMap((item) => [
         ...Object.entries(item.toolOutputs ?? {}),
@@ -53,21 +51,12 @@ export function buildTimeline(
     persistedSourceIds = new Set(
       messages.map((item) => item.sourceId).filter((id) => id !== undefined),
     ),
-    knownQueue = new Set(messages.map((item) => item.inputId)),
-    persistedUserQueue = new Set(
-      messages
-        .filter((item) => item.role === "user")
-        .map((item) => item.inputId)
-        .filter((inputId): inputId is number => inputId !== null),
-    ),
+    knownInputs = new Set(messages.map((item) => item.inputId)),
     queuedUsers = new Map(
       queue
         .filter(
           (item) =>
-            item.content.length > 0 &&
-            item.userMessageId == null &&
-            !persistedUserQueue.has(item.id) &&
-            !knownQueue.has(item.id),
+            item.content.length > 0 && item.userMessageId == null && !knownInputs.has(item.id),
         )
         .map(
           (item) =>
@@ -79,8 +68,10 @@ export function buildTimeline(
     ),
     activeQueueIds = new Set(
       queue
-        .filter((item) => item.status === "running" || item.status === "paused")
-        .filter((item) => item.userMessageId !== null)
+        .filter(
+          (item) =>
+            item.userMessageId !== null && (item.status === "running" || item.status === "paused"),
+        )
         .map((item) => item.id),
     ),
     liveEvents = events.filter(
@@ -92,7 +83,6 @@ export function buildTimeline(
     live = timelineTail(
       liveEvents,
       queuedUsers,
-      optimistic,
       outputs,
       lifecycle,
       persistedToolCalls,
@@ -104,7 +94,6 @@ export function buildTimeline(
 function timelineTail(
   events: DisplayEvent[],
   pending: Map<number, TimelineMessage>,
-  optimistic: TimelineMessage[],
   outputs: Map<string, DisplayToolOutput>,
   lifecycle: ReturnType<typeof toolCallLifecycle>,
   persistedToolCalls: DisplayToolCall[],
@@ -148,6 +137,5 @@ function timelineTail(
   for (const message of pending.values()) {
     result.push({ ...message, pending: true });
   }
-  result.push(...optimistic);
   return result;
 }

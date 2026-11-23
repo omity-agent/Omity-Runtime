@@ -15,7 +15,7 @@ export interface WorkspaceGroup {
   createdAt: number;
   updatedAt: number;
 }
-export function isRunning(session: SessionInfo) {
+function isRunning(session: SessionInfo) {
   return isRunningStatus(session.status);
 }
 export function statusLabelKey(status: SessionStatus) {
@@ -96,7 +96,7 @@ function toGroup([workspace, source]: [string, SessionInfo[]]): WorkspaceGroup {
     workspace,
   };
 }
-export function compareSessions(left: SessionInfo, right: SessionInfo) {
+function compareSessions(left: SessionInfo, right: SessionInfo) {
   const runningOrder = Number(isRunning(right)) - Number(isRunning(left));
   if (runningOrder !== 0) {
     return runningOrder;

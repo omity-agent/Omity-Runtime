@@ -3,7 +3,7 @@ import { startAppServer } from "../app/server";
 import { appendSessionMessage, setSessionControl } from "../client";
 import { runHost } from "../host";
 import { localize } from "../i18n/server";
-import { deleteHostSession } from "../storedSessions";
+import { deleteStoredSession } from "../storedSessions";
 import type { HostMode } from "../types";
 import type { CliCommand } from "./parser";
 
@@ -22,7 +22,7 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
       return;
     }
     case "delete": {
-      deleteHostSession(command.sessionId);
+      deleteStoredSession(command.sessionId);
       console.log(localize("cli:output.sessionDeleted", { value0: command.sessionId }));
       return;
     }

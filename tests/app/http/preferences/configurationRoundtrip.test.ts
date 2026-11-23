@@ -2,27 +2,15 @@ import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { z } from "zod";
-
-import type { SessionSubmission } from "../../../../src/app/attachments/contract";
-import { submissionForm } from "../../../../src/app/attachments/submission";
 import { sessionOptionsSchema } from "../../../../src/app/contracts/results";
-import { type AppMcp, createAppMcp } from "../../../../src/app/runtime/resources/toolPool";
-import { sessionPaths } from "../../../../src/infrastructure/configuration/sessionPaths";
-import { AgentDatabase } from "../../../../src/infrastructure/database/agentDatabase";
+import { createAppMcp } from "../../../../src/app/runtime/resources/toolPool";
 import { readDefinitionRecord } from "../../../../src/infrastructure/database/records/session/metadata";
 import { AskUserRuntime } from "../../../../src/infrastructure/toolbox/runtime";
+import { openStoredSession } from "../../../../src/storedSessions";
 import { fixtureTools } from "../../../support/builtins";
 import { writeFixtureYaml } from "../../../support/configuration";
 import { liveApplication } from "../liveApplication";
 
-const sessionResponse = z.object({ session: z.object({ id: z.string() }) });
-function createSubmission(
-  root: string,
-  overrides: Partial<Omit<SessionSubmission, "attachments">>,
-) {
-  return submissionForm({ history: [], message: "hello", workspace: root, ...overrides }, []);
-}
 test("HTTP session preferences list disabled servers without resolving secrets and preserve per-session selections", async () => {
   await using app = liveApplication();
   const optionalServer = {
@@ -74,15 +62,9 @@ test("HTTP session preferences list disabled servers without resolving secrets a
     ],
     model: "alternate-model",
   });
-  const invalidModel = await fetch(`${app.url}/api/sessions`, {
-      body: createSubmission(app.root, { model: "   " }),
-      method: "POST",
-    }),
-    invalidServer = await fetch(`${app.url}/api/sessions`, {
-      body: createSubmission(app.root, {
-        mcpOverrides: { missing: true, unavailable: false },
-      }),
-      method: "POST",
+  const invalidModel = await app.submitSession({ model: "   " }),
+    invalidServer = await app.submitSession({
+      mcpOverrides: { missing: true, unavailable: false },
     });
   expect(invalidModel.status).toBe(400);
   expect(invalidServer.status).toBe(400);
@@ -90,68 +72,42 @@ test("HTTP session preferences list disabled servers without resolving secrets a
     error: { code: "MCP_SELECTION_INVALID" },
   });
   const overrides = { optional: true, unavailable: false },
-    created = await fetch(`${app.url}/api/sessions`, {
-      body: createSubmission(app.root, {
-        builtInOverrides: { choice: true, open_ended: false },
-        mcpOverrides: overrides,
-        model: " chosen-model ",
-      }),
-      method: "POST",
+    session = await app.createSession({
+      builtInOverrides: { choice: true, open_ended: false },
+      mcpOverrides: overrides,
+      model: " chosen-model ",
     });
-  expect(created.status).toBe(200);
-  const { session } = sessionResponse.parse(await created.json()),
-    database = new AgentDatabase(sessionPaths(session.id).dbPath);
-  let restoredMcp: AppMcp | undefined;
-  try {
-    const deadline = Date.now() + 5000;
-    while (!app.controller.transcript(session.id).queue.every(({ status }) => status === "done")) {
-      if (Date.now() >= deadline) {
-        throw new Error("模型没有完成会话配置集成测试");
-      }
-      await app.controller.events.wait(session.id, 25);
-    }
-    expect(app.requests).toHaveLength(1);
-    expect(app.requests[0]).toMatchObject({ model: "chosen-model" });
-    const definition = readDefinitionRecord(database.db, session.id);
-    expect(definition.prefix.model).toMatchObject({
-      adapter: "completions",
-      model: "chosen-model",
-    });
-    expect(definition.prefix.tools.serverOverrides).toEqual(overrides);
-    expect(definition.prefix.tools.tools.map(({ name }) => name)).toContain("optional__identity");
-    expect(definition.prefix.tools.tools.map(({ name }) => name)).not.toContain(
-      "unavailable_identity",
-    );
-    restoredMcp = createAppMcp(app.root, "error", app.context, new AskUserRuntime(() => {}));
-    const restored = await restoredMcp.loadSession(
+  await app.waitForRun(session.id);
+  expect(app.requests).toHaveLength(1);
+  expect(app.requests[0]).toMatchObject({ model: "chosen-model" });
+  using database = openStoredSession(session.id);
+  const { prefix } = readDefinitionRecord(database.db, session.id),
+    names = prefix.tools.tools.map(({ name }) => name);
+  expect(prefix.model).toMatchObject({ adapter: "completions", model: "chosen-model" });
+  expect(prefix.tools.serverOverrides).toEqual(overrides);
+  expect(names).toContain("optional__identity");
+  expect(names).not.toContain("unavailable_identity");
+  await using cleanup = new AsyncDisposableStack();
+  const mcp = createAppMcp(app.root, "error", app.context, new AskUserRuntime(() => {}));
+  cleanup.defer(() => mcp.close());
+  const restored = await mcp.loadSession(
       session.id,
       database.profiles(session.id),
-      definition.prefix.tools,
+      prefix.tools,
       app.root,
-    );
-    expect(Object.keys(restored.configuration.mcpServers)).toEqual(["optional"]);
-    expect(restored.tools.map(({ name }) => name)).toContain("optional__identity");
-    expect(restored.tools.map(({ name }) => name)).toContain("prompt_choices");
-    expect(restored.tools.map(({ name }) => name)).not.toContain(open_ended.name);
-  } finally {
-    await restoredMcp?.close();
-    database.close();
-  }
-  const withoutServers = await fetch(`${app.url}/api/sessions`, {
-    body: createSubmission(app.root, {
+    ),
+    restoredNames = restored.tools.map(({ name }) => name);
+  expect(Object.keys(restored.configuration.mcpServers)).toEqual(["optional"]);
+  expect(restoredNames).toContain("optional__identity");
+  expect(restoredNames).toContain("prompt_choices");
+  expect(restoredNames).not.toContain(open_ended.name);
+  const disabledSession = await app.createSession({
       mcpOverrides: { optional: false, unavailable: false },
       model: "test",
     }),
-    method: "POST",
-  });
-  expect(withoutServers.status).toBe(200);
-  const disabledSession = sessionResponse.parse(await withoutServers.json()).session,
-    disabledDatabase = new AgentDatabase(sessionPaths(disabledSession.id).dbPath);
-  try {
-    const { tools } = readDefinitionRecord(disabledDatabase.db, disabledSession.id).prefix.tools;
-    expect(tools.map(({ name }) => name)).toContain(open_ended.name);
-    expect(tools.map(({ name }) => name)).not.toContain("optional__identity");
-  } finally {
-    disabledDatabase.close();
-  }
+    disabled = readDefinitionRecord(database.db, disabledSession.id).prefix.tools.tools.map(
+      ({ name }) => name,
+    );
+  expect(disabled).toContain(open_ended.name);
+  expect(disabled).not.toContain("optional__identity");
 }, 15_000);

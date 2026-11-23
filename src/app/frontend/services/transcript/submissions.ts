@@ -1,11 +1,11 @@
-import { type QueryClient, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useState } from "react";
 
 import type { PendingAttachment } from "../../../attachments/contract";
 import { sendMessage } from "../client";
-import { rebuildTranscript, type TranscriptData } from "./cache";
 import { optimisticTimelineMessage, type OptimisticUser } from "./optimistic";
 import { transcriptKey } from "./query";
+import { stageQueuedInput, type TranscriptData } from "./reconciliation";
 
 interface StagedUser extends OptimisticUser {
   accepted?: true;
@@ -16,42 +16,26 @@ export function useUserMessageSubmissions(
 ) {
   const queryClient = useQueryClient(),
     [staged, setStaged] = useState<StagedUser[]>([]),
-    queryClientRef = useRef(queryClient),
-    acknowledged = new Set(
-      transcript.queue.flatMap(({ submissionId }) => (submissionId ? [submissionId] : [])),
+    acknowledged = new Set(transcript.queue.map(({ submissionId }) => submissionId)),
+    pending = staged.filter(
+      (user) =>
+        user.sessionId !== sessionId || !user.accepted || !acknowledged.has(user.submissionId),
     ),
     view = [
       ...transcript.view,
-      ...staged
-        .filter(
-          (user) =>
-            user.sessionId === sessionId &&
-            (!user.accepted || !acknowledged.has(user.submissionId)),
-        )
-        .map(optimisticTimelineMessage),
+      ...pending.filter((user) => user.sessionId === sessionId).map(optimisticTimelineMessage),
     ];
-  useLayoutEffect(() => {
-    queryClientRef.current = queryClient;
-  }, [queryClient]);
   useEffect(() => {
-    const acknowledgedIds = new Set(
-        transcript.queue.flatMap(({ submissionId }) => (submissionId ? [submissionId] : [])),
-      ),
-      frame = requestAnimationFrame(() => {
-        setStaged((current) => {
-          const next = current.filter(
-            (user) =>
-              user.sessionId !== sessionId ||
-              !user.accepted ||
-              !acknowledgedIds.has(user.submissionId),
-          );
-          return next.length === current.length ? current : next;
-        });
-      });
+    if (pending.length === staged.length) {
+      return;
+    }
+    const frame = requestAnimationFrame(() => {
+      setStaged((current) => (current === staged ? pending : current));
+    });
     return () => {
       cancelAnimationFrame(frame);
     };
-  }, [sessionId, transcript.queue]);
+  }, [pending, staged]);
   const send = useCallback(
     async (optimistic: OptimisticUser, draftRevision: number, attachments: PendingAttachment[]) => {
       setStaged((current) => [...current, optimistic]);
@@ -66,45 +50,25 @@ export function useUserMessageSubmissions(
         setStaged((current) =>
           current.map((user) => (user.key === optimistic.key ? { ...user, accepted: true } : user)),
         );
-        acknowledgeUser(
-          queryClientRef.current,
-          optimistic.sessionId,
-          optimistic.submissionId,
-          inputId,
-          content,
+        queryClient.setQueryData<TranscriptData>(
+          transcriptKey(optimistic.sessionId),
+          (current) =>
+            current &&
+            stageQueuedInput(current, {
+              content,
+              error: null,
+              id: inputId,
+              status: "pending",
+              submissionId: optimistic.submissionId,
+              userMessageId: null,
+            }),
         );
       } catch (error) {
         setStaged((current) => current.filter(({ key }) => key !== optimistic.key));
         throw error;
       }
     },
-    [setStaged],
+    [queryClient, setStaged],
   );
   return { send, view };
-}
-function acknowledgeUser(
-  queryClient: QueryClient,
-  sessionId: string,
-  submissionId: string,
-  inputId: number,
-  content: string,
-) {
-  queryClient.setQueryData<TranscriptData>(transcriptKey(sessionId), (current) => {
-    if (!current || current.queue.some(({ id }) => id === inputId)) {
-      return current;
-    }
-    return rebuildTranscript(current, {
-      queue: [
-        ...current.queue,
-        {
-          content,
-          error: null,
-          id: inputId,
-          status: "pending",
-          submissionId,
-          userMessageId: null,
-        },
-      ],
-    });
-  });
 }

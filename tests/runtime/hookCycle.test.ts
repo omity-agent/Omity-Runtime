@@ -47,10 +47,9 @@ test("takeover hooks bracket an Agent tool cycle without recursive hooks", async
   const processing = processInput(fixture.context, required(fixture.db.nextInput("session")));
   try {
     await Promise.race([visible.promise, delay(5000, undefined, { ref: false })]);
-    const { events, messages, queue } = loadTranscript(fixture.db.db, "session"),
-      live = buildTimeline(messages, queue, events)
-        .flatMap(({ parts }) => parts)
-        .filter((part) => part.type === "tool" && isHookCallId(part.call.id));
+    const live = buildTimeline(loadTranscript(fixture.db.db, "session"))
+      .flatMap(({ parts }) => parts)
+      .filter((part) => part.type === "tool" && isHookCallId(part.call.id));
     expect(live).toMatchObject([
       { call: { input: { message: "inspect" }, name: "hook" }, phase: "running" },
     ]);

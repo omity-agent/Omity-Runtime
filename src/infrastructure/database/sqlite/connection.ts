@@ -23,7 +23,7 @@ const nonnegativeInteger = z.number().int().nonnegative(),
     .parse(storage),
   busyTimeoutPragma = `PRAGMA busy_timeout = ${sqlite.busyTimeoutMs.toString()}`,
   databases = new WeakMap<Database, SQLiteBunDatabase>(),
-  transactions = new WeakMap<Database, (operation: () => void) => void>();
+  transactions = new WeakMap<Database, ReturnType<typeof createTransaction>>();
 export function openSessionDatabase(path: string, root = process.cwd()) {
   const db = new Database(path, { create: true, strict: true });
   try {
@@ -58,13 +58,14 @@ export function queryAll<Row>(db: Database, sql: string, ...params: SQLQueryBind
 export function cachedQuery<Row>(db: Database, sql: string) {
   return db.query<Row, SQLQueryBindings[]>(sql);
 }
-export function runTransaction<T>(db: Database, operation: () => T): T {
+export function runTransaction<T>(
+  db: Database,
+  operation: () => T,
+  mode: "deferred" | "immediate" = "deferred",
+): T {
   let result!: T;
   try {
-    transactions.getOrInsertComputed(
-      db,
-      createTransaction,
-    )(() => {
+    transactions.getOrInsertComputed(db, createTransaction)[mode](() => {
       result = operation();
     });
   } catch (error) {

@@ -47,7 +47,6 @@
     "@simplewebauthn/browser": "latest",
     "@simplewebauthn/server": "latest",
     "@tanstack/pacer": "latest",
-    "@tanstack/react-pacer": "latest",
     "@tanstack/react-query": "latest",
     "@uiw/react-codemirror": "latest",
     "@vscode/os-proxy-resolver": "latest",

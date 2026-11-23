@@ -1,18 +1,15 @@
 import { setSessionControl } from "../client";
+import { sessionProfileBusy } from "../errors";
 import type { FileLinkAction } from "../fileLinks/types";
 import type { SettingsContext } from "../infrastructure/configuration/settings/context";
 import { readComposerDraftRecord } from "../infrastructure/database/records/session/composerDrafts";
 import { appOwner } from "../infrastructure/process/ownership";
 import { AskUserRuntime } from "../infrastructure/toolbox/runtime";
-import { deleteHostSession } from "../storedSessions";
-import type { Control, Settings } from "../types";
+import { deleteStoredSession, requestHostToolCancellation } from "../storedSessions";
+import { type Control, isRunningStatus, type Settings } from "../types";
 import type { MessageSubmission, SessionSubmission } from "./attachments/contract";
 import { enqueueMessageWithAttachments } from "./attachments/message";
-import {
-  readPreparationDraft,
-  writePreparationDraft,
-  writeSessionDraft,
-} from "./composition/draftStorage";
+import { writeSessionDraft } from "./composition/draftStorage";
 import { AppEvents } from "./events";
 import { activateFileLink } from "./fileLinks/launch";
 import { controllerSessionInfo, createControllerHosts } from "./hostCoordination";
@@ -27,18 +24,14 @@ import {
   prepareController,
 } from "./runtime/prepareController";
 import { hasLiveHostLease } from "./runtime/recovery";
-import { materializeAppFork } from "./runtime/sessionActions";
-import { updateSessionProfile } from "./runtime/sessionProfile";
-import { createSnapshotSession } from "./runtime/sessionSnapshot";
+import { storeSessionProfile } from "./runtime/sessions/profileChange";
+import { materializeAppFork, provisionAppSession } from "./runtime/sessions/provision";
 import { closeControllerResources } from "./runtime/shutdown";
 import { clearAgentTemporaryFiles } from "./runtime/temporaryFiles";
-import { cancelSessionTool } from "./sessionCommands";
 import { loadTranscript } from "./transcript";
-import { loadUserMessages } from "./userMessages";
-import { pickWorkspaceDirectory } from "./workspaceDialog/bridge";
 
 export class AppController {
-  readonly events: AppEvents;
+  readonly events = new AppEvents();
   private readonly settings: Settings;
   private readonly registry: AppRegistry;
   private readonly hosts: AppHosts;
@@ -53,7 +46,6 @@ export class AppController {
     this.settingsContext = prepared.settingsContext;
     this.settings = prepared.settings;
     this.registry = prepared.registry;
-    this.events = new AppEvents();
     this.askUser = new AskUserRuntime((sessionId) => this.publishChange(sessionId));
     this.prediction = createSessionPredictions(this.registry, this.settingsContext);
     this.hosts = createControllerHosts({
@@ -79,26 +71,15 @@ export class AppController {
   }
   sessionOptions = (profile?: string) => availableSessionOptions(this.settingsContext, profile);
   async updateProfile(sessionId: string, profile?: string) {
-    const session = this.registry.require(sessionId),
-      info = await updateSessionProfile({
-        baseContext: this.settingsContext,
-        clearError: () => this.hosts.clearError(sessionId),
-        currentProfiles: session.profiles,
-        isBound: () => this.hosts.isBound(sessionId),
-        profile,
-        readSession: () => this.sessionInfo(this.registry.refresh(sessionId)),
-        restart: () => this.hosts.startDetached(sessionId, session.workspace, "load"),
-        root: this.appRoot,
-        sessionId,
-        sessionStatus: this.sessionInfo(session).status,
-        stop: () => this.hosts.stop(sessionId),
-        workspace: session.workspace,
-      });
-    this.events.notifySession(info);
-    return info;
-  }
-  userMessages() {
-    return { messages: loadUserMessages() };
+    const session = this.registry.require(sessionId);
+    if (isRunningStatus(this.sessionInfo(session).status)) {
+      throw sessionProfileBusy(sessionId);
+    }
+    await this.hosts.withStoppedHost(sessionId, session.workspace, () => {
+      storeSessionProfile(this.appRoot, this.settingsContext, session, profile);
+      this.hosts.clearError(sessionId);
+    });
+    return this.notifySession(this.registry.refresh(sessionId));
   }
   async predictions(sessionId: string) {
     this.registry.require(sessionId);
@@ -107,35 +88,27 @@ export class AppController {
   assertSession(sessionId: string) {
     this.registry.require(sessionId);
   }
-  pickWorkspace() {
-    return pickWorkspaceDirectory();
-  }
   async activateFileLink(sessionId: string, path: string, action: FileLinkAction) {
     this.registry.require(sessionId);
     return { path: await activateFileLink(path, action) };
   }
   async createSession(submission: SessionSubmission) {
-    const created = await createSnapshotSession({
+    const { sessionId, workspace } = await provisionAppSession({
         baseContext: this.settingsContext,
         mcp: this.hosts.mcp,
         root: this.appRoot,
         submission,
       }),
-      session = this.registry.refresh(created.sessionId);
-    this.hosts.startDetached(created.sessionId, created.workspace, "load");
-    const info = this.sessionInfo(session);
-    this.events.notifySession(info);
-    return info;
+      session = this.registry.refresh(sessionId);
+    this.hosts.scheduleStart(sessionId, workspace);
+    return this.notifySession(session);
   }
   async sendMessage(sessionId: string, submission: MessageSubmission) {
     const session = this.registry.require(sessionId),
       result = await enqueueMessageWithAttachments(
-        this.settings,
+        this.settings.attachments,
         sessionId,
-        submission.content,
-        submission.draftRevision,
-        submission.submissionId,
-        submission.attachments,
+        submission,
         () => this.ensureHost(session),
       );
     this.hosts.clearError(sessionId);
@@ -149,8 +122,6 @@ export class AppController {
     this.registry.require(sessionId);
     return writeSessionDraft(sessionId, content, revision);
   }
-  preparationDraft = readPreparationDraft;
-  savePreparationDraft = writePreparationDraft;
   async control(sessionId: string, control: Control) {
     const session = this.registry.require(sessionId);
     if (control === "running" || control === "step") {
@@ -162,9 +133,10 @@ export class AppController {
   }
   cancelTool(sessionId: string, toolCallId: string) {
     this.registry.require(sessionId);
-    const result = cancelSessionTool(this.hosts, sessionId, toolCallId);
+    requestHostToolCancellation(sessionId, toolCallId);
+    this.hosts.cancelTool(sessionId, toolCallId);
     this.publishChange(sessionId);
-    return result;
+    return { toolCallId };
   }
   answerTool(sessionId: string, toolCallId: string, answer: unknown) {
     this.registry.require(sessionId);
@@ -178,17 +150,14 @@ export class AppController {
         profiles: session.profiles,
         sourceSessionId: sessionId,
         workspace: session.workspace,
-      }),
-      targetSession = this.registry.refresh(id);
+      });
     this.hosts.clearError(id);
-    const info = this.sessionInfo(targetSession);
-    this.events.notifySession(info);
-    return info;
+    return this.notifySession(this.registry.refresh(id));
   }
   async deleteSession(sessionId: string) {
     this.registry.require(sessionId);
     await this.hosts.stop(sessionId);
-    deleteHostSession(sessionId);
+    deleteStoredSession(sessionId);
     this.hosts.clearError(sessionId);
     this.registry.remove(sessionId);
     this.events.notifyDeleted(sessionId);
@@ -212,9 +181,13 @@ export class AppController {
   }
   private publishChange(sessionId: string) {
     this.events.wake(sessionId);
-    const info = this.sessionInfo(this.registry.refresh(sessionId));
-    this.events.notifySession(info);
+    this.notifySession(this.registry.refresh(sessionId));
     this.events.invalidateTranscript(sessionId, this.eventCursor(sessionId));
+  }
+  private notifySession(session: RegisteredSession) {
+    const info = this.sessionInfo(session);
+    this.events.notifySession(info);
+    return info;
   }
   private sessionInfo(session: RegisteredSession) {
     return controllerSessionInfo(session, this.hosts, this.askUser);

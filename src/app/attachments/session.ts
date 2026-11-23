@@ -1,11 +1,11 @@
 import type { SessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
 import type { Settings } from "../../types";
 import type { InitialMessagePair } from "../initialState";
-import { createSessionStorage } from "../runtime/sessionStorage";
+import { createSessionStorage } from "../runtime/sessions/persistence";
 import { initialAttachmentTexts, type PendingAttachment } from "./contract";
-import { saveAttachments } from "./storage";
+import { withSavedAttachments } from "./uploads";
 
-export async function createSessionWithAttachments(options: {
+export function createSessionWithAttachments(options: {
   settings: Settings;
   sessionId: string;
   workspace: string;
@@ -15,26 +15,22 @@ export async function createSessionWithAttachments(options: {
   message: string;
   attachments: PendingAttachment[];
 }) {
-  const saved = await saveAttachments(
-    options.settings,
+  return withSavedAttachments(
+    options.settings.attachments,
     options.sessionId,
     initialAttachmentTexts(options.history, options.message),
     options.attachments,
+    (rewrite) =>
+      createSessionStorage(
+        options.sessionId,
+        options.workspace,
+        options.profiles,
+        options.history.map(({ assistant, user }) => ({
+          assistant: rewrite(assistant),
+          user: rewrite(user),
+        })),
+        rewrite(options.message),
+        options.definition,
+      ),
   );
-  try {
-    createSessionStorage(
-      options.sessionId,
-      options.workspace,
-      options.profiles,
-      options.history.map(({ assistant, user }) => ({
-        assistant: saved.rewrite(assistant),
-        user: saved.rewrite(user),
-      })),
-      saved.rewrite(options.message),
-      options.definition,
-    );
-  } catch (error) {
-    await saved.discard();
-    throw error;
-  }
 }

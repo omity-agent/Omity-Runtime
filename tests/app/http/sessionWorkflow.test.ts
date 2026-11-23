@@ -1,9 +1,8 @@
 import { expect, spyOn, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 
-import { z } from "zod";
-
 import { submissionForm } from "../../../src/app/attachments/submission";
+import { messageResponseSchema } from "../../../src/app/contracts/results";
 import { sessionPaths } from "../../../src/infrastructure/configuration/sessionPaths";
 import { containingItems, partialObject } from "../../support/asymmetric";
 import { liveApplication } from "./liveApplication";
@@ -18,16 +17,9 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   });
   globalThis.AI_SDK_LOG_WARNINGS = (event) => warnings.push(...event.warnings);
   await using app = liveApplication();
-  const created = await fetch(`${app.url}/api/sessions`, {
-    body: submissionForm({ history: [], message: "first question", workspace: app.root }, []),
-    method: "POST",
-  });
-  expect(created.status).toBe(200);
-  const { session } = z
-      .object({ session: z.object({ id: z.string() }) })
-      .parse(await created.json()),
+  const session = await app.createSession({ message: "first question" }),
     endpoint = `${app.url}/api/sessions/${session.id}`;
-  await waitForCompletedRun(app, session.id);
+  await app.waitForRun(session.id);
   expect(app.requests).toHaveLength(1);
   expect(warnings).toEqual([]);
   const transcript = await fetch(`${endpoint}/transcript`);
@@ -59,7 +51,7 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
     method: "POST",
   });
   expect(sent.status).toBe(200);
-  const accepted = z.object({ content: z.string(), inputId: z.number() }).parse(await sent.json()),
+  const accepted = messageResponseSchema.parse(await sent.json()),
     path = accepted.content.slice("read ".length);
   expect(readFileSync(path, "utf8")).toBe("attachment content");
   const draftAfterMessage = await fetch(`${endpoint}/composer-draft`),
@@ -89,7 +81,7 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   using updates = spyOn(app.controller.events, "notifySession");
   const step = await fetch(`${endpoint}/control`, json({ control: "step" }));
   expect(step.status).toBe(200);
-  await waitForCompletedRun(app, session.id);
+  await app.waitForRun(session.id);
   expect(app.controller.transcript(session.id).control).toBe("pause");
   expect(updates.mock.calls.map(([info]) => info.status)).toContain("stepping");
   expect(app.controller.sessions()).toMatchObject([{ status: "paused", stepAvailable: false }]);
@@ -180,16 +172,6 @@ test.each(["buffered", "streamed"])(
     }
   },
 );
-async function waitForCompletedRun(app: ReturnType<typeof liveApplication>, sessionId: string) {
-  const { controller } = app,
-    deadline = Date.now() + 5000;
-  while (!controller.transcript(sessionId).queue.every(({ status }) => status === "done")) {
-    if (Date.now() >= deadline) {
-      throw new Error("HTTP 会话未在期限内完成模型调用");
-    }
-    await controller.events.wait(sessionId, 25);
-  }
-}
 function json(body: unknown): RequestInit {
   return {
     body: JSON.stringify(body),

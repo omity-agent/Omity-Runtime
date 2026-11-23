@@ -2,19 +2,14 @@ import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { z } from "zod";
-
-import { submissionForm } from "../../../../src/app/attachments/submission";
 import { createAppMcp } from "../../../../src/app/runtime/resources/toolPool";
-import { sessionPaths } from "../../../../src/infrastructure/configuration/sessionPaths";
-import { AgentDatabase } from "../../../../src/infrastructure/database/agentDatabase";
 import { readDefinitionRecord } from "../../../../src/infrastructure/database/records/session/metadata";
 import { AskUserRuntime } from "../../../../src/infrastructure/toolbox/runtime";
+import { openStoredSession } from "../../../../src/storedSessions";
 import { containingItems, partialObject } from "../../../support/asymmetric";
 import { writeFixtureYaml } from "../../../support/configuration";
 import { liveApplication } from "../liveApplication";
 
-const sessionResponse = z.object({ session: z.object({ id: z.string() }) });
 test.each([true, false])(
   "MCP-owned original-name customizations survive server selection and snapshot restoration (prefix: %s)",
   async (prefixToolNameWithServerName) => {
@@ -55,62 +50,41 @@ test.each([true, false])(
     );
     writeFixtureYaml(app.profileDirectory, "toolbox", configuration);
     const overrides = { active: true, inactive: false },
-      created = await fetch(`${app.url}/api/sessions`, {
-        body: submissionForm(
-          { history: [], mcpOverrides: overrides, message: "hello", profile: "custom", workspace },
-          [],
-        ),
-        method: "POST",
-      });
-    expect(created.status).toBe(200);
-    const { session } = sessionResponse.parse(await created.json()),
-      database = new AgentDatabase(sessionPaths(session.id).dbPath),
-      restoredMcp = createAppMcp(app.root, "error", app.context, new AskUserRuntime(() => {}));
-    try {
-      const deadline = Date.now() + 5000;
-      while (
-        !app.controller.transcript(session.id).queue.every(({ status }) => status === "done")
-      ) {
-        const failure = app.controller.sessions().find(({ id }) => id === session.id)?.error;
-        if (failure) {
-          throw new Error(failure.message, { cause: failure });
-        }
-        if (Date.now() >= deadline) {
-          throw new Error("会话未在期限内完成");
-        }
-        await app.controller.events.wait(session.id, 25);
-      }
-      expect(app.requests).toHaveLength(1);
-      expect(app.requests[0]).toMatchObject({
-        tools: containingItems([
-          partialObject({
-            description: "profile description",
-            name: "renamed_tool",
-            type: "custom",
-          }),
-        ]),
-      });
-      const definition = readDefinitionRecord(database.db, session.id),
-        tool = definition.prefix.tools.tools.find(({ name }) => name === "renamed_tool");
-      expect(tool).toMatchObject({ description: "profile description", freeform: true });
-      expect(definition.prefix.tools.serverOverrides).toEqual(overrides);
-      writeFileSync(
-        join(profileDirectory, "toolbox.yaml"),
-        "mcpServers:\n  active:\n    freeformToolInputs: [unavailable]\n    toolDescriptionOverrides: { unavailable: absent.md }\n",
-      );
-      const restored = await restoredMcp.loadSession(
-        session.id,
-        database.profiles(session.id),
-        definition.prefix.tools,
-        workspace,
-      );
-      expect(Object.keys(restored.configuration.mcpServers)).toEqual(["active"]);
-      expect(restored.freeformToolParameters.get("renamed_tool")).toBe("input");
-      expect(restored.tools.map(({ name }) => name)).not.toContain("unused_alias");
-    } finally {
-      await restoredMcp.close();
-      database.close();
-    }
+      session = await app.createSession({ mcpOverrides: overrides, profile: "custom", workspace });
+    await app.waitForRun(session.id);
+    expect(app.requests).toHaveLength(1);
+    expect(app.requests[0]).toMatchObject({
+      tools: containingItems([
+        partialObject({
+          description: "profile description",
+          name: "renamed_tool",
+          type: "custom",
+        }),
+      ]),
+    });
+    using database = openStoredSession(session.id);
+    const { prefix } = readDefinitionRecord(database.db, session.id);
+    expect(prefix.tools.tools.find(({ name }) => name === "renamed_tool")).toMatchObject({
+      description: "profile description",
+      freeform: true,
+    });
+    expect(prefix.tools.serverOverrides).toEqual(overrides);
+    writeFileSync(
+      join(profileDirectory, "toolbox.yaml"),
+      "mcpServers:\n  active:\n    freeformToolInputs: [unavailable]\n    toolDescriptionOverrides: { unavailable: absent.md }\n",
+    );
+    await using cleanup = new AsyncDisposableStack();
+    const mcp = createAppMcp(app.root, "error", app.context, new AskUserRuntime(() => {}));
+    cleanup.defer(() => mcp.close());
+    const restored = await mcp.loadSession(
+      session.id,
+      database.profiles(session.id),
+      prefix.tools,
+      workspace,
+    );
+    expect(Object.keys(restored.configuration.mcpServers)).toEqual(["active"]);
+    expect(restored.freeformToolParameters.get("renamed_tool")).toBe("input");
+    expect(restored.tools.map(({ name }) => name)).not.toContain("unused_alias");
   },
   15_000,
 );

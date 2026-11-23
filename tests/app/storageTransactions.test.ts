@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { createSessionWithAttachments } from "../../src/app/attachments/session";
-import { createSessionStorage, forkSessionStorage } from "../../src/app/runtime/sessionStorage";
+import {
+  createSessionStorage,
+  forkSessionStorage,
+} from "../../src/app/runtime/sessions/persistence";
+import { materializeAppFork } from "../../src/app/runtime/sessions/provision";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { emptySessionDefinition } from "../../src/infrastructure/database/session/sessionDefinition";
@@ -25,6 +29,20 @@ beforeEach(() => {
 afterEach(() => {
   environment.dispose();
   rmSync(home, { force: true, recursive: true });
+});
+test("fork initialization releases its reservation even if the database cannot open", async () => {
+  const paths = sessionPaths("source");
+  mkdirSync(paths.dbPath);
+  await expect(
+    materializeAppFork({
+      beforeMessageId: 1,
+      pauseSource: () => Promise.resolve(),
+      profiles: [],
+      sourceSessionId: "source",
+      workspace,
+    }),
+  ).rejects.toThrow();
+  expect(readdirSync(dirname(paths.dir))).toEqual(["source"]);
 });
 test.each(operations)(
   "%s rolls back database records when message files cannot be written",

@@ -24,19 +24,13 @@ export class UserMessageArchive {
   }
   writeAll(contents: readonly string[]) {
     mkdirSync(this.directory, { recursive: true });
-    const paths: string[] = [];
-    try {
-      for (const [id, content] of contents.entries()) {
-        const path = this.path(id);
-        writeFileSync(path, content, { encoding: "utf8", flag: "wx" });
-        paths.push(path);
-      }
-    } catch (error) {
-      for (const path of paths) {
-        this.remove(path);
-      }
-      throw error;
+    using rollback = new DisposableStack();
+    for (const [id, content] of contents.entries()) {
+      const path = this.path(id);
+      writeFileSync(path, content, { encoding: "utf8", flag: "wx" });
+      rollback.defer(() => this.remove(path));
     }
+    rollback.move();
   }
   remove(path: string) {
     rmSync(path, { force: true });

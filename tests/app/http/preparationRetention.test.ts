@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test";
 
-import { submissionForm } from "../../../src/app/attachments/submission";
 import { AppController } from "../../../src/app/controller";
 import { createApi } from "../../../src/app/http/handler";
 import { liveApplication } from "./liveApplication";
@@ -58,17 +57,15 @@ test("session creation clears only its submitted preparation and keeps drafts on
   const endpoint = `${app.url}/api/session-preparation`,
     ready = { ...preparation, pairs: [preparation.pairs[0]!] };
   await saveDraft(endpoint, ready, 1);
-  const failed = await create(app, "", 1);
+  const failed = await app.submitSession({ draftRevision: 1, message: "" });
   expect(failed.status).toBe(400);
   await checkDraft(endpoint, ready, 1);
-  const created = await create(app, ready.message, 1);
-  expect(created.status).toBe(200);
+  await app.createSession({ draftRevision: 1, message: ready.message });
   await saveDraft(endpoint, ready, 1);
   await checkDraft(endpoint, { ...ready, message: "", pairs: [] }, 1);
   const newer = { message: "another tab's draft", pairs: [] };
   await saveDraft(endpoint, newer, 2);
-  const olderCreation = await create(app, ready.message, 1);
-  expect(olderCreation.status).toBe(200);
+  await app.createSession({ draftRevision: 1, message: ready.message });
   await checkDraft(endpoint, newer, 2);
 }, 15_000);
 async function saveDraft(endpoint: string, content: unknown, revision: number): Promise<unknown> {
@@ -85,11 +82,5 @@ async function checkDraft(endpoint: string, content: unknown, revision: number) 
   expect(await response.json()).toEqual({
     content: JSON.stringify(content),
     revision,
-  });
-}
-function create(app: ReturnType<typeof liveApplication>, message: string, draftRevision: number) {
-  return fetch(`${app.url}/api/sessions`, {
-    body: submissionForm({ draftRevision, history: [], message, workspace: app.root }, []),
-    method: "POST",
   });
 }

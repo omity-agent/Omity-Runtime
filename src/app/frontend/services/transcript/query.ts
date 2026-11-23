@@ -1,9 +1,8 @@
-import { useAsyncThrottler } from "@tanstack/react-pacer/async-throttler";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { AsyncThrottler } from "@tanstack/pacer/async-throttler";
+import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 import type { DisplayEvent } from "../../../timeline";
-import { localize } from "../../i18n";
 import { uiBehavior } from "../../presentation/preferences";
 import { contentEvents, loadTranscript } from "../client";
 import { reportError } from "../errors";
@@ -15,91 +14,78 @@ import {
   emptyTranscriptData,
   reconcileTranscript,
   type TranscriptData,
-} from "./cache";
+} from "./reconciliation";
 
 export const transcriptKey = (sessionId: string) => ["transcript", sessionId] as const;
-const emptyTranscript = emptyTranscriptData();
 export function useSessionTranscript(
   sessionId: string | undefined,
   snapshotThrottleMs: number | undefined,
 ) {
   const queryClient = useQueryClient(),
+    queryKey = transcriptKey(sessionId ?? ""),
     query = useQuery({
-      enabled: sessionId !== undefined,
-      queryFn: async ({ signal }) => {
-        const id = requiredId(sessionId),
-          snapshot = await loadTranscript(id, signal);
-        return reconcileTranscript(
-          snapshot,
-          queryClient.getQueryData<TranscriptData>(transcriptKey(id)),
-        );
-      },
-      queryKey: transcriptKey(sessionId ?? ""),
-    }),
-    refresh = useAsyncThrottler(
-      async (id: string) => {
-        await refreshTranscript(queryClient, id);
-      },
-      {
-        asyncRetryerOptions: {
-          backoff: "exponential",
-          baseWait: Math.max(snapshotThrottleMs ?? 0, uiBehavior.transcriptRetry.minimumWaitMs),
-          maxAttempts: uiBehavior.transcriptRetry.maxAttempts,
-          maxWait: uiBehavior.transcriptRetry.maxWaitMs,
-        },
-        onError: (error) => {
-          reportError(error);
-        },
-        wait: snapshotThrottleMs ?? 0,
-      },
-    ),
-    deltas = useMemo(
-      () =>
-        new FrameBatcher<DisplayEvent>((batch) => {
-          if (!sessionId) {
-            return;
-          }
-          queryClient.setQueryData<TranscriptData>(transcriptKey(sessionId), (current) =>
-            appendTranscriptEvents(current ?? emptyTranscriptData(), batch),
-          );
-        }),
-      [queryClient, sessionId],
-    );
+      queryFn:
+        sessionId === undefined
+          ? skipToken
+          : async ({ signal }) =>
+              reconcileTranscript(
+                await loadTranscript(sessionId, signal),
+                queryClient.getQueryData<TranscriptData>(queryKey),
+              ),
+      queryKey,
+    });
   useEffect(() => {
     if (!sessionId || snapshotThrottleMs === undefined) {
       return;
     }
-    const close = subscribeEvents(contentEvents(sessionId), {
-      delta(event) {
-        deltas.add(readTranscriptEvent(event));
-      },
-      sync(event) {
-        readContentSyncEvent(event);
-        void refresh.maybeExecute(sessionId);
-      },
-    });
+    const key = transcriptKey(sessionId),
+      controller = new AbortController(),
+      { signal } = controller,
+      deltas = new FrameBatcher<DisplayEvent>((batch) => {
+        queryClient.setQueryData<TranscriptData>(key, (current) =>
+          appendTranscriptEvents(current ?? emptyTranscriptData, batch),
+        );
+      }),
+      refresh = new AsyncThrottler(
+        async () => {
+          const snapshot = await loadTranscript(sessionId, signal);
+          if (!signal.aborted) {
+            queryClient.setQueryData<TranscriptData>(key, (current) =>
+              reconcileTranscript(snapshot, current),
+            );
+          }
+        },
+        {
+          asyncRetryerOptions: {
+            backoff: "exponential",
+            baseWait: Math.max(snapshotThrottleMs, uiBehavior.transcriptRetry.minimumWaitMs),
+            maxAttempts: uiBehavior.transcriptRetry.maxAttempts,
+            maxWait: uiBehavior.transcriptRetry.maxWaitMs,
+          },
+          onError: (error) => {
+            if (!signal.aborted) {
+              reportError(error);
+            }
+          },
+          wait: snapshotThrottleMs,
+        },
+      ),
+      close = subscribeEvents(contentEvents(sessionId), {
+        delta(event) {
+          deltas.add(readTranscriptEvent(event));
+        },
+        sync(event) {
+          readContentSyncEvent(event);
+          void refresh.maybeExecute();
+        },
+      });
     return () => {
       close();
       deltas.cancel();
-      refresh.cancel();
+      controller.abort();
+      refresh.setOptions({ enabled: false });
       refresh.abort();
     };
-  }, [deltas, refresh, sessionId, snapshotThrottleMs]);
-  return query.data ?? emptyTranscript;
-}
-async function refreshTranscript(
-  queryClient: ReturnType<typeof useQueryClient>,
-  sessionId: string,
-) {
-  const queryKey = transcriptKey(sessionId),
-    snapshot = await loadTranscript(sessionId);
-  queryClient.setQueryData<TranscriptData>(queryKey, (current) =>
-    reconcileTranscript(snapshot, current),
-  );
-}
-function requiredId(sessionId: string | undefined) {
-  if (!sessionId) {
-    throw new Error(localize("diagnostics:transcript.sessionIdMissing"));
-  }
-  return sessionId;
+  }, [queryClient, sessionId, snapshotThrottleMs]);
+  return query.data ?? emptyTranscriptData;
 }
