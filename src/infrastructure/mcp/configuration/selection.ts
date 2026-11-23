@@ -9,7 +9,6 @@ import { mcpServerSchema } from "./connections";
 
 const option = z.object({ enable: z.boolean(), id: z.string().min(1) }),
   builtInPreferences = z.object({
-    description: emptyAs(z.string(), ""),
     enabled: z.boolean(),
     name: z.string().min(1),
   }),
@@ -25,7 +24,7 @@ const option = z.object({ enable: z.boolean(), id: z.string().min(1) }),
     ),
   });
 export const toolboxOptionsSchema = z.object({
-  builtInTools: z.array(option.extend({ description: z.string(), name: z.string().min(1) })),
+  builtInTools: z.array(option.extend({ name: z.string().min(1) })),
   mcpServers: z.array(option),
 });
 export interface ToolboxOverrides {
@@ -38,16 +37,7 @@ export function describeToolbox(value: unknown) {
     aliases = new Map(Object.entries(toolNameOverrides));
   return {
     builtInTools: Object.entries<BuiltInMetadata | undefined>(toolboxes).flatMap(([id, tool]) =>
-      tool
-        ? [
-            {
-              description: tool.description,
-              enable: tool.enabled,
-              id,
-              name: aliases.get(tool.name) ?? tool.name,
-            },
-          ]
-        : [],
+      tool ? [{ enable: tool.enabled, id, name: aliases.get(tool.name) ?? tool.name }] : [],
     ),
     mcpServers: Object.entries(mcpServers).map(([id, server]) => ({
       enable: server.enabled ?? true,

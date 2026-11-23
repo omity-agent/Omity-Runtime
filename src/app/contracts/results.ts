@@ -28,9 +28,9 @@ export const bootstrapResponseSchema = z.object({
   sessions: z.array(sessionInfoSchema),
 });
 export const sessionOptionsSchema = z.object({
-  builtInTools: z.array(capabilitySchema.required({ name: true })),
-  hooks: z.array(capabilitySchema),
-  mcpServers: z.array(capabilitySchema),
+  builtInTools: z.array(capabilitySchema.omit({ description: true }).required({ name: true })),
+  hooks: z.array(capabilitySchema.omit({ name: true })),
+  mcpServers: z.array(capabilitySchema.pick({ enable: true, id: true })),
   model: z.string().min(1),
 });
 export const userMessagesResponseSchema = z.object({

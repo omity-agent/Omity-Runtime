@@ -21,7 +21,7 @@
   "hooks": "Hooks",
   "loadingOptions": "正在加载会话配置…",
   "noHooks": "当前配置没有 Hook",
-  "builtInTools": "内置工具",
+  "builtInTools": "内置",
   "mcpServers": "MCP 服务器",
   "noTools": "当前配置没有工具",
   "optionsLoadFailed": "加载会话配置失败：{{message}}",
