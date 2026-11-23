@@ -1,9 +1,9 @@
 import { CircleStop, LoaderCircle } from "lucide-react";
 import { useCallback, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
 import type { ToolCallPhase } from "../../../timeline";
+import { useTranslation } from "../../i18n";
 import { reportPromiseErrors } from "../../services/errors";
 import { Badge, IconButton } from "../ui";
 
@@ -34,14 +34,14 @@ export function useToolAccessory({
     }, [callId, onCancel, setCancelling]);
   return phase === "streaming" || cancellable ? (
     <span className={accessory}>
-      {phase === "streaming" ? <Badge>{t("streaming")}</Badge> : null}
+      {phase === "streaming" ? <Badge>{t("conversation:streaming")}</Badge> : null}
       {cancellable ? (
         <IconButton
-          aria-label={t("stopTool")}
+          aria-label={t("conversation:stopTool")}
           className={stopButton}
           disabled={cancelling}
           onClick={handleCancel}
-          title={t("stopTool")}
+          title={t("conversation:stopTool")}
           type="button"
           visual="ghost"
         >

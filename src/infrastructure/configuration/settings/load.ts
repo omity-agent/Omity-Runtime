@@ -1,7 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { localize } from "../../../i18n/server";
 import { buildSkillsList } from "../../../skills";
 import type { Settings } from "../../../types";
 import { resolveConfiguredPath } from "../configuredPath";
@@ -10,7 +9,7 @@ import { readSettingsText } from "../placeholders";
 import { safeId } from "../sessionPaths";
 import { normalizeWorkspacePath } from "../workspacePath";
 import { createSettingsContext, type SettingsContext } from "./context";
-import { readLayeredSettingsYaml, resolveLayeredSettingsText, userDataDirectory } from "./files";
+import { requireLayeredSettingsYaml, resolveLayeredSettingsText, userDataDirectory } from "./files";
 import { prepareMainSettings } from "./models";
 import {
   omitCodexConnectionSettings,
@@ -31,7 +30,7 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
     context = options.settingsContext ?? createSettingsContext(configRoot, options.userSettingsDir),
     model = loadModelSettings(context),
     main = loadMainSettings(context, model),
-    agent = parseAgentSettings(requireLayeredYaml(context, "profile", "agent.yaml").value),
+    agent = parseAgentSettings(requireLayeredSettingsYaml(context, "profile", "agent.yaml").value),
     storageDirectory = userDataDirectory(),
     session = options.sessionId
       ? resolve(storageDirectory, "sessions", safeId(options.sessionId))
@@ -80,7 +79,7 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
 }
 export function loadModelSettings(context: SettingsContext) {
   return parseModelSettings(
-    requireLayeredYaml(
+    requireLayeredSettingsYaml(
       context,
       "profile",
       "model.yaml",
@@ -91,30 +90,24 @@ export function loadModelSettings(context: SettingsContext) {
 }
 export function loadMainSettings(context: SettingsContext, model: Settings["model"]) {
   return parseMainSettings(
-    requireLayeredYaml(
+    requireLayeredSettingsYaml(
       context,
       "global",
       "main.yaml",
-      {},
+      {
+        dynamic: (name) =>
+          name === "predictionTask"
+            ? {
+                matched: true,
+                value: readSettingsText(
+                  resolveLayeredSettingsText(context, "global", "prompts/prediction.md"),
+                  {},
+                ).trimEnd(),
+              }
+            : { matched: false },
+      },
       { beforePlaceholders: (value) => prepareMainSettings(value, model) },
     ).value,
     model,
   );
-}
-function requireLayeredYaml(
-  context: SettingsContext,
-  scope: Parameters<typeof readLayeredSettingsYaml>[1],
-  relativePath: string,
-  placeholders: Parameters<typeof readLayeredSettingsYaml>[3] = {},
-  transforms: Parameters<typeof readLayeredSettingsYaml>[4] = {},
-) {
-  const file = readLayeredSettingsYaml(context, scope, relativePath, placeholders, transforms);
-  if (!file) {
-    throw new Error(
-      localize("configuration:settings.fileMissing", {
-        value0: resolve(context.defaultsDirectory, relativePath),
-      }),
-    );
-  }
-  return file;
 }

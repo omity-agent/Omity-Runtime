@@ -1,9 +1,9 @@
 import { LoaderCircle, Pause, Play, StepForward } from "lucide-react";
 import { useCallback } from "react";
-import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
 import type { Control, SessionStatus } from "../../../../../../types";
+import { useTranslation } from "../../../../i18n";
 import { reportPromiseErrors } from "../../../../services/errors";
 import { IconButton } from "../../../ui";
 import { runtimeControls } from "../arrangement";
@@ -51,10 +51,10 @@ export function RuntimeControl({
     }, [requestControl]),
     controlState = sessionStatus && controlStates[sessionStatus],
     disabled = controlDisabled || sessionStatus === "idle",
-    controlLabel = controlState ? t(controlState) : "",
-    resumeLabel = t("resumeContinuous"),
-    stepLabel = t("step"),
-    cancelPauseLabel = t("cancelPause"),
+    controlLabel = controlState ? t(`conversation:${controlState}`) : "",
+    resumeLabel = t("conversation:resumeContinuous"),
+    stepLabel = t("conversation:step"),
+    cancelPauseLabel = t("conversation:cancelPause"),
     control =
       controlState === "resume" || controlState === "stepping" ? (
         <>

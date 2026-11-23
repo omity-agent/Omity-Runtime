@@ -1,16 +1,15 @@
-import { mkdirSync, rmSync } from "node:fs";
+import { rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { raceSignal } from "race-signal";
 import type { z } from "zod";
 
-import { httpServerOptions } from "../../../../settings/networking";
 import { createAppMcp } from "../../../../src/app/runtime/resources/toolPool";
-import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
+import { settingsProfileNames } from "../../../../src/infrastructure/configuration/settings/context";
 import type { mcpServerSchema } from "../../../../src/infrastructure/mcp/configuration/connections";
 import { AskUserRuntime } from "../../../../src/infrastructure/toolbox/runtime";
 import { createTestDirectory } from "../../../support/artifacts";
-import { defaultBuiltIns, writeToolboxConfiguration } from "../../../support/builtins";
+import { testProfiles, writeFixtureYaml } from "../../../support/configuration";
 
 interface StartupCheckpoint {
   reached: PromiseWithResolvers<void>;
@@ -34,7 +33,6 @@ export function coordinateStartup(declarations: Record<string, z.input<typeof mc
       ),
     ),
     server = Bun.serve({
-      ...httpServerOptions,
       async fetch(request) {
         const url = new URL(request.url),
           checkpoint = checkpoints.get(url.pathname);
@@ -47,6 +45,7 @@ export function coordinateStartup(declarations: Record<string, z.input<typeof mc
         return new Response(failure, { status: failure ? 500 : 200 });
       },
       hostname: "127.0.0.1",
+      idleTimeout: 0,
       port: 0,
     }),
     endpoint = server.url.origin,
@@ -63,19 +62,12 @@ export function coordinateStartup(declarations: Record<string, z.input<typeof mc
   for (const name of Object.keys(declarations)) {
     checkpoints.get(`/${name}/listed`)!.response.resolve({});
   }
-  mkdirSync(join(root, "settings"));
-  writeToolboxConfiguration(root, {
+  const { context, profileDirectory } = testProfiles(root);
+  writeFixtureYaml(profileDirectory, "toolbox", {
     mcpServers,
     stdio: { restart: { delayMs: 0, maxAttempts: 1 } },
-    toolboxes: Object.fromEntries(
-      Object.entries(defaultBuiltIns()).map(([name, configuration]) => [
-        name,
-        { ...configuration, enabled: false },
-      ]),
-    ),
   });
-  const context = createSettingsContext(root, join(root, "user-settings")),
-    mcp = createAppMcp(root, "error", context, new AskUserRuntime(() => {}));
+  const mcp = createAppMcp(root, "error", context, new AskUserRuntime(() => {}));
   function releaseAll() {
     for (const checkpoint of checkpoints.values()) {
       checkpoint.response.resolve({});
@@ -94,6 +86,7 @@ export function coordinateStartup(declarations: Record<string, z.input<typeof mc
     },
     mcp,
     processes,
+    profiles: settingsProfileNames(context),
     release(name: string, phase: string, failure?: string) {
       checkpoints.get(`/${name}/${phase}`)!.response.resolve({ failure });
     },

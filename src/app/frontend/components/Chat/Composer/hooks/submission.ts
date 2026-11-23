@@ -84,7 +84,7 @@ export function useComposerSubmit({
     submittingRef.current = true;
     setSubmitting(true);
     if (draftTarget.kind === "new") {
-      throw new Error(localize("frontend:composer.chatProtocolUnsupported"));
+      throw new Error(localize("diagnostics:composer.chatProtocolUnsupported"));
     }
     const submissionTarget =
         draftTarget.kind === "session" ? draftTarget.sessionId : composerDraftKey(draftTarget),

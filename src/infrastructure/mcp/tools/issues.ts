@@ -38,7 +38,7 @@ function formatZodIssue(issue: z.core.$ZodIssue): string {
 }
 function formatIssuePath(path: PropertyKey[]): string {
   if (path.length === 0) {
-    return "settings/toolbox.yaml";
+    return "toolbox.yaml";
   }
-  return `settings/toolbox.yaml.${path.map(String).join(".")}`;
+  return `toolbox.yaml.${path.map(String).join(".")}`;
 }

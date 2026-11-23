@@ -10,13 +10,17 @@ import {
   registrationOptionsBody,
 } from "../contracts/authentication";
 import { HttpError } from "./errors";
-import { jsonBody, limitRequestBody } from "./request";
+import type { requestValidation } from "./request";
 
 export interface AccessEnvironment {
   Bindings: { remoteAddress: string | undefined };
   Variables: { client: ClientIdentity };
 }
-export function mountAccess(app: Hono<AccessEnvironment>, access: AccessService | undefined) {
+export function mountAccess(
+  app: Hono<AccessEnvironment>,
+  access: AccessService | undefined,
+  { json: jsonBody, limit }: ReturnType<typeof requestValidation>,
+) {
   app.use("/api/*", async (c: Context<AccessEnvironment>, next) => {
     c.header("cache-control", "no-store");
     c.header("x-content-type-options", "nosniff");
@@ -52,7 +56,7 @@ export function mountAccess(app: Hono<AccessEnvironment>, access: AccessService 
       setChallengeCookie(c, result.challengeId, access);
       return c.json({ options: result.options, origin: result.origin });
     })
-    .post("/api/access/register/ticket", limitRequestBody(), (c) =>
+    .post("/api/access/register/ticket", limit, (c) =>
       c.json(required(access).registrationTicket(c.get("client"))),
     )
     .post("/api/access/register", ...jsonBody(registrationBody), async (c) => {
@@ -61,7 +65,7 @@ export function mountAccess(app: Hono<AccessEnvironment>, access: AccessService 
       clearChallengeCookie(c);
       return c.json({ credentialCount: result.credentialCount, verified: result.verified });
     })
-    .post("/api/access/login/options", limitRequestBody(), async (c) => {
+    .post("/api/access/login/options", limit, async (c) => {
       const result = await required(access).authenticationOptions(c.get("client"));
       setChallengeCookie(c, result.challengeId, access);
       return c.json({ options: result.options });

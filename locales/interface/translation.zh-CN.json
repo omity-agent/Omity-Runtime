@@ -1,0 +1,14 @@
+{
+  "markerGenerationFailed": "无法生成思维链翻译换行标记",
+  "duplicateMarker": "思维链翻译重复换行标记：{{value0}}",
+  "markerMissing": "思维链翻译丢失换行标记",
+  "markerOrderInvalid": "思维链翻译换行标记顺序错误：{{value0}}",
+  "unsupported": "思维链翻译已开启，但浏览器不支持 Translator API 和 Language Detector API",
+  "preferredLanguageMissing": "浏览器未提供首选语言",
+  "detectionFailed": "浏览器无法检测思维链语言",
+  "confidenceInvalid": "浏览器返回的语言识别置信度无效",
+  "abortSignalMissing": "翻译任务缺少取消信号",
+  "pairUnavailable": "浏览器不支持翻译语言对：{{sourceLanguage}} → {{targetLanguage}}，识别置信度：{{confidence}}",
+  "retryDetection": "思维链 {{messageId}} 的翻译语言对不受支持：{{sourceLanguage}} → {{targetLanguage}}。置信度 {{confidence}} 低于 {{threshold}}，内容更新时重试。",
+  "skipReasoning": "思维链 {{messageId}} 的翻译语言对不受支持：{{sourceLanguage}} → {{targetLanguage}}。置信度 {{confidence}} 达到 {{threshold}}，停止翻译。"
+}

@@ -1,0 +1,5 @@
+coarse: "(pointer: coarse)"
+compact: "(width < 64rem)"
+largeCanvas: "(min-width: 160rem) and (min-height: 90rem)"
+short: "(max-height: 40rem)"
+topNav: "(max-aspect-ratio: 1 / 1)"

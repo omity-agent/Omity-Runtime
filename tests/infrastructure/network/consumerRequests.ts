@@ -1,7 +1,8 @@
 import { openaiCredentials } from "@openai-oauth/local";
 
 import { installNetworking } from "../../../src/infrastructure/network/installNetworking";
-import { testSettings } from "../../support/settings";
+import { fixtureDiagnosticLimits } from "../../support/builtins";
+import { testSettings } from "../../support/configuration";
 import { createOAuthFile, createTestJwt } from "../openai/authSessionFixture";
 
 const closeNetworking = installNetworking();
@@ -44,7 +45,7 @@ try {
           url: "http://tools.invalid/mcp",
         },
       },
-      { delayMs: 1, maxAttempts: 0 },
+      { diagnostics: fixtureDiagnosticLimits, stdio: { restart: { delayMs: 1, maxAttempts: 0 } } },
       new Logger("error", true),
       process.cwd(),
     );

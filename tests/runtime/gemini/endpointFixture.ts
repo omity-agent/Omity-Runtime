@@ -5,7 +5,7 @@ import { z } from "zod";
 import { buildConfiguredAiModel } from "../../../src/agent/model/provider";
 import { parseModelSettings } from "../../../src/infrastructure/configuration/settings/schema";
 import type { ModelToolDefinition } from "../../../src/infrastructure/mcp/tools/definitions";
-import { testSettings } from "../../support/settings";
+import { testSettings } from "../../support/configuration";
 
 export const geminiApis = ["interactions", "generate-content"] as const;
 export type GeminiApi = (typeof geminiApis)[number];

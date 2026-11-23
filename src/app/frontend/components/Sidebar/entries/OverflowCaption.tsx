@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { css } from "styled-system/css";
 
 import { localize } from "../../../i18n";
+import { uiBehavior } from "../../../presentation/preferences";
 
 const viewport = css({
     flexBasis: "0",
@@ -27,7 +28,7 @@ export function OverflowCaption({ text, className }: { text: string; className: 
     }
     const element = ref.current;
     if (!element) {
-      throw new Error(localize("frontend:sidebar.titleElementMissing"));
+      throw new Error(localize("diagnostics:sidebar.titleElementMissing"));
     }
     const motion = globalThis.matchMedia(
       "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
@@ -44,8 +45,9 @@ export function OverflowCaption({ text, className }: { text: string; className: 
         if (!motion.matches || distance <= 0) {
           return;
         }
-        const duration = distance * 35 + 1600,
-          pause = 800 / duration,
+        const { msPerPixel, pauseMs } = uiBehavior.marquee,
+          duration = distance * msPerPixel + 2 * pauseMs,
+          pause = pauseMs / duration,
           end = `translateX(-${distance}px)`;
         element.style.overflow = "visible";
         animation = element.animate(

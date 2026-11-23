@@ -15,7 +15,7 @@ export function FileLinkProvider({
 export function useFileLinkSession() {
   const sessionId = useContext(SessionContext);
   if (sessionId === undefined) {
-    throw new Error(localize("frontend:fileLink.sessionContextMissing"));
+    throw new Error(localize("diagnostics:fileLink.sessionContextMissing"));
   }
   return sessionId;
 }

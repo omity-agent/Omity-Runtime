@@ -2,18 +2,29 @@ import { APICallError } from "@ai-sdk/provider";
 import { version as undiciVersion } from "undici/package.json";
 import { z } from "zod";
 
-import { handshakeDiagnosticHeaders } from "../../../settings/networking";
 import {
   nonRetryableApiErrorTypes,
   nonRetryableWebsocketCloseCodes,
   retryableHandshakeStatuses,
-} from "../../../settings/resilience";
+} from "../../failures/classification";
 import { captureError, summarizeError } from "../../failures/details";
 import { localize } from "../../i18n/server";
 import type { SocketHandshake } from "../../infrastructure/network/handshakeChannels";
 import type { StreamEvidence } from "./streamEvidence";
 
-const responseErrorSchema = z.looseObject({
+const handshakeDiagnosticHeaders = new Set([
+    "cf-ray",
+    "connection",
+    "content-type",
+    "retry-after",
+    "sec-websocket-accept",
+    "sec-websocket-extensions",
+    "sec-websocket-protocol",
+    "server",
+    "upgrade",
+    "x-request-id",
+  ]),
+  responseErrorSchema = z.looseObject({
     message: z.string().min(1),
     type: z.string().optional(),
   }),
@@ -127,7 +138,7 @@ function describeAttempt(
     ...(attempt.headers
       ? {
           headers: Object.fromEntries(
-            [...attempt.headers].filter(([name]) => handshakeDiagnosticHeaders.includes(name)),
+            [...attempt.headers].filter(([name]) => handshakeDiagnosticHeaders.has(name)),
           ),
         }
       : {}),

@@ -8,12 +8,16 @@ import { userSettingsDirectory } from "./files";
 import { settingsProfileNameSchema, settingsProfileNamesSchema } from "./profileNames";
 
 export { settingsProfileNamesSchema } from "./profileNames";
+const bundledSettingsDirectory = applicationAssetPath(
+  resolve(import.meta.dir, "../../../.."),
+  "settings",
+);
 interface SettingsProfile {
   directory: string;
   name: string;
 }
 export interface SettingsContext {
-  defaultsDirectory: string;
+  bundledDirectory: string;
   profiles: SettingsProfile[];
   root: string;
   userDirectory: string;
@@ -32,7 +36,7 @@ export function createSettingsContext(
         ? settingsProfileNamesSchema.parse(readSettingsYamlValue(selectionPath))
         : []);
   return {
-    defaultsDirectory: applicationAssetPath(resolvedRoot, "settings"),
+    bundledDirectory: bundledSettingsDirectory,
     profiles: resolveProfiles(resolvedUserDirectory, names),
     root: resolvedRoot,
     userDirectory: resolvedUserDirectory,

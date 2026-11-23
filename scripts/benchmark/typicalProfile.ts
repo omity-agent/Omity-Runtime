@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { parse, stringify } from "yaml";
@@ -9,7 +9,6 @@ import {
   parseAgentSettings,
   parseModelSettings,
 } from "../../src/infrastructure/configuration/settings/schema";
-import { emptyMcpConfiguration } from "../../src/infrastructure/mcp/configuration";
 
 const positive = z.number().int().positive(),
   contextSchema = z
@@ -70,26 +69,28 @@ const positive = z.number().int().positive(),
 export type TypicalContext = z.infer<typeof contextSchema>;
 export type LatencyProfile = z.infer<typeof profileSchema>;
 export async function readLatencyProfile(repository: string) {
-  const text = await readFile(join(repository, "settings/benchmarks/mcpLatency.yaml"), "utf8");
+  const text = await readFile(join(repository, "settings/mcpLatency.yaml"), "utf8");
   return profileSchema.parse(parse(text) as unknown);
 }
 export async function prepareBenchmarkSettings(
   root: string,
-  repository: string,
   profile: LatencyProfile,
   systemPrompt: string,
   toolsPath: string,
 ) {
-  const directory = join(root, "settings");
+  const userDirectory = join(root, "benchmark-settings"),
+    isolation = join(userDirectory, "profiles", "isolated"),
+    directory = join(userDirectory, "profiles", "latency");
   await mkdir(join(directory, "prompts"), { recursive: true });
-  await copyFile(join(repository, "settings/main.yaml"), join(directory, "main.yaml"));
-  await Promise.all(
-    Object.entries({
+  await mkdir(isolation, { recursive: true });
+  const files: [string, unknown][] = [
+    [join(userDirectory, "main.yaml"), { prediction: null }],
+    [join(isolation, "toolbox.yaml"), { mcpServers: {}, toolNameOverrides: {}, toolboxes: {} }],
+    ...Object.entries({
       "agent.yaml": profile.agent,
       "hooks.yaml": { hooks: [] },
       "model.yaml": profile.model,
       "toolbox.yaml": {
-        ...emptyMcpConfiguration(),
         mcpServers: {
           bench: {
             args: [join(import.meta.dir, "emptyStdio.ts"), toolsPath],
@@ -97,8 +98,9 @@ export async function prepareBenchmarkSettings(
           },
         },
       },
-    }).map(([file, value]) => writeFile(join(directory, file), stringify(value))),
-  );
+    }).map(([file, value]): [string, unknown] => [join(directory, file), value]),
+  ];
+  await Promise.all(files.map(([file, value]) => writeFile(file, stringify(value))));
   await writeFile(join(directory, "prompts/synthetic.md"), systemPrompt);
-  return (home: string) => createSettingsContext(root, join(home, "settings"), []);
+  return createSettingsContext(root, userDirectory, ["isolated", "latency"]);
 }

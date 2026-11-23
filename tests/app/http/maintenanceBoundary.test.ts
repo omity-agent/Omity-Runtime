@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { AppController } from "../../../src/app/controller";
 import { createApi } from "../../../src/app/http/handler";
 import { sessionPaths } from "../../../src/infrastructure/configuration/sessionPaths";
+import { loadSettings } from "../../../src/infrastructure/configuration/settings/load";
 import { AgentDatabase } from "../../../src/infrastructure/database/agentDatabase";
 import { hostOwnerId } from "../../../src/infrastructure/process/ownership";
 import { createTestDirectory } from "../../support/artifacts";
@@ -26,7 +27,7 @@ test("controller permits cleanup while running and rejects unknown sessions", as
   const paths = sessionPaths("cleanup-running"),
     db = new AgentDatabase(paths.dbPath);
   roots.push(root, paths.dir);
-  writeTestConfiguration(root);
+  const { context } = writeTestConfiguration(root);
   db.createSession("cleanup-running", root);
   const inputId = db.appendUser("cleanup-running", "running task");
   db.setRunStatus(runOf(db, inputId), "running");
@@ -38,9 +39,9 @@ test("controller permits cleanup while running and rejects unknown sessions", as
   });
   db.close();
   writeFileSync(join(paths.tempDir, "scratch.txt"), "temporary");
-  const controller = new AppController(root);
+  const controller = new AppController(root, { settingsContext: context });
   try {
-    const api = createApi(controller),
+    const api = createApi(controller, loadSettings(root, { settingsContext: context })),
       response = await api.request("/api/sessions/cleanup-running/temporary-files", {
         method: "DELETE",
       });

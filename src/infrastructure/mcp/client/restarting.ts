@@ -6,15 +6,13 @@ import { raceSignal } from "race-signal";
 import { captureError, summarizeError } from "../../../failures/details";
 import { localize } from "../../../i18n/server";
 import type { Logger } from "../../logging/logger";
+import type { McpConfiguration } from "../configuration";
 import type { StdioConnection } from "../configuration/connections";
-import {
-  McpStdioProcessExitedError,
-  McpStdioUnavailableError,
-  type StdioRestartPolicy,
-} from "./availability";
+import { McpStdioProcessExitedError, McpStdioUnavailableError } from "./availability";
 import type { McpOperations } from "./protocol";
 import { type ConnectedStdioClient, connectStdioClient } from "./stdio";
 
+type StdioClientPolicy = Pick<McpConfiguration, "diagnostics" | "stdio">;
 export class RestartingStdioClient implements McpOperations {
   private readonly controller = new AbortController();
   private current?: ConnectedStdioClient;
@@ -25,17 +23,17 @@ export class RestartingStdioClient implements McpOperations {
   private constructor(
     private readonly serverName: string,
     private readonly connection: StdioConnection,
-    private readonly policy: StdioRestartPolicy,
+    private readonly policy: StdioClientPolicy,
     private readonly logger: Logger,
   ) {}
   static async create(
     serverName: string,
     connection: StdioConnection,
-    policy: StdioRestartPolicy,
+    policy: StdioClientPolicy,
     logger: Logger,
   ) {
     const client = new RestartingStdioClient(serverName, connection, policy, logger);
-    client.install(await connectStdioClient(serverName, connection, client.controller.signal));
+    await client.connect();
     return client;
   }
   callTool: McpOperations["callTool"] = (params, options) =>
@@ -88,10 +86,6 @@ export class RestartingStdioClient implements McpOperations {
       await raceSignal(this.ensureRecovery(), signal);
       throw failure;
     }
-  }
-  private install(connection: ConnectedStdioClient) {
-    this.current = connection;
-    void this.observeClosure(connection);
   }
   private async observeClosure(connection: ConnectedStdioClient) {
     await connection.closed;
@@ -158,16 +152,16 @@ export class RestartingStdioClient implements McpOperations {
     }
   }
   private async restart() {
-    const { signal } = this.controller;
-    while (this.restartAttempts < this.policy.maxAttempts) {
+    const { signal } = this.controller,
+      { delayMs, maxAttempts } = this.policy.stdio.restart;
+    while (this.restartAttempts < maxAttempts) {
       if (this.restartAttempts > 0) {
-        await sleep(this.policy.delayMs, undefined, { signal });
+        await sleep(delayMs, undefined, { signal });
       }
       signal.throwIfAborted();
       const attempt = ++this.restartAttempts;
       try {
-        const connection = await connectStdioClient(this.serverName, this.connection, signal);
-        this.install(connection);
+        const connection = await this.connect();
         this.logger.info(localize("mcp:client.processRestarted"), {
           attempt,
           server: this.serverName,
@@ -180,19 +174,26 @@ export class RestartingStdioClient implements McpOperations {
         this.lastFailure = error;
         this.logger.warn(localize("mcp:client.processRestartFailed"), {
           attempt,
-          maximum: this.policy.maxAttempts,
+          maximum: maxAttempts,
           server: this.serverName,
         });
       }
     }
-    this.unavailable = new McpStdioUnavailableError(
-      this.serverName,
-      this.policy.maxAttempts,
-      this.lastFailure,
-    );
+    this.unavailable = new McpStdioUnavailableError(this.serverName, maxAttempts, this.lastFailure);
     this.logger.error(this.unavailable.message, {
       lastFailure: summarizeError(captureError(this.lastFailure)),
     });
     throw this.unavailable;
+  }
+  private async connect() {
+    const connection = await connectStdioClient(
+      this.serverName,
+      this.connection,
+      this.policy.diagnostics,
+      this.controller.signal,
+    );
+    this.current = connection;
+    void this.observeClosure(connection);
+    return connection;
   }
 }

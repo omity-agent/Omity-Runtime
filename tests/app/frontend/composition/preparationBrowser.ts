@@ -2,6 +2,8 @@ import type { Page } from "playwright";
 
 import { composerDraftBody } from "../../../../src/app/contracts/commands";
 import type { SessionInfo } from "../../../../src/app/events/contracts";
+import { compactViewport } from "../../../../src/app/frontend/presentation/preferences";
+import { testSettings } from "../../../support/configuration";
 import type { BrowserSession } from "../scrolling/browserSession";
 
 export const projectPaths = ["/projects/atlas", "/projects/beacon"];
@@ -20,6 +22,17 @@ export const fixtureSessions: SessionInfo[] = [
   { ...working, id: "history", status: "idle", title: "History" },
   { ...working, id: "other", title: "Other", workspace: projectPaths[1]! },
 ];
+export async function setPreparationLayout(page: Page, layout: "compact" | "wide") {
+  const compact = layout === "compact",
+    widths = compact ? [390, 320, 240] : [1440, 1920, 2560, 3840];
+  for (const width of widths) {
+    await page.setViewportSize({ height: compact ? 844 : 900, width });
+    if ((await page.evaluate((query) => matchMedia(query).matches, compactViewport)) === compact) {
+      return;
+    }
+  }
+  throw new Error(`No fixture viewport matches the ${layout} layout: ${compactViewport}`);
+}
 export async function emitState(
   page: Page,
   name: "session" | "restore",
@@ -41,12 +54,14 @@ export async function openPreparation(
   browser: BrowserSession,
   suggestions: { messages?: string[]; predictions?: string[] } = {},
 ) {
+  const { attachments, frontend } = testSettings();
   let draft: { content: string | null; revision: number } = { content: null, revision: 0 },
     composer: typeof draft = { content: null, revision: 0 };
   const errors: string[] = [],
     page = await browser.openFixture(
       "/tests/app/frontend/composition/applicationShell.html",
       async (fixture) => {
+        await setPreparationLayout(fixture, "wide");
         fixture.on("pageerror", (error) => errors.push(error.message));
         await fixture.addInitScript(() => {
           Object.defineProperty(globalThis, "EventSource", {
@@ -76,17 +91,11 @@ export async function openPreparation(
                 publicOrigin: "https://example.com",
               },
               "/api/bootstrap": {
-                attachments: { allowedSuffixes: [".txt"], maxSizeBytes: 1024 },
+                attachments,
                 cwd: projectPaths[0],
                 frontend: {
-                  cacheHitWarningRatio: 0.9,
-                  draftSaveDelayMs: 500,
-                  reasoningTranslation: {
-                    enabled: false,
-                    highConfidenceThreshold: 0.8,
-                    minimumIntervalMs: 0,
-                  },
-                  transcriptSnapshotThrottleMs: 250,
+                  ...frontend,
+                  reasoningTranslation: { ...frontend.reasoningTranslation, enabled: false },
                 },
                 profiles: { available: ["alternate", "limited"] },
                 sessions: fixtureSessions,

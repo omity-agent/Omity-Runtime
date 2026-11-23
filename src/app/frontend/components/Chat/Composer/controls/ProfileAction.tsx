@@ -1,9 +1,9 @@
 import { Check, LoaderCircle } from "lucide-react";
 import { type ChangeEvent, useCallback, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 import { visuallyHidden } from "styled-system/patterns";
 
+import { useTranslation } from "../../../../i18n";
 import { reportPromiseErrors } from "../../../../services/errors";
 import { Field, IconButton, Select } from "../../../ui";
 
@@ -59,14 +59,14 @@ export function ProfileAction({
   return (
     <div className={action}>
       <Field.Root className={field} disabled={disabled || pending}>
-        <Field.Label className={hiddenLabel}>{t("profile")}</Field.Label>
+        <Field.Label className={hiddenLabel}>{t("preparation:profile")}</Field.Label>
         <Select
           className={select}
           name="session-profile"
           onChange={change}
           value={selectedProfile ?? ""}
         >
-          <option value="">{t("defaultProfile")}</option>
+          <option value="">{t("preparation:defaultProfile")}</option>
           {availableProfiles.map((profile) => (
             <option key={profile} value={profile}>
               {profile}
@@ -76,10 +76,10 @@ export function ProfileAction({
       </Field.Root>
       <IconButton
         aria-busy={pending}
-        aria-label={t("confirmProfile")}
+        aria-label={t("conversation:confirmProfile")}
         disabled={disabled || pending || !changed}
         onClick={confirm}
-        title={t("confirmProfile")}
+        title={t("conversation:confirmProfile")}
         type="button"
       >
         {pending ? (

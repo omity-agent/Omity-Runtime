@@ -1,0 +1,56 @@
+toolboxes:
+  # 内置工具按实现标识配置；name 是向模型公开的名称。
+  choice:
+    enabled: true
+    defer_loading: false # 延迟向模型加载工具定义；启用时自动添加服务端工具搜索。
+    name: ask_user__choice
+    description: "不可以主动推荐特定选项。"
+    parameters:
+      multiple:
+        description: ""
+      options:
+        description: "选项应只包含单个决策，不可以把一连串决策绑定在一起。"
+        itemDescription: ""
+        minLength: 1 # 每个选项的最小字符串长度。
+        minItems: 2
+      question:
+        description: ""
+        minLength: 1
+  open_ended:
+    enabled: true
+    defer_loading: false
+    name: ask_user__open_ended
+    description: "如果有多个问题，必须分别调用该工具，而不是写进单个 question。"
+    parameters:
+      question:
+        description: ""
+        minLength: 1
+  update_title:
+    enabled: true
+    defer_loading: false
+    name: update_title
+    description: 更新当前 Session 的标题。你应经常更新 Session 标题，确保其始终足够贴切。在本 Session 第一次对话结束前，你至少更新一次标题。
+    parameters:
+      title:
+        description: 标题的功能是让用户能够在 Session 列表快速重新找到该 Session，所以标题应极其简短、信息密度高，代表完整对话轨迹而不是末状态。不应包含逗号，谨慎使用并列连词。
+        minTokens: 2 # 标题长度下限。
+        maxTokens: 12 # 标题长度上限。
+    errors:
+      invalidLength: 标题长度超出允许范围
+stdio:
+  restart:
+    delayMs: 1000
+    maxAttempts: 3
+diagnostics:
+  stderrBytes: 65536
+  stdoutBytes: 4096
+  transportErrors: 16
+# MCP 服务器可设置 defer_loading: true，作用于其全部工具（默认 false）。
+# 服务器可设置 prefixToolNameWithServerName: false，使用原始工具名；
+# 默认为 true，工具名为“服务器名__工具名”。
+# 服务器可设置 excludedTools: [delete_file, execute_command] 排除指定工具；
+# toolNameOverrides 的源名称使用此前缀设置生效后的工具名；
+# toolDescriptionOverrides 和 freeformToolInputs 放在各 MCP 服务器配置内，
+# 使用服务器提供的工具原名，不含服务器前缀，不受 toolNameOverrides 影响。
+mcpServers: {}
+toolNameOverrides: {}

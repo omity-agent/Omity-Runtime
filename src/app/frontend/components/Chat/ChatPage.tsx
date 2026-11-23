@@ -1,10 +1,10 @@
-import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
 import { type Control, isRunningStatus, type SessionStatus } from "../../../../types";
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
 import type { InitialSessionState } from "../../../initialState";
 import type { TimelineMessage } from "../../../timeline";
+import { useTranslation } from "../../i18n";
 import type { FrontendSettings } from "../../services/client";
 import { composerDraftKey, type ComposerDraftTarget } from "../../services/composerDrafts";
 import type { useNewSessionDraft } from "../../services/preparation/editorState";
@@ -122,7 +122,7 @@ export function ChatPage({
     }
     return (
       <div className={page}>
-        <div className={empty}>{t("empty")}</div>
+        <div className={empty}>{t("shell:empty")}</div>
       </div>
     );
   }
@@ -130,7 +130,7 @@ export function ChatPage({
     <div className={page}>
       <FileLinkProvider sessionId={activeId}>
         {view.length === 0 ? (
-          <div className={empty}>{t("noMessages")}</div>
+          <div className={empty}>{t("conversation:noMessages")}</div>
         ) : (
           <Transcript
             allowFork={allowFork}

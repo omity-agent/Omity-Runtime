@@ -1,3 +1,5 @@
+import { transcriptWindow } from "../../../presentation/preferences";
+
 function ownsScroll(viewport: HTMLElement, target: EventTarget | null, delta: number) {
   const canScroll = (element: HTMLElement) =>
     delta < 0
@@ -22,7 +24,10 @@ function isScrollbarPointer(viewport: HTMLElement, event: PointerEvent | MouseEv
     return false;
   }
   const bounds = viewport.getBoundingClientRect(),
-    scrollbarWidth = Math.max(viewport.offsetWidth - viewport.clientWidth, 16);
+    scrollbarWidth = Math.max(
+      viewport.offsetWidth - viewport.clientWidth,
+      transcriptWindow.minimumScrollbarWidthPx,
+    );
   return (
     event.clientX >= bounds.right - scrollbarWidth &&
     event.clientY >= bounds.top &&

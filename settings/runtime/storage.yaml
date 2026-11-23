@@ -1,0 +1,7 @@
+sqlite:
+  busyTimeoutMs: 5000
+  journalSizeLimitBytes: 4194304
+  vacuumPages: 64
+deletion:
+  maxRetries: 50
+  retryDelayMs: 50

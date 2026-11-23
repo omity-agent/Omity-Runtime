@@ -118,6 +118,6 @@ function clientControl<const T extends "pause" | "cancel">(action: T, brief: str
     { brief: message`${text(brief)}` },
   );
 }
-function localized(key: string, options?: Parameters<typeof localize>[1]) {
+function localized(...[key, options]: Parameters<typeof localize>) {
   return message`${text(localize(key, options))}`;
 }

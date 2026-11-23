@@ -64,7 +64,7 @@ export function readLayeredSettingsYaml(
   placeholders: Omit<PlaceholderOptions, "source"> = {},
   transforms: LayeredSettingsTransforms = {},
 ): LayeredSettingsFile | undefined {
-  const defaultPath = resolve(context.defaultsDirectory, relativePath),
+  const defaultPath = bundledYamlPath(context, relativePath),
     overrideDirectories =
       scope === "global"
         ? [context.userDirectory]
@@ -120,6 +120,26 @@ export function readLayeredSettingsYaml(
     value: resolved,
   };
 }
+export function bundledYamlPath(context: SettingsContext, relativePath: string) {
+  return resolve(context.bundledDirectory, "defaults", relativePath);
+}
+export function requireLayeredSettingsYaml(
+  context: SettingsContext,
+  scope: SettingsScope,
+  relativePath: string,
+  placeholders: Omit<PlaceholderOptions, "source"> = {},
+  transforms: LayeredSettingsTransforms = {},
+) {
+  const file = readLayeredSettingsYaml(context, scope, relativePath, placeholders, transforms);
+  if (!file) {
+    throw new Error(
+      localize("configuration:settings.fileMissing", {
+        value0: bundledYamlPath(context, relativePath),
+      }),
+    );
+  }
+  return file;
+}
 export function resolveLayeredSettingsText(
   context: SettingsContext,
   scope: SettingsScope,
@@ -127,8 +147,8 @@ export function resolveLayeredSettingsText(
 ) {
   const directories =
       scope === "global"
-        ? [context.defaultsDirectory, context.userDirectory]
-        : [context.defaultsDirectory, ...context.profiles.map(({ directory }) => directory)],
+        ? [context.bundledDirectory, context.userDirectory]
+        : [context.bundledDirectory, ...context.profiles.map(({ directory }) => directory)],
     path = directories
       .map((directory) => resolve(directory, relativePath))
       .findLast((candidate) => existsSync(candidate) && statSync(candidate).isFile());

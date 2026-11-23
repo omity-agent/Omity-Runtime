@@ -1,6 +1,7 @@
 import { Agent, type Dispatcher, ProxyAgent } from "undici/index.js";
 
-import { outboundAgentOptions } from "../../../settings/networking";
+import outboundAgentOptions from "#settings/transport/outbound.yaml";
+
 import { localize } from "../../i18n/server";
 import { connectionContext } from "./connectionEvidence";
 

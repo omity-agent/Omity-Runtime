@@ -29,7 +29,7 @@ export function DisclosureProvider({
 export function useDisclosure(stateKey: string, expandedInitially: boolean) {
   const context = useContext(DisclosureContext);
   if (!context) {
-    throw new Error(localize("frontend:transcript.disclosureContextMissing"));
+    throw new Error(localize("diagnostics:transcript.disclosureContextMissing"));
   }
   const { registerDetail, states } = context,
     [open, setOpen] = useState(() => states.current.get(stateKey) ?? expandedInitially),

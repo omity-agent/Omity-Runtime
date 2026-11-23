@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { requestBodyLimit } from "../../../settings/networking";
 import { fileLinkActionSchema } from "../../fileLinks/types";
 import { settingsProfileNameSchema } from "../../infrastructure/configuration/settings/profileNames";
 import { controlCommandSchema } from "../../types";
@@ -26,7 +25,7 @@ export const forkMaterializationBody = z.strictObject({
 });
 export const reasoningTranslationBody = z.strictObject({
   messageId: z.string().min(1).max(1024),
-  source: z.string().min(1).max(requestBodyLimit),
+  source: z.string().min(1),
   targetLanguage: z.string().min(1).max(255),
-  translated: z.string().min(1).max(requestBodyLimit),
+  translated: z.string().min(1),
 });

@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import { AppController } from "../../src/app/controller";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
+import { settingsProfileNames } from "../../src/infrastructure/configuration/settings/context";
 import { userDataDirectory } from "../../src/infrastructure/configuration/settings/files";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { emptySessionDefinition } from "../../src/infrastructure/database/session/sessionDefinition";
@@ -26,7 +27,7 @@ test("app startup atomically pauses an orphaned run", async () => {
   const fixture = interruptedSession("orphan"),
     pending = fixture.db.appendUser("orphan", "尚未消费的追加输入");
   fixture.db.close();
-  const controller = new AppController(fixture.root),
+  const controller = new AppController(fixture.root, { settingsContext: fixture.context }),
     transcript = controller.transcript("orphan");
   expect(controller.bootstrap().sessions[0]?.status).toBe("paused");
   expect(transcript.control).toBe("pause");
@@ -43,7 +44,7 @@ test("app startup preserves the activity time of an already paused session", asy
   fixture.db.db.run("UPDATE sessions SET updated_at = 1 WHERE id = 'already-paused'");
   fixture.db.db.run("UPDATE messages SET created_at = 1 WHERE session_id = 'already-paused'");
   fixture.db.close();
-  const controller = new AppController(fixture.root);
+  const controller = new AppController(fixture.root, { settingsContext: fixture.context });
   expect(controller.bootstrap().sessions[0]?.updatedAt).toBe(1);
   await controller.close();
 });
@@ -61,7 +62,10 @@ test("app startup reclaims the lease of its terminated predecessor", async () =>
     ttlMs: 30_000,
   });
   fixture.db.close();
-  const controller = new AppController(fixture.root, { abandonedOwner }),
+  const controller = new AppController(fixture.root, {
+      abandonedOwner,
+      settingsContext: fixture.context,
+    }),
     reopened = openSession("abandoned");
   expect(reopened.control("abandoned")).toBe("pause");
   expect(reopened.runStatus(runOf(reopened, fixture.inputId))).toBe("paused");
@@ -82,7 +86,7 @@ test("app startup never takes over a live standalone host", async () => {
     ttlMs: 30_000,
   });
   fixture.db.close();
-  const controller = new AppController(fixture.root),
+  const controller = new AppController(fixture.root, { settingsContext: fixture.context }),
     reopened = openSession("live");
   expect(reopened.control("live")).toBe("running");
   expect(reopened.runStatus(runOf(reopened, fixture.inputId))).toBe("running");
@@ -110,8 +114,8 @@ test("standalone Host uses the shared interrupted-session recovery", () => {
 test("resume reloads the current MCP configuration", async () => {
   const fixture = interruptedSession("resume-failure");
   fixture.db.close();
-  writeFileSync(join(fixture.root, "settings", "toolbox.yaml"), "[]\n");
-  const controller = new AppController(fixture.root),
+  writeFileSync(join(fixture.profileDirectory, "toolbox.yaml"), "[]\n");
+  const controller = new AppController(fixture.root, { settingsContext: fixture.context }),
     failures = spyOn(controller.events, "notifyFailure");
   try {
     let caught: unknown;
@@ -137,8 +141,8 @@ test("resume reloads the current MCP configuration", async () => {
 function interruptedSession(sessionId: string) {
   const root = createTestDirectory("app-recovery");
   roots.push(root);
-  writeTestConfiguration(root);
-  const workspace = join(root, "workspace");
+  const configuration = writeTestConfiguration(root),
+    workspace = join(root, "workspace");
   mkdirSync(workspace);
   const db = openSession(sessionId),
     definition = emptySessionDefinition();
@@ -148,10 +152,10 @@ function interruptedSession(sessionId: string) {
     model: "test",
     reasoning_effort: "medium",
   };
-  db.createSession(sessionId, workspace, [], definition);
+  db.createSession(sessionId, workspace, settingsProfileNames(configuration.context), definition);
   const inputId = db.appendUser(sessionId, "运行中的输入");
   db.consumeInput(sessionId, required(db.nextInput(sessionId)));
-  return { db, inputId, root };
+  return { ...configuration, db, inputId, root };
 }
 function openSession(sessionId: string) {
   return new AgentDatabase(sessionPaths(sessionId).dbPath);

@@ -39,7 +39,7 @@ export class ReasoningTranslationCoordinator {
       (job) => {
         const signal = this.queue.getAbortSignal();
         if (!signal) {
-          throw new Error(localize("translationAbortSignalMissing"));
+          throw new Error(localize("translation:abortSignalMissing"));
         }
         return this.translate(job, signal);
       },
@@ -151,7 +151,7 @@ export class ReasoningTranslationCoordinator {
     if (error instanceof UnsupportedLanguagePairError) {
       const highConfidence = error.confidence >= this.options.highConfidenceThreshold;
       console.warn(
-        localize(highConfidence ? "translationSkipReasoning" : "translationRetryDetection", {
+        localize(highConfidence ? "translation:skipReasoning" : "translation:retryDetection", {
           confidence: error.confidence,
           messageId: job.candidate.messageId,
           sourceLanguage: error.sourceLanguage,

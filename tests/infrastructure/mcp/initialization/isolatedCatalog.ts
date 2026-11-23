@@ -1,32 +1,26 @@
-import { mkdirSync, rmSync } from "node:fs";
+import { rmSync } from "node:fs";
 import { join } from "node:path";
 
-import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
 import { Logger } from "../../../../src/infrastructure/logging/logger";
 import { McpLoadError } from "../../../../src/infrastructure/mcp/failures/reportConstruction";
 import { loadMcp } from "../../../../src/infrastructure/mcp/tools/catalog";
 import { createTestDirectory } from "../../../support/artifacts";
-import { defaultBuiltIns, writeToolboxConfiguration } from "../../../support/builtins";
+import { fixtureDiagnosticLimits } from "../../../support/builtins";
+import { testProfiles, writeFixtureYaml } from "../../../support/configuration";
 
 export const failingStartupPath = join(import.meta.dir, "failingStartup.ts");
-export function configureFailure(root: string, mcpServers: Record<string, unknown>) {
-  writeToolboxConfiguration(root, {
+export function configureFailure(profileDirectory: string, mcpServers: Record<string, unknown>) {
+  writeFixtureYaml(profileDirectory, "toolbox", {
+    diagnostics: fixtureDiagnosticLimits,
     mcpServers,
     stdio: { restart: { delayMs: 0, maxAttempts: 1 } },
-    toolboxes: Object.fromEntries(
-      Object.entries(defaultBuiltIns()).map(([name, configuration]) => [
-        name,
-        { ...configuration, enabled: false },
-      ]),
-    ),
   });
 }
 export async function failedCatalog(mcpServers: Record<string, unknown>) {
   const root = createTestDirectory("mcp-failure-diagnostics");
-  mkdirSync(join(root, "settings"));
-  configureFailure(root, mcpServers);
   try {
-    const context = createSettingsContext(root, join(root, "user-settings"));
+    const { context, profileDirectory } = testProfiles(root);
+    configureFailure(profileDirectory, mcpServers);
     try {
       const loaded = await loadMcp(root, new Logger("error", true), context, { cwd: root });
       await loaded.close();

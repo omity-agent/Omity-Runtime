@@ -1,10 +1,10 @@
 import { type ComponentProps, useDeferredValue, useMemo, useRef } from "react";
-import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 import { Virtualizer, type VirtualizerHandle } from "virtua";
 
-import { transcriptWindow } from "../../../../../settings/rendering";
 import type { TimelineMessage } from "../../../timeline";
+import { useTranslation } from "../../i18n";
+import { transcriptWindow } from "../../presentation/preferences";
 import { findLatestDetails } from "../Chat/messages/detailFocus";
 import { Message } from "../Chat/messages/Message";
 import { MessageCopies, useMessageCopies } from "./actions/PinnedCopy";
@@ -59,7 +59,12 @@ export function Transcript({
     });
   return (
     <DisclosureProvider registerDetail={registerDetail}>
-      <section aria-label={t("conversation")} className={viewport} ref={scrollRef} tabIndex={0}>
+      <section
+        aria-label={t("conversation:conversation")}
+        className={viewport}
+        ref={scrollRef}
+        tabIndex={0}
+      >
         <div className={content} ref={contentRef}>
           <Virtualizer
             as={FlowWindow}

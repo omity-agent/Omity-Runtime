@@ -81,7 +81,7 @@ export function useNewSessionDraft({
         return;
       }
       if (!flushComposerDraft(target, JSON.stringify(draftRef.current), revisionRef.current)) {
-        reportError(new Error(localize("frontend:newSession.draftSaveFailed")));
+        reportError(new Error(localize("diagnostics:newSession.draftSaveFailed")));
       }
     };
     window.addEventListener("pagehide", flush);
@@ -98,7 +98,7 @@ export function useNewSessionDraft({
   }, []);
   const update = (change: DraftUpdate) => {
       if (revisionRef.current >= Number.MAX_SAFE_INTEGER) {
-        throw new Error(localize("frontend:newSession.draftRevisionUnsafe"));
+        throw new Error(localize("diagnostics:newSession.draftRevisionUnsafe"));
       }
       const next = {
         ...draftRef.current,

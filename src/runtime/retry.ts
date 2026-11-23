@@ -1,3 +1,5 @@
+import scheduling from "#settings/runtime/scheduling.yaml";
+
 import { captureError } from "../failures/details";
 import { localize } from "../i18n/server";
 import type { BrowserWarning } from "../types";
@@ -57,7 +59,7 @@ export async function waitBeforeModelRetry(
     if (control === "pause" || control === "pause_cancel") {
       return controls.pause();
     }
-    await waitForWake(ctx, Math.min(250, deadline - Date.now()));
+    await waitForWake(ctx, Math.min(scheduling.modelRetryPollMs, deadline - Date.now()));
   }
   return true;
 }

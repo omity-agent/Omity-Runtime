@@ -1,7 +1,8 @@
 import { machine, platform, release } from "node:os";
 
-import { codexProtocol } from "../../../settings/openai/codexProtocol";
-import { terminalProbes } from "../../../settings/openai/terminalProbes";
+import terminalProbes from "#settings/transport/terminal.yaml";
+
+import { codexProtocol } from "./protocol";
 
 function terminalIdentity(environment: NodeJS.ProcessEnv = process.env) {
   const program = environment["TERM_PROGRAM"],

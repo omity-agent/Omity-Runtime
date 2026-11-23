@@ -37,7 +37,7 @@ export async function request<T>(
     parsed = schema.safeParse(json);
   if (!parsed.success) {
     throw new Error(
-      localize("frontend:api.successResponseInvalid", {
+      localize("diagnostics:api.successResponseInvalid", {
         value0: response.status.toString(),
       }),
       {
@@ -53,7 +53,7 @@ async function fetchApi(input: RequestInfo | URL, init?: RequestInit): Promise<R
     const parsed = errorResponse.safeParse(await response.json());
     if (!parsed.success) {
       throw new Error(
-        localize("frontend:api.errorResponseInvalid", {
+        localize("diagnostics:api.errorResponseInvalid", {
           value0: response.status.toString(),
         }),
       );

@@ -3,19 +3,30 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { expect as browserExpect } from "playwright/test";
 
 import { BrowserSession } from "../scrolling/browserSession";
-import { emitState, fixtureSessions, openPreparation, projectPaths } from "./preparationBrowser";
+import {
+  emitState,
+  fixtureSessions,
+  openPreparation,
+  projectPaths,
+  setPreparationLayout,
+} from "./preparationBrowser";
 
-const browser = new BrowserSession();
+const browser = new BrowserSession({
+  "interaction.yaml": {
+    recentSessions: fixtureSessions.length,
+    recentWorkspaces: projectPaths.length,
+  },
+});
 beforeAll(() => browser.start(), 60_000);
 afterAll(() => browser.stop());
-test.each([1440, 390])(
-  "project selection stays independent of recent sessions at width %s",
-  async (width) => {
+test.each(["wide", "compact"] as const)(
+  "project selection stays independent of recent sessions in %s layout",
+  async (layout) => {
     const fixture = await openPreparation(browser);
     await using page = fixture.page;
-    await page.setViewportSize({ height: 900, width });
+    await setPreparationLayout(page, layout);
     const showSessions = async () => {
-      if (width === 390) {
+      if (layout === "compact") {
         await page.getByRole("button", { exact: true, name: "会话列表" }).click();
       }
     };
@@ -91,7 +102,7 @@ test("setup adapts from side-by-side columns to a narrow screen with accessible 
   await browserExpect(
     page.locator("aside header").getByRole("link", { name: "管理通行密钥" }),
   ).toBeVisible();
-  await page.setViewportSize({ height: 844, width: 390 });
+  await setPreparationLayout(page, "compact");
   expect((await workspace.boundingBox())!.y).toBeLessThan((await profile.boundingBox())!.y);
   await page.getByRole("button", { exact: true, name: "会话列表" }).click();
   await page

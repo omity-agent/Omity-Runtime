@@ -1,6 +1,5 @@
 import { type Dispatcher, WebSocket } from "undici/index.js";
 
-import { websocketHandshakeHeaders } from "../../../settings/networking";
 import { localize } from "../../i18n/server";
 import { explicitHeaderDispatcher, type OutboundFetch } from "./explicitHeaders";
 import { registerHandshakeChannels, SocketHandshake } from "./handshakeChannels";
@@ -10,7 +9,15 @@ interface OutboundSocket {
   socket: WebSocket;
 }
 type SocketConnector = (url: URL, headers: Headers) => OutboundSocket;
-const connectors = new WeakMap<object, SocketConnector>();
+const connectors = new WeakMap<object, SocketConnector>(),
+  websocketHandshakeHeaders = [
+    "connection",
+    "sec-websocket-extensions",
+    "sec-websocket-key",
+    "sec-websocket-protocol",
+    "sec-websocket-version",
+    "upgrade",
+  ];
 export function registerSocketTransport(fetch: OutboundFetch, connect: SocketConnector) {
   connectors.set(fetch, connect);
 }

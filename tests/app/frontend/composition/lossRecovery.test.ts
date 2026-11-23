@@ -20,7 +20,7 @@ test("new session restores all edits and pasted file bytes after navigation and 
     hook = page.getByRole("switch", { exact: true, name: "shared-hook" }),
     optional = page.getByRole("switch", { exact: true, name: "optional-hook" }),
     server = page.getByRole("switch", { exact: true, name: "shared-server" }),
-    builtIn = page.getByRole("group", { name: "内置工具" }).getByRole("switch"),
+    builtIn = page.getByRole("switch", { exact: true, name: "ask_choices" }),
     users = page.locator(".cm-content"),
     assistant = users.nth(1),
     customWorkspace = `${projectPaths[1]}/unsent`;
@@ -44,7 +44,10 @@ test("new session restores all edits and pasted file bytes after navigation and 
   });
   const message = (await users.last().textContent())!;
   expect(message).toContain("{{file:");
-  await page.getByRole("region", { name: "近期" }).getByRole("link", { name: "Working" }).click();
+  await page
+    .getByRole("region", { name: "项目会话" })
+    .getByRole("link", { name: "Working" })
+    .click();
   await page.getByRole("link", { exact: true, name: "新建会话" }).click();
   await browserExpect(workspace).toHaveValue(customWorkspace);
   await page.reload({ waitUntil: "networkidle" });

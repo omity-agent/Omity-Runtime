@@ -1,8 +1,8 @@
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useEffectEvent, useMemo, useRef } from "react";
-import { useTranslation } from "react-i18next";
 
 import type { ReasoningTranslation, TimelineMessage } from "../../../timeline";
+import { useTranslation } from "../../i18n";
 import { saveReasoningTranslation } from "../client";
 import { reportError } from "../errors";
 import { transcriptKey } from "../transcript/query";
@@ -41,7 +41,7 @@ export function useTranslatedTranscript(
       return;
     }
     if (!browserTranslationSupported()) {
-      warnUnsupportedBrowser(t("reasoningTranslationUnsupported"));
+      warnUnsupportedBrowser(t("translation:unsupported"));
       return;
     }
     const targetLanguage = preferredTranslationLanguage(),

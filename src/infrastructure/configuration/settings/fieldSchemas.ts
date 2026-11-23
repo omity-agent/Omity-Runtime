@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { requestBodyLimit } from "../../../../settings/networking";
 import { localize } from "../../../i18n/server";
 
 const suffixSchema = z
@@ -18,11 +17,7 @@ export const attachmentSettingsSchema = z.strictObject({
       (suffixes) => new Set(suffixes).size === suffixes.length,
       localize("configuration:settings.schema.duplicateSuffixes"),
     ),
-  maxSizeBytes: z
-    .number()
-    .int()
-    .positive()
-    .max(Number.MAX_SAFE_INTEGER - requestBodyLimit),
+  maxSizeBytes: z.number().int().positive(),
 });
 export const frontendSettingsSchema = z.strictObject({
   cacheHitWarningRatio: z.number().min(0).max(1),

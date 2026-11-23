@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { createAppMcp } from "../../src/app/runtime/resources/toolPool";
 import { createSnapshotSession } from "../../src/app/runtime/sessionSnapshot";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
-import { createSettingsContext } from "../../src/infrastructure/configuration/settings/context";
+import { settingsProfileNames } from "../../src/infrastructure/configuration/settings/context";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { readDefinitionRecord } from "../../src/infrastructure/database/records/session/metadata";
 import { removeDatabaseDirectory } from "../../src/infrastructure/database/sqlite/connection";
@@ -13,42 +13,36 @@ import { AskUserRuntime } from "../../src/infrastructure/toolbox/runtime";
 import { prepareHostSession } from "../../src/runtime/execution/sessionPreparation";
 import { createTestDirectory } from "../support/artifacts";
 import { containingItems } from "../support/asymmetric";
-import { defaultBuiltIns, writeToolboxConfiguration } from "../support/builtins";
-import { writeTestConfiguration } from "../support/configuration";
+import { fixtureTools } from "../support/builtins";
+import { writeFixtureYaml, writeTestConfiguration } from "../support/configuration";
 import { scopedEnvironment } from "../support/scopedEnvironment";
 
 test("session snapshots lock only the model prefix while runtime configuration changes", async () => {
   await using resources = new AsyncDisposableStack();
   const root = createTestDirectory("session-snapshot"),
-    builtIns = defaultBuiltIns(),
-    toolboxes = {
-      choice: { ...builtIns.choice!, enabled: true },
-      open_ended: { ...builtIns.open_ended!, enabled: true },
-    };
+    { choice, open_ended } = fixtureTools,
+    toolboxes = { choice, open_ended },
+    rule = { args: {}, mode: "silent", runLimit: -1, target: "agent" };
   resources.defer(() => removeDatabaseDirectory(root));
   resources.use(scopedEnvironment({ OMITY_HOME: join(root, "home") }));
-  writeTestConfiguration(root, {
-    hooksYaml: `hooks:
-  - { id: notify, enable: true, target: agent, when: after, runLimit: -1, mode: silent, tool: ${JSON.stringify(toolboxes.open_ended.name)}, args: {} }
-  - { id: review, enable: false, target: agent, when: before, runLimit: -1, mode: silent, tool: ${JSON.stringify(toolboxes.choice.name)}, args: {} }
-`,
-    modelYaml: `adapter: completions
-model: locked-model
-apiKeyEnv: INITIAL_KEY
-baseURL: https://locked.example.test
-temperature: 0
-reasoning_effort: medium
-retryDelayMs: 1000
-maxConcurrentRequests: 2
-raceIntervalMs: 1000
-`,
+  const { context, profileDirectory } = writeTestConfiguration(root, {
+    hooks: [
+      { ...rule, enable: true, id: "notify", tool: open_ended.name, when: "after" },
+      { ...rule, enable: false, id: "review", tool: choice.name, when: "before" },
+    ],
+    model: {
+      apiKeyEnv: "INITIAL_KEY",
+      baseURL: "https://locked.example.test",
+      model: "locked-model",
+      reasoning_effort: "medium",
+      temperature: 0,
+    },
     systemPrompt: "locked prompt",
   });
-  writeToolboxConfiguration(root, { toolboxes });
+  writeFixtureYaml(profileDirectory, "toolbox", { toolboxes });
   const workspacePath = join(root, "workspace");
   mkdirSync(workspacePath);
-  const context = createSettingsContext(root, join(root, "user-settings")),
-    mcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => {}));
+  const mcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => {}));
   resources.defer(() => mcp.close());
   const created = await createSnapshotSession({
       baseContext: context,
@@ -65,29 +59,24 @@ raceIntervalMs: 1000
     paths = sessionPaths(created.sessionId),
     db = resources.use(new AgentDatabase(paths.dbPath)),
     definition = readDefinitionRecord(db.db, created.sessionId);
-  writeFileSync(join(root, "settings", "prompts", "system.md"), "changed prompt");
-  writeFileSync(
-    join(root, "settings", "model.yaml"),
-    `adapter: responses-sse
-model: changed-model
-apiKeyEnv: CURRENT_KEY
-baseURL: https://changed.example.test
-temperature: 0.75
-reasoning_effort: high
-retryDelayMs: 2500
-maxConcurrentRequests: 4
-raceIntervalMs: 3500
-`,
-  );
-  writeToolboxConfiguration(root, {
+  writeFileSync(join(profileDirectory, "prompts", "fixture.md"), "changed prompt");
+  writeFixtureYaml(profileDirectory, "model", {
+    adapter: "responses-sse",
+    apiKeyEnv: "CURRENT_KEY",
+    baseURL: "https://changed.example.test",
+    maxConcurrentRequests: 4,
+    model: "changed-model",
+    raceIntervalMs: 3500,
+    reasoning_effort: "high",
+    retryDelayMs: 2500,
+    temperature: 0.75,
+  });
+  writeFixtureYaml(profileDirectory, "toolbox", {
     stdio: { restart: { delayMs: 4321, maxAttempts: 7 } },
     toolboxes,
   });
-  expect(definition.prefix.systemPrompt).toBe("locked prompt\n\nuse skills");
+  expect(definition.prefix.systemPrompt).toBe("locked prompt");
   expect(definition.hookOverrides).toEqual({ notify: false, review: true });
-  expect(readFileSync(join(root, "settings", "hooks.yaml"), "utf8")).toContain(
-    "id: notify, enable: true",
-  );
   expect(definition.prefix.model).toEqual({
     adapter: "completions",
     baseURL: "https://locked.example.test",
@@ -123,7 +112,7 @@ raceIntervalMs: 3500
   resources.defer(() => restoredMcp.close());
   const restored = await restoredMcp.loadSession(
     created.sessionId,
-    [],
+    settingsProfileNames(context),
     definition.prefix.tools,
     workspacePath,
   );

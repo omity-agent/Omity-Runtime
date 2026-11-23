@@ -9,8 +9,8 @@ import { HookRuntime } from "../../../src/hooks/runtime";
 import { Logger } from "../../../src/infrastructure/logging/logger";
 import type { HostContext } from "../../../src/runtime/context";
 import type { HookRule } from "../../../src/types";
+import { testSettings } from "../../support/configuration";
 import { makeDb, workspace } from "../../support/database";
-import { testSettings } from "../../support/settings";
 
 export function agentFixture({
   db: existingDatabase,
@@ -31,6 +31,7 @@ export function agentFixture({
     checkpointer = new BunSqliteSaver(db.db),
     executions = new ToolExecutions({
       cancellationRequested: (callId) => db.toolCancellation(sessionId, callId),
+      pollMs: settings.host.pollMs,
     }),
     hooks = new HookRuntime(rules, tools, db.db, logger, sessionId, workspace),
     graph = createAgentGraph({

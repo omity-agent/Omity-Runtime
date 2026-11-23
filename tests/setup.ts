@@ -1,9 +1,14 @@
 import { afterAll } from "bun:test";
 
-import { fixtureProxyBypass } from "../settings/verification";
 import { clearTestArtifacts, prepareTestArtifacts, testArtifactsRoot } from "./support/artifacts";
 
-const proxyBypass = [process.env["NO_PROXY"], process.env["no_proxy"], ...fixtureProxyBypass]
+const proxyBypass = [
+  process.env["NO_PROXY"],
+  process.env["no_proxy"],
+  "localhost",
+  "127.0.0.1",
+  "::1",
+]
   .filter(Boolean)
   .join(",");
 process.env["NO_PROXY"] = proxyBypass;

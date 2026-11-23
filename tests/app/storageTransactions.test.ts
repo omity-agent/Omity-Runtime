@@ -8,9 +8,9 @@ import { sessionPaths } from "../../src/infrastructure/configuration/sessionPath
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { emptySessionDefinition } from "../../src/infrastructure/database/session/sessionDefinition";
 import { createTestDirectory } from "../support/artifacts";
+import { testSettings } from "../support/configuration";
 import { required, workspace } from "../support/database";
 import { scopedEnvironment } from "../support/scopedEnvironment";
-import { testSettings } from "../support/settings";
 
 const history = [
     { assistant: "first answer", user: "first user" },

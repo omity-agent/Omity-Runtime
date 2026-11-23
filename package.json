@@ -6,6 +6,9 @@
   },
   "type": "module",
   "module": "src/cli.ts",
+  "imports": {
+    "#settings/*": "./settings/*"
+  },
   "scripts": {
     "format": "bun fmt .",
     "lint": "bun lint --format=agent --fix --fix-suggestions",

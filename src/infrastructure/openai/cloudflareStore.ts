@@ -1,7 +1,7 @@
 import { Cookie, CookieJar } from "tough-cookie";
 
-import { codexProtocol } from "../../../settings/openai/codexProtocol";
 import { localize } from "../../i18n/server";
+import { codexProtocol } from "./protocol";
 
 function isChatGptCookieUrl(value: string) {
   const url = new URL(value);

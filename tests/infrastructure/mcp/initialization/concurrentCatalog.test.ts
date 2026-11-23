@@ -12,7 +12,7 @@ test("session MCP pipelines overlap while preserving tool order and reusing the 
       second: { excludedTools: ["hidden"], prefixToolNameWithServerName: false },
       third: {},
     }),
-    loading = fixture.mcp.createSession("parallel-session", [], fixture.root),
+    loading = fixture.mcp.createSession("parallel-session", fixture.profiles, fixture.root),
     outcome = Promise.allSettled([loading]);
   try {
     await Promise.all(["first", "second", "third"].map((name) => fixture.wait(name, "boot")));
@@ -43,7 +43,7 @@ test("session MCP pipelines overlap while preserving tool order and reusing the 
     expect(
       await fixture.mcp.loadSession(
         "parallel-session",
-        [],
+        fixture.profiles,
         snapshotMcpTools(loaded, { cwd: fixture.root, session: fixture.root }),
         fixture.root,
       ),
@@ -59,7 +59,7 @@ test.each([false, true])(
   "initialization failure drains other pipelines and closes all children (multiple errors: %s)",
   async (multipleErrors) => {
     const fixture = coordinateStartup({ broken: {}, late: {}, other: {} }),
-      loading = fixture.mcp.createSession("failed-session", [], fixture.root),
+      loading = fixture.mcp.createSession("failed-session", fixture.profiles, fixture.root),
       outcome = Promise.allSettled([loading]);
     try {
       await Promise.all(["broken", "other", "late"].map((name) => fixture.wait(name, "boot")));

@@ -1,6 +1,6 @@
-import { useTranslation } from "react-i18next";
 import { css, cx } from "styled-system/css";
 
+import { useTranslation } from "../../../../i18n";
 import { MarkdownEditor } from "../../MarkdownEditor";
 import type { AskUserQuestion } from "../../toolActions";
 import { ChoiceOptions } from "./Options";
@@ -62,7 +62,7 @@ export function AskUserPrompt({
           label={question.question}
           onChange={onNoteChange}
           onSubmit={onSubmit}
-          placeholder={t("answerPlaceholder")}
+          placeholder={t("conversation:answerPlaceholder")}
           value={note}
         />
       </div>
@@ -79,15 +79,15 @@ export function AskUserPrompt({
         />
       </section>
       <section className={cx(choicePane, notePane)}>
-        <p className={noteLabel}>{t("answerNote")}</p>
+        <p className={noteLabel}>{t("conversation:answerNote")}</p>
         <MarkdownEditor
           bare
           disabled={false}
           fill
-          label={t("answerNote")}
+          label={t("conversation:answerNote")}
           onChange={onNoteChange}
           onSubmit={onSubmit}
-          placeholder={t("answerNotePlaceholder")}
+          placeholder={t("conversation:answerNotePlaceholder")}
           value={note}
         />
       </section>

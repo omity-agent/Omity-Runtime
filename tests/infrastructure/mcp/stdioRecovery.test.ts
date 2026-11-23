@@ -7,12 +7,17 @@ import { localize } from "../../../src/i18n/server";
 import { Logger } from "../../../src/infrastructure/logging/logger";
 import { RestartingStdioClient } from "../../../src/infrastructure/mcp/client/restarting";
 import { containingText } from "../../support/asymmetric";
+import { fixtureDiagnosticLimits } from "../../support/builtins";
 
+const policy = {
+  diagnostics: fixtureDiagnosticLimits,
+  stdio: { restart: { delayMs: 0, maxAttempts: 1 } },
+};
 test("real MCP process crash rejects the interrupted call and the next call uses a new child", async () => {
   const client = await RestartingStdioClient.create(
     "crash-recovery",
     { args: [join(import.meta.dir, "crashingToolServer.ts")], command: process.execPath },
-    { delayMs: 0, maxAttempts: 1 },
+    policy,
     new Logger("error", true),
   );
   try {
@@ -46,7 +51,7 @@ test("closing a real MCP process immediately rejects new requests", async () => 
   const client = await RestartingStdioClient.create(
       "closing-client",
       { args: [join(import.meta.dir, "crashingToolServer.ts")], command: process.execPath },
-      { delayMs: 0, maxAttempts: 1 },
+      policy,
       new Logger("error", true),
     ),
     closing = client.close(),
@@ -75,7 +80,7 @@ test("shutdown during restart backoff reports cancellation without a recovery er
     client = await RestartingStdioClient.create(
       "closing-recovery",
       connection,
-      { delayMs: 5000, maxAttempts: 3 },
+      { ...policy, stdio: { restart: { delayMs: 5000, maxAttempts: 3 } } },
       logger,
     );
   connection.args = ["--eval", 'throw new Error("initialization unavailable")'];

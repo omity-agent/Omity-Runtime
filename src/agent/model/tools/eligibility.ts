@@ -3,8 +3,8 @@ import { RegExpParser, visitRegExpAST } from "@eslint-community/regexpp";
 import { sumBy } from "es-toolkit";
 import { compileSchema, isJsonError, type SchemaNode } from "json-schema-library";
 
-import { schemaConstraints } from "../../../../settings/schemaConstraints";
 import type { ModelApi } from "../../../types";
+import { schemaConstraints } from "./providerLimits";
 
 const patterns = new RegExpParser();
 export function isStrictSchema(schema: JSONSchema7, api: ModelApi): boolean {

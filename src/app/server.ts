@@ -41,6 +41,7 @@ export async function startAppServer(options: AppServerOptions) {
         kind: "app",
         pid: lock.owner.pid,
       },
+      settings,
       settingsContext,
     });
     server = createHttpServer({
@@ -48,6 +49,7 @@ export async function startAppServer(options: AppServerOptions) {
       controller,
       hostname: host,
       port,
+      settings,
       staticRoot: applicationAssetPath(options.root, "dist/frontend"),
     });
     const boundPort = server.port;

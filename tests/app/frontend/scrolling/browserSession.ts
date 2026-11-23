@@ -4,17 +4,23 @@ import { type Browser, chromium, type Page } from "playwright";
 import { createServer, type ViteDevServer } from "vite";
 
 import {
+  createYamlAssets,
+  type YamlAssetOverrides,
+  yamlAssets,
+} from "../../../../scripts/yamlAssets";
+import viteConfig from "../../../../vite.config";
+import {
   fixtureDependencies,
   fixtureServer,
   regressionViewport,
   scrollingBrowser,
-} from "../../../../settings/verification";
-import viteConfig from "../../../../vite.config";
+} from "../../../support/browserOptions";
 
 export class BrowserSession {
   private browser?: Browser;
   private server?: ViteDevServer;
   private origin?: string;
+  constructor(private readonly overrides?: YamlAssetOverrides) {}
   async start() {
     this.server = await createServer({
       ...viteConfig,
@@ -22,6 +28,9 @@ export class BrowserSession {
       configFile: false,
       logLevel: "error",
       optimizeDeps: fixtureDependencies,
+      plugins: viteConfig.plugins?.map((plugin) =>
+        plugin === yamlAssets && this.overrides ? createYamlAssets(this.overrides) : plugin,
+      ),
       root: resolvePath(import.meta.dir, "../../../.."),
       server: fixtureServer,
     });
@@ -31,7 +40,10 @@ export class BrowserSession {
       throw new Error("Scrolling fixture server has no TCP address");
     }
     this.origin = `http://${fixtureServer.host}:${address.port.toString()}`;
-    this.browser = await chromium.launch(scrollingBrowser);
+    this.browser = await chromium.launch({
+      ...scrollingBrowser,
+      channel: process.env["OMITY_TEST_BROWSER_CHANNEL"],
+    });
   }
   async open(mode: string) {
     const page = await this.openFixture(

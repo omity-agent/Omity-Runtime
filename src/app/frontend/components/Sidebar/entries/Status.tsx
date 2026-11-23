@@ -9,11 +9,11 @@ import {
   StepForward,
   Wrench,
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { css, cva, cx } from "styled-system/css";
 
 import type { ErrorDetails } from "../../../../../failures/details";
 import type { SessionStatus } from "../../../../../types";
+import { useTranslation } from "../../../i18n";
 import { statusLabelKey } from "../sessions";
 
 const indicator = cva({

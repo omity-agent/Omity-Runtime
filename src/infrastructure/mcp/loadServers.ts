@@ -95,7 +95,7 @@ function configureServerTools(
   context: SettingsContext,
 ) {
   overrideMcpToolDescriptions(tools, configuration.toolDescriptionOverrides, context.root, [
-    resolve(context.defaultsDirectory, "prompts"),
+    resolve(context.bundledDirectory, "prompts"),
     ...context.profiles.map(({ directory }) => resolve(directory, "prompts")),
   ]);
   return configureFreeformMcpTools(tools, configuration.freeformToolInputs).parameters;

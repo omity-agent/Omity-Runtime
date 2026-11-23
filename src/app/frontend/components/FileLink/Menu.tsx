@@ -2,10 +2,10 @@ import { Menu } from "@ark-ui/react/menu";
 import { Portal } from "@ark-ui/react/portal";
 import { ExternalLink, FolderOpen } from "lucide-react";
 import { type ReactNode, useCallback } from "react";
-import { useTranslation } from "react-i18next";
 import { sva } from "styled-system/css";
 
 import type { FilePathKind } from "../../../../fileLinks/types";
+import { useTranslation } from "../../i18n";
 import { activateFileLink } from "../../services/client";
 import { reportPromiseErrors } from "../../services/errors";
 import { useFileLinkSession } from "./context";
@@ -96,14 +96,14 @@ export function FileLinkMenu({
             <Menu.Item asChild value="open" onSelect={open}>
               <button className={classes.item} type="button">
                 <ExternalLink aria-hidden size={14} />
-                {t("openFileLink")}
+                {t("conversation:openFileLink")}
               </button>
             </Menu.Item>
             {kind === "file" ? (
               <Menu.Item asChild value="reveal" onSelect={reveal}>
                 <button className={classes.item} type="button">
                   <FolderOpen aria-hidden size={14} />
-                  {t("revealFileLink")}
+                  {t("conversation:revealFileLink")}
                 </button>
               </Menu.Item>
             ) : null}

@@ -1,10 +1,10 @@
 import { Fragment, memo, useRef } from "react";
-import { useTranslation } from "react-i18next";
 import { cx } from "styled-system/css";
 import { type CustomContainerComponentProps, Virtualizer } from "virtua";
 
-import { codeWindow } from "../../../../../settings/rendering";
 import type { FilePathMatch } from "../../../../fileLinks/types";
+import { useTranslation } from "../../i18n";
+import { codeWindow } from "../../presentation/preferences";
 import { CopyButton } from "../Chat/messages/CopyButton";
 import { normalizeCodeMatches } from "../FileLink/lineBreaks";
 import { useFollowBottom } from "../Transcript/useFollowBottom";
@@ -53,7 +53,7 @@ function HighlightedCodeView({
     <div className={container}>
       <CopyButton className={copyButton} value={code} />
       <pre
-        aria-label={t("codeBlock")}
+        aria-label={t("conversation:codeBlock")}
         className={cx(block({ layout }), className)}
         ref={blockRef}
         onScroll={onScroll}

@@ -8,6 +8,7 @@ import { Logger } from "../../../../src/infrastructure/logging/logger";
 import { McpClientPool } from "../../../../src/infrastructure/mcp/client/pool";
 import { loadServerTools } from "../../../../src/infrastructure/mcp/loadServers";
 import { structuredToolOutput } from "../../../../src/infrastructure/mcp/tools/structured";
+import { fixtureDiagnosticLimits } from "../../../support/builtins";
 
 test.each(["modern", "legacy"] as const)(
   "%s HTTP catalog owns one connection and preserves multimodal results and tool errors",
@@ -40,7 +41,10 @@ test.each(["modern", "legacy"] as const)(
       },
       pool = new McpClientPool(
         configuration,
-        { delayMs: 0, maxAttempts: 1 },
+        {
+          diagnostics: fixtureDiagnosticLimits,
+          stdio: { restart: { delayMs: 0, maxAttempts: 1 } },
+        },
         new Logger("error", true),
         process.cwd(),
       );

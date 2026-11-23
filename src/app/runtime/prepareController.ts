@@ -15,11 +15,12 @@ import { recoverAppSessions } from "./recovery";
 export interface ControllerOptions {
   abandonedOwner?: AppInstanceOwner;
   owner?: ProcessOwner;
+  settings?: Settings;
   settingsContext?: SettingsContext;
 }
 export function prepareController(root: string, options: ControllerOptions) {
   const settingsContext = options.settingsContext ?? createSettingsContext(root),
-    settings = loadSettings(root, { settingsContext }),
+    settings = options.settings ?? loadSettings(root, { settingsContext }),
     registry = new AppRegistry();
   try {
     recoverAppSessions(registry.list(), options.abandonedOwner);

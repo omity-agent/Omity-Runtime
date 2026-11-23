@@ -1,8 +1,8 @@
 import { type Context, Hono } from "hono";
 import { compress } from "hono/compress";
 
-import { requestBodyLimit } from "../../../settings/networking";
 import { localize } from "../../i18n/server";
+import type { Settings } from "../../types";
 import type { AccessService } from "../access/service";
 import {
   answerToolBody,
@@ -20,16 +20,23 @@ import { writeReasoningTranslation } from "../reasoningTranslation";
 import { type AccessEnvironment, mountAccess } from "./access";
 import { errorResponse, HttpError } from "./errors";
 import { messageForm, sessionForm } from "./multipart";
-import { decodeSessionId, jsonBody, limitRequestBody, validate } from "./request";
+import { decodeSessionId, limitRequestBody, requestValidation, validate } from "./request";
 
-export function createApi(controller: AppController, access?: AccessService) {
+export function createApi(
+  controller: AppController,
+  settings: Pick<Settings, "attachments" | "server">,
+  access?: AccessService,
+) {
   const app = new Hono<AccessEnvironment>(),
-    attachmentBodyLimit = requestBodyLimit + controller.bootstrap().attachments.maxSizeBytes,
+    { maxSizeBytes: attachmentBytes } = settings.attachments,
+    { requestBodyLimitBytes: bodyBytes } = settings.server,
+    validation = requestValidation(bodyBytes),
+    { json: jsonBody } = validation,
     attachmentRequestLimit = limitRequestBody(
-      attachmentBodyLimit,
+      bodyBytes + attachmentBytes,
       localize("http:request.attachmentBody"),
     ),
-    routes = mountAccess(app, access);
+    routes = mountAccess(app, access, validation);
   app.use("/api/sessions/:sessionId/messages", attachmentRequestLimit);
   app.use("/api/sessions/:sessionId/transcript", compress());
   app.notFound((c) => {

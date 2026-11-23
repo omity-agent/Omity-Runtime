@@ -1,10 +1,10 @@
 import { Bot, Trash2, UserRound } from "lucide-react";
 import { useCallback, useMemo } from "react";
-import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
 import type { EditablePair } from "../../../composition/preparation";
 import type { InitialMessagePair } from "../../../initialState";
+import { useTranslation } from "../../i18n";
 import { composerFrame, composerRole } from "../Chat/Composer/arrangement";
 import { ActionPanel } from "../Chat/Composer/controls/ActionPanel";
 import { MarkdownEditor } from "../Chat/MarkdownEditor";
@@ -29,11 +29,11 @@ export function MessageStack({
     <div className={stack}>
       {pairs.map((item) => (
         <MessagePairEditor
-          assistantLabel={t("assistant")}
+          assistantLabel={t("conversation:assistant")}
           disabled={disabled}
           item={item}
           key={item.id}
-          userLabel={t("user")}
+          userLabel={t("conversation:user")}
           onPairChange={onPairChange}
           onRemove={onRemove}
           onSubmit={onSubmit}
@@ -136,10 +136,10 @@ function MessageEditor({
       <ActionPanel footer={footer}>
         {onRemove ? (
           <IconButton
-            aria-label={t("removeMessagePair")}
+            aria-label={t("preparation:removeMessagePair")}
             disabled={disabled}
             onClick={onRemove}
-            title={t("removeMessagePair")}
+            title={t("preparation:removeMessagePair")}
             type="button"
           >
             <Trash2 aria-hidden size={16} />

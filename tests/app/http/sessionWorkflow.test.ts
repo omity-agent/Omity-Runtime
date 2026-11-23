@@ -3,12 +3,12 @@ import { existsSync, readFileSync } from "node:fs";
 
 import { z } from "zod";
 
-import { requestBodyLimit } from "../../../settings/networking";
 import { submissionForm } from "../../../src/app/attachments/submission";
 import { sessionPaths } from "../../../src/infrastructure/configuration/sessionPaths";
 import { containingItems, partialObject } from "../../support/asymmetric";
 import { liveApplication } from "./liveApplication";
 
+const requestBodyLimit = 4096;
 test("HTTP session creation runs a model then preserves draft revisions and attachments until deletion", async () => {
   using cleanup = new DisposableStack();
   const warnings: unknown[] = [],
@@ -103,7 +103,7 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   expect(await sessions.json()).toEqual({ sessions: [] });
 }, 15_000);
 test("HTTP validation rejects malformed or ambiguous submissions before session mutations", async () => {
-  await using app = liveApplication();
+  await using app = liveApplication({ requestBodyLimitBytes: requestBodyLimit });
   const draftEndpoint = `${app.url}/api/sessions/absent/composer-draft`,
     invalidJsonRequests = [
       { body: "{", headers: { "content-type": "application/json" } },
@@ -155,7 +155,7 @@ test("HTTP validation rejects malformed or ambiguous submissions before session 
 test.each(["buffered", "streamed"])(
   "HTTP rejects oversized %s bodies without breaking subsequent requests",
   async (mode) => {
-    await using app = liveApplication();
+    await using app = liveApplication({ requestBodyLimitBytes: requestBodyLimit });
     for (const size of [requestBodyLimit + 1, requestBodyLimit * 4, requestBodyLimit * 16]) {
       const payload = new Uint8Array(size),
         body =
@@ -181,8 +181,8 @@ test.each(["buffered", "streamed"])(
   },
 );
 async function waitForCompletedRun(app: ReturnType<typeof liveApplication>, sessionId: string) {
-  const { controller } = app;
-  const deadline = Date.now() + 5000;
+  const { controller } = app,
+    deadline = Date.now() + 5000;
   while (!controller.transcript(sessionId).queue.every(({ status }) => status === "done")) {
     if (Date.now() >= deadline) {
       throw new Error("HTTP 会话未在期限内完成模型调用");

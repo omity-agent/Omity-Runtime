@@ -4,9 +4,15 @@ import { anyValue } from "../../support/asymmetric";
 import { liveApplication } from "./liveApplication";
 
 test("real HTTP access rejects public reads and cross-site writes while registration tickets are single-use", async () => {
-  await using app = liveApplication();
+  const origin = "https://omity.example.test";
+  await using app = liveApplication({
+    access: {
+      loginRateLimit: { attempts: 4, windowMs: 5000 },
+      publicOrigin: origin,
+      trustedProxies: ["127.0.0.1/32"],
+    },
+  });
   const remote = { "x-forwarded-for": "203.0.113.9" },
-    origin = "https://omity.example.test",
     unauthorized = await fetch(`${app.url}/api/sessions`, { headers: remote });
   expect(unauthorized.status).toBe(401);
   expect(await unauthorized.json()).toMatchObject({ error: { code: "AUTH_REQUIRED" } });

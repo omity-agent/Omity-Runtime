@@ -1,7 +1,7 @@
 import { KeyRound, LogOut } from "lucide-react";
 import { createContext, useContext } from "react";
-import { useTranslation } from "react-i18next";
 
+import { useTranslation } from "../../i18n";
 import type { AccessStatus } from "../../services/access";
 import { Button, LinkButton } from "../ui";
 
@@ -21,21 +21,21 @@ export function CredentialAction() {
   }
   return access.status.local ? (
     <LinkButton
-      aria-label={t("accessManageCredentials")}
+      aria-label={t("credentials:manageCredentials")}
       href="?setup=manage#/new"
       iconOnly
-      title={t("accessManageCredentials")}
+      title={t("credentials:manageCredentials")}
       visual="ghost"
     >
       <KeyRound aria-hidden size={16} />
     </LinkButton>
   ) : (
     <Button
-      aria-label={t("accessLogout")}
+      aria-label={t("credentials:logout")}
       disabled={access.busy}
       iconOnly
       onClick={access.handleLogout}
-      title={t("accessLogout")}
+      title={t("credentials:logout")}
       type="button"
       visual="ghost"
     >

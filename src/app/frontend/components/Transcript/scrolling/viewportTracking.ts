@@ -24,7 +24,7 @@ export function useTranscriptScroll({
       content = contentRef.current,
       handle = handleRef.current;
     if (!element || !content || !handle) {
-      throw new Error(localize("frontend:transcript.scrollContainerMissing"));
+      throw new Error(localize("diagnostics:transcript.scrollContainerMissing"));
     }
     let disposed = false,
       frame: number | undefined;

@@ -1,21 +1,20 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, rmSync } from "node:fs";
+import { rmSync } from "node:fs";
 import { join } from "node:path";
 
-import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
 import { Logger } from "../../../../src/infrastructure/logging/logger";
 import { loadMcp, loadSessionMcp } from "../../../../src/infrastructure/mcp/tools/catalog";
 import { snapshotMcpTools } from "../../../../src/infrastructure/mcp/tools/definitions";
 import { createTestDirectory } from "../../../support/artifacts";
-import { defaultBuiltIns, writeToolboxConfiguration } from "../../../support/builtins";
+import { fixtureTools } from "../../../support/builtins";
+import { testProfiles, writeFixtureYaml } from "../../../support/configuration";
 
 test.each([true, false])(
   "session tools remain callable after configuration disables them (server prefix: %s)",
   async (prefixToolNameWithServerName) => {
     const root = createTestDirectory("frozen-mcp-availability"),
       logger = new Logger("error", true),
-      context = createSettingsContext(root, join(root, "user-settings")),
-      builtIns = defaultBuiltIns(),
+      { context, profileDirectory } = testProfiles(root),
       server = {
         args: [
           join(import.meta.dir, "../../../app/http/preferences/argumentServer.ts"),
@@ -28,8 +27,8 @@ test.each([true, false])(
         prefixToolNameWithServerName,
       },
       toolboxes = {
-        ...builtIns,
-        update_title: { ...builtIns.update_title!, enabled: false },
+        choice: fixtureTools.choice,
+        update_title: { ...fixtureTools.update_title, enabled: false },
       },
       configuration = {
         mcpServers: { active: server },
@@ -38,26 +37,23 @@ test.each([true, false])(
         },
         toolboxes,
       };
-    mkdirSync(join(root, "settings"));
     try {
-      writeToolboxConfiguration(root, configuration);
+      writeFixtureYaml(profileDirectory, "toolbox", configuration);
       const initial = await loadMcp(root, logger, context),
         snapshot = snapshotMcpTools(initial, { cwd: root, session: root });
       await initial.close();
-      writeToolboxConfiguration(root, {
+      writeFixtureYaml(profileDirectory, "toolbox", {
         ...configuration,
         mcpServers: { active: { ...server, defer_loading: false, enabled: false } },
-        toolboxes: Object.fromEntries(
-          Object.entries(builtIns).map(([id, preferences]) => [
-            id,
-            { ...preferences, enabled: id === "update_title" },
-          ]),
-        ),
+        toolboxes: {
+          choice: { ...fixtureTools.choice, enabled: false },
+          update_title: fixtureTools.update_title,
+        },
       });
       const fresh = await loadMcp(root, logger, context);
       try {
         expect(Object.keys(fresh.configuration.mcpServers)).toEqual([]);
-        expect(fresh.tools.map(({ name }) => name)).toEqual([builtIns.update_title!.name]);
+        expect(fresh.tools.map(({ name }) => name)).toEqual([fixtureTools.update_title.name]);
       } finally {
         await fresh.close();
       }
@@ -76,7 +72,7 @@ test.each([true, false])(
       } finally {
         await restored.close();
       }
-      writeToolboxConfiguration(root, {
+      writeFixtureYaml(profileDirectory, "toolbox", {
         ...configuration,
         mcpServers: {
           active: {
@@ -109,15 +105,14 @@ test.each([true, false])(
 test("session server selections override changed configuration activation flags", async () => {
   const root = createTestDirectory("frozen-server-selection"),
     logger = new Logger("error", true),
-    context = createSettingsContext(root, join(root, "user-settings")),
+    { context, profileDirectory } = testProfiles(root),
     server = {
       args: [join(import.meta.dir, "../../../app/http/preferences/argumentServer.ts"), "identity"],
       command: process.execPath,
     },
     overrides = { excluded: false, selected: true };
-  mkdirSync(join(root, "settings"));
   try {
-    writeToolboxConfiguration(root, {
+    writeFixtureYaml(profileDirectory, "toolbox", {
       mcpServers: {
         excluded: { command: `\${OMITY_FROZEN_EXCLUDED_COMMAND}`, enabled: false },
         selected: { ...server, enabled: true },
@@ -126,7 +121,7 @@ test("session server selections override changed configuration activation flags"
     const initial = await loadMcp(root, logger, context, { serverOverrides: overrides }),
       snapshot = snapshotMcpTools(initial, { cwd: root, session: root }, overrides);
     await initial.close();
-    writeToolboxConfiguration(root, {
+    writeFixtureYaml(profileDirectory, "toolbox", {
       mcpServers: {
         excluded: { command: `\${OMITY_FROZEN_EXCLUDED_COMMAND}`, enabled: true },
         selected: { ...server, enabled: false },

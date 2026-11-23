@@ -97,7 +97,7 @@ function MarkdownTable(props: ComponentProps<"table"> & ExtraProps) {
 function useMarkdownRenderContext() {
   const context = useContext(MarkdownContext);
   if (!context) {
-    throw new Error(localize("frontend:markdown.contextMissing"));
+    throw new Error(localize("diagnostics:markdown.contextMissing"));
   }
   return context;
 }

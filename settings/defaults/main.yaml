@@ -1,0 +1,71 @@
+server:
+  host: 127.0.0.1
+  port: 3030
+  idleTimeoutSeconds: 0
+  requestBodyLimitBytes: 1048576
+
+access:
+  publicOrigin:
+  trustedProxies: []
+  challengeTtlMs: 300000
+  sessionTtlMs: 43200000
+  loginRateLimit:
+    attempts: 10
+    windowMs: 60000
+
+attachments:
+  allowedSuffixes:
+    - .txt
+    - .md
+    - .json
+    - .yaml
+    - .yml
+    - .csv
+    - .log
+    - .pdf
+    - .png
+    - .jpg
+    - .jpeg
+    - .webp
+  maxSizeBytes: 10485760
+
+frontend:
+  cacheHitWarningRatio: 0.9
+  draftSaveDelayMs: 500
+  reasoningTranslation:
+    enabled: true
+    highConfidenceThreshold: 0.8
+    minimumIntervalMs: 1000
+  transcriptSnapshotThrottleMs: 250
+
+host:
+  pollMs: 300
+  pausePollMs: 500
+  idleLogMs: 25000
+  shutdownTimeoutMs: 10000
+
+logging:
+  level: info
+  streamTokens: false
+
+leases:
+  hostTtlMs: 30000
+
+prediction:
+  enabled: true
+  sampleContextTokens: 50000
+  maxUserMessageTokens: 200
+  sampleCount: 10
+  refreshIntervalHours: 1
+  outputCount: 3
+  task: ${predictionTask}
+  model:
+    adapter:
+    model:
+    apiKeyEnv:
+    baseURL:
+    maxConcurrentRequests:
+    raceIntervalMs:
+    retryDelayMs:
+    reasoning_effort:
+    temperature:

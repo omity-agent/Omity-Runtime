@@ -10,7 +10,7 @@ export class UnsupportedLanguagePairError extends Error {
     readonly targetLanguage: string,
     readonly confidence: number,
   ) {
-    super(localize("translationPairUnavailable", { confidence, sourceLanguage, targetLanguage }));
+    super(localize("translation:pairUnavailable", { confidence, sourceLanguage, targetLanguage }));
     this.name = "UnsupportedLanguagePairError";
   }
 }
@@ -20,7 +20,7 @@ export function browserTranslationSupported() {
 export function preferredTranslationLanguage() {
   const language = navigator.languages.find(Boolean) ?? navigator.language;
   if (!language) {
-    throw new Error(localize("translationPreferredLanguageMissing"));
+    throw new Error(localize("translation:preferredLanguageMissing"));
   }
   return Intl.getCanonicalLocales(language)[0] ?? language;
 }
@@ -56,10 +56,10 @@ async function detectReasoningLanguage(text: string, signal?: AbortSignal) {
   try {
     const [result] = await detector.detect(text, { signal });
     if (!result?.detectedLanguage) {
-      throw new Error(localize("translationDetectionFailed"));
+      throw new Error(localize("translation:detectionFailed"));
     }
     if (!Number.isFinite(result.confidence) || result.confidence < 0 || result.confidence > 1) {
-      throw new Error(localize("translationConfidenceInvalid"));
+      throw new Error(localize("translation:confidenceInvalid"));
     }
     return result;
   } finally {

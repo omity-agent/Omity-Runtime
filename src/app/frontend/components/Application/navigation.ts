@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 
-import { compactViewport } from "../../../../../settings/appearance/conditions";
+import { compactViewport } from "../../presentation/preferences";
 
 function subscribe(listener: () => void) {
   const query = globalThis.matchMedia(compactViewport);

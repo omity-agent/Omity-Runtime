@@ -65,7 +65,7 @@ export function AccessGate({ children }: { children: ReactNode }) {
         run(setBusy, setError, async () => {
           const result = await registrationTicket();
           if (!publicOrigin) {
-            throw new Error(localize("frontend:access.publicOriginMissing"));
+            throw new Error(localize("credentials:publicOriginMissing"));
           }
           const url = new URL(globalThis.location.pathname, publicOrigin);
           url.searchParams.set("setup", result.ticket);

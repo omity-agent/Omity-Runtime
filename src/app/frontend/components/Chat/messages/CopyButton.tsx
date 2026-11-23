@@ -1,16 +1,16 @@
 import { Check, Copy } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { css, cx } from "styled-system/css";
 
+import { useTranslation } from "../../../i18n";
+import { uiBehavior } from "../../../presentation/preferences";
 import { reportPromiseErrors } from "../../../services/errors";
 import { IconButton } from "../../ui";
 
 const button = css({
-    borderWidth: "0",
-    flexShrink: 0,
-  }),
-  copiedDurationMs = 1600;
+  borderWidth: "0",
+  flexShrink: 0,
+});
 export function CopyButton({ className, value }: { className?: string; value: string }) {
   const { t } = useTranslation(),
     [copied, setCopied] = useState(false),
@@ -32,11 +32,11 @@ export function CopyButton({ className, value }: { className?: string; value: st
         }
         resetTimer.current = setTimeout(() => {
           setCopied(false);
-        }, copiedDurationMs);
+        }, uiBehavior.copyFeedbackMs);
       };
       reportPromiseErrors(copy());
     }, [setCopied, value]),
-    label = t(copied ? "copied" : "copy");
+    label = t(copied ? "conversation:copied" : "conversation:copy");
   return (
     <IconButton
       aria-label={label}

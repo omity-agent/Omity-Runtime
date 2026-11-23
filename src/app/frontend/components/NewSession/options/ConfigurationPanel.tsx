@@ -1,6 +1,6 @@
 import { useCallback } from "react";
-import { useTranslation } from "react-i18next";
 
+import { useTranslation } from "../../../i18n";
 import { reportPromiseErrors } from "../../../services/errors";
 import { Button } from "../../ui";
 import { configuration, setupFirst } from "../preparationGrid";
@@ -26,21 +26,21 @@ export function ConfigurationPanel({
     handleRetry = useCallback(() => reportPromiseErrors(selection.reload()), [selection]),
     panels = [
       {
-        emptyLabel: t("noHooks"),
-        label: t("hooks"),
+        emptyLabel: t("preparation:noHooks"),
+        label: t("preparation:hooks"),
         sections: [{ onChange: selection.handleHookChange, options: selection.hooks }],
       },
       {
-        emptyLabel: t("noTools"),
-        label: t("tool"),
+        emptyLabel: t("preparation:noTools"),
+        label: t("conversation:tool"),
         sections: [
           {
-            label: t("builtInTools"),
+            label: t("preparation:builtIn"),
             onChange: selection.handleBuiltInChange,
             options: selection.builtInTools,
           },
           {
-            label: t("mcpServers"),
+            label: t("preparation:mcpServers"),
             onChange: selection.handleServerChange,
             options: selection.mcpServers,
           },
@@ -62,9 +62,9 @@ export function ConfigurationPanel({
       />
       {selection.error ? (
         <div className={setupFirst} role="alert">
-          <p>{t("optionsLoadFailed", { message: selection.error.message })}</p>
+          <p>{t("preparation:optionsLoadFailed", { message: selection.error.message })}</p>
           <Button disabled={disabled} onClick={handleRetry} type="button">
-            {t("retry")}
+            {t("preparation:retry")}
           </Button>
         </div>
       ) : selection.ready ? (
@@ -78,7 +78,7 @@ export function ConfigurationPanel({
           />
         ))
       ) : (
-        <output className={setupFirst}>{t("loadingOptions")}</output>
+        <output className={setupFirst}>{t("preparation:loadingOptions")}</output>
       )}
     </div>
   );

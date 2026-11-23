@@ -1,9 +1,9 @@
 import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { databaseOutput, schemaGenerationCache } from "../settings/bundling";
 import { localize } from "../src/i18n/server";
 import { isProcessRunning } from "../src/infrastructure/process/ownership";
+import { databaseOutput, schemaGenerationCache } from "./distribution";
 
 const database = {
   name: "database",

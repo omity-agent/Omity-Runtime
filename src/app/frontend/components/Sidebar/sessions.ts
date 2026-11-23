@@ -1,6 +1,7 @@
 import { maxBy } from "es-toolkit";
 
 import { isRunningStatus, type SessionStatus } from "../../../../types";
+import { uiBehavior } from "../../presentation/preferences";
 import type { SessionInfo } from "../../services/client";
 
 const dayMs = 86_400_000,
@@ -18,16 +19,17 @@ export function isRunning(session: SessionInfo) {
   return isRunningStatus(session.status);
 }
 export function statusLabelKey(status: SessionStatus) {
-  return {
-    error: "statusError",
-    idle: "statusIdle",
-    paused: "statusPaused",
-    pausing: "statusPausing",
-    stepping: "stepping",
-    streaming: "statusStreaming",
-    tool: "statusTool",
-    waiting: "statusWaiting",
-  }[status];
+  const labels = {
+    error: "shell:status.error",
+    idle: "shell:status.idle",
+    paused: "shell:status.paused",
+    pausing: "shell:status.pausing",
+    stepping: "conversation:stepping",
+    streaming: "shell:status.streaming",
+    tool: "shell:status.tool",
+    waiting: "shell:status.waiting",
+  } as const;
+  return labels[status];
 }
 export function groupSessions(sessions: SessionInfo[]): WorkspaceGroup[] {
   return [...Map.groupBy(sessions, (session) => session.workspace)]
@@ -42,7 +44,7 @@ export function recentSessions(sessions: SessionInfo[], unreadIds: ReadonlySet<s
         Number(needsAttention(right)) - Number(needsAttention(left)) ||
         compareSessions(left, right),
     )
-    .slice(0, 5);
+    .slice(0, uiBehavior.recentSessions);
 }
 export function workspaceLabel(workspace: string) {
   const parts = workspace.split(/[\\/]+/u).filter(Boolean);

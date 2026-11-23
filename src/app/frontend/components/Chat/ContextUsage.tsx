@@ -1,9 +1,9 @@
 import { DatabaseZap } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
 import type { TokenUsage } from "../../../timeline";
-import { formatTokens } from "../../tokenUnits";
+import { useTranslation } from "../../i18n";
+import { formatTokens } from "../../presentation/tokenUnits";
 
 const panel = css({
     alignItems: "end",
@@ -40,7 +40,7 @@ export function ContextUsage({
     totalTokens =
       usage?.inputTokens !== undefined && usage.outputTokens !== undefined
         ? formatTokens(usage.inputTokens + usage.outputTokens)
-        : t("unavailableTokens"),
+        : t("conversation:unavailableTokens"),
     actualCacheHitRate =
       usage?.inputTokens !== undefined &&
       usage.inputTokens > 0 &&
@@ -54,17 +54,17 @@ export function ContextUsage({
       cacheHitWarningRatio !== undefined &&
       usage?.estimatedCacheHitRate !== undefined &&
       actualCacheHitRate + Number.EPSILON < usage.estimatedCacheHitRate * cacheHitWarningRatio,
-    description = `${t("contextUsage")}: ${totalTokens}; ${t("kvCache")}: ${cacheRate}`;
+    description = `${t("conversation:contextUsage")}: ${totalTokens}; ${t("conversation:kvCache")}: ${cacheRate}`;
   return (
     <div aria-label={description} className={panel} title={description}>
       <span className={row}>
-        <span>{t("contextUsage")}</span>
+        <span>{t("conversation:contextUsage")}</span>
         <span className={value}>{totalTokens}</span>
       </span>
       <span className={row}>
         <span className={row}>
           <DatabaseZap aria-hidden="true" size={12} />
-          <span>{t("kvCache")}</span>
+          <span>{t("conversation:kvCache")}</span>
         </span>
         <span
           className={

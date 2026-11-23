@@ -3,8 +3,8 @@ import { resolve } from "node:path";
 
 import { build } from "vite";
 
-import { executableBuild, frontendOutput } from "../settings/bundling";
 import { localize } from "../src/i18n/server";
+import { executableBuild, frontendOutput } from "./distribution";
 import { prepareMagikaAssets } from "./magikaModel";
 import { generateDatabaseSchema } from "./schemaAsset";
 

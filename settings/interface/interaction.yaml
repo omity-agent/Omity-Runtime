@@ -1,0 +1,14 @@
+confirmWindowMs: 2000
+copyFeedbackMs: 1600
+recentSessions: 5
+recentWorkspaces: 8
+marquee:
+  msPerPixel: 35
+  pauseMs: 800
+queryRetries:
+  mutations: false
+  queries: false
+transcriptRetry:
+  minimumWaitMs: 250
+  maxAttempts: 4
+  maxWaitMs: 2000

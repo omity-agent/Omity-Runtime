@@ -9,11 +9,11 @@ import { submissionForm } from "../../../../src/app/attachments/submission";
 import { sessionOptionsSchema } from "../../../../src/app/contracts/results";
 import { type AppMcp, createAppMcp } from "../../../../src/app/runtime/resources/toolPool";
 import { sessionPaths } from "../../../../src/infrastructure/configuration/sessionPaths";
-import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
 import { AgentDatabase } from "../../../../src/infrastructure/database/agentDatabase";
 import { readDefinitionRecord } from "../../../../src/infrastructure/database/records/session/metadata";
 import { AskUserRuntime } from "../../../../src/infrastructure/toolbox/runtime";
-import { writeToolboxConfiguration } from "../../../support/builtins";
+import { fixtureTools } from "../../../support/builtins";
+import { writeFixtureYaml } from "../../../support/configuration";
 import { liveApplication } from "../liveApplication";
 
 const sessionResponse = z.object({ session: z.object({ id: z.string() }) });
@@ -31,14 +31,15 @@ test("HTTP session preferences list disabled servers without resolving secrets a
       enabled: false,
     },
     unavailableServer = { command: `\${OMITY_UNCONFIGURED_COMMAND}`, enabled: true },
-    profileDirectory = join(app.root, "home", "settings", "profiles", "alternate");
-  writeToolboxConfiguration(app.root, {
+    profileDirectory = join(app.context.userDirectory, "profiles", "alternate"),
+    { choice, open_ended } = fixtureTools;
+  writeFixtureYaml(app.profileDirectory, "toolbox", {
     mcpServers: { optional: optionalServer, unavailable: unavailableServer },
     toolNameOverrides: {
-      ask_user__choice: "prompt_choices",
+      [choice.name]: "prompt_choices",
       unavailable__identity: "unavailable_identity",
     },
-    toolboxes: { choice: { enabled: false } },
+    toolboxes: { choice: { ...choice, enabled: false }, open_ended },
   });
   mkdirSync(profileDirectory, { recursive: true });
   writeFileSync(join(profileDirectory, "model.yaml"), "model: alternate-model\n");
@@ -121,12 +122,7 @@ test("HTTP session preferences list disabled servers without resolving secrets a
     expect(definition.prefix.tools.tools.map(({ name }) => name)).not.toContain(
       "unavailable_identity",
     );
-    restoredMcp = createAppMcp(
-      app.root,
-      "error",
-      createSettingsContext(app.root),
-      new AskUserRuntime(() => {}),
-    );
+    restoredMcp = createAppMcp(app.root, "error", app.context, new AskUserRuntime(() => {}));
     const restored = await restoredMcp.loadSession(
       session.id,
       database.profiles(session.id),
@@ -136,7 +132,7 @@ test("HTTP session preferences list disabled servers without resolving secrets a
     expect(Object.keys(restored.configuration.mcpServers)).toEqual(["optional"]);
     expect(restored.tools.map(({ name }) => name)).toContain("optional__identity");
     expect(restored.tools.map(({ name }) => name)).toContain("prompt_choices");
-    expect(restored.tools.map(({ name }) => name)).not.toContain("ask_user__open_ended");
+    expect(restored.tools.map(({ name }) => name)).not.toContain(open_ended.name);
   } finally {
     await restoredMcp?.close();
     database.close();
@@ -153,7 +149,7 @@ test("HTTP session preferences list disabled servers without resolving secrets a
     disabledDatabase = new AgentDatabase(sessionPaths(disabledSession.id).dbPath);
   try {
     const { tools } = readDefinitionRecord(disabledDatabase.db, disabledSession.id).prefix.tools;
-    expect(tools.map(({ name }) => name)).toContain("ask_user__open_ended");
+    expect(tools.map(({ name }) => name)).toContain(open_ended.name);
     expect(tools.map(({ name }) => name)).not.toContain("optional__identity");
   } finally {
     disabledDatabase.close();

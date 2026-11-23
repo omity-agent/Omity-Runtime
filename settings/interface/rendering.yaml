@@ -1,0 +1,7 @@
+transcript:
+  bufferSize: 384
+  followThreshold: 48
+  minimumScrollbarWidthPx: 16
+code:
+  bufferSize: 192
+  estimatedLineHeight: 24

@@ -16,10 +16,10 @@ function connectHighlighter() {
       worker.terminate();
     };
   worker.addEventListener("error", (event) => {
-    close(new Error(event.message || localize("frontend:highlight.workerFailed")));
+    close(new Error(event.message || localize("diagnostics:highlight.workerFailed")));
   });
   worker.addEventListener("messageerror", () => {
-    close(new Error(localize("frontend:highlight.messageInvalid")));
+    close(new Error(localize("diagnostics:highlight.messageInvalid")));
   });
   return { close, rpc };
 }
@@ -85,7 +85,7 @@ export class HighlightScheduler {
     }
     this.queue.stop();
     this.queue.clear();
-    this.connection?.close(new Error(localize("frontend:highlight.schedulerClosed")));
+    this.connection?.close(new Error(localize("diagnostics:highlight.schedulerClosed")));
   }
   private cancelPending(streamId: string) {
     for (const job of this.queue.peekPendingItems()) {

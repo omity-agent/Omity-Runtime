@@ -2,10 +2,14 @@ import "katex/dist/katex.min.css";
 import type { Root } from "hast";
 import { useMemo } from "react";
 import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
 import remarkBreaks from "remark-breaks";
+import remarkCjkFriendlyGfmStrikethrough from "remark-cjk-friendly-gfm-strikethrough/parseOnly";
+import remarkCjkFriendly from "remark-cjk-friendly/parseOnly";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import { SKIP, visit } from "unist-util-visit";
 
-import { markdownPlugins, markdownRehypePlugins } from "../../../../../settings/rendering";
 import type { FilePathMatch } from "../../../../fileLinks/types";
 import { normalizeCodeMatches, normalizeLineBreaks } from "../FileLink/lineBreaks";
 import { fileLinkRemark } from "../FileLink/markdown";
@@ -13,6 +17,14 @@ import { useMarkdownSource } from "./DisplayMode";
 import { region, rendered } from "./proseLayout";
 import { blockComponents, inlineComponents, MarkdownContext, noFileLinks } from "./Renderers";
 import { MarkdownSource } from "./Source";
+
+const markdownPlugins = [
+    remarkGfm,
+    remarkCjkFriendly,
+    remarkCjkFriendlyGfmStrikethrough,
+    remarkMath,
+  ],
+  markdownRehypePlugins = [rehypeKatex];
 
 export function MarkdownView({
   content,

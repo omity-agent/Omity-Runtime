@@ -8,7 +8,7 @@ import {
   retryableHttpStatuses,
   retryableMessages,
   retryableNames,
-} from "../../settings/resilience";
+} from "../failures/classification";
 import { localize } from "../i18n/server";
 
 export class ModelEmptyResponseError extends Error {

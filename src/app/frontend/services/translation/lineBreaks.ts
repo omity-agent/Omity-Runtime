@@ -40,7 +40,7 @@ function availableMarkerIndex(source: string, markerCount: number) {
       return firstIndex;
     }
   }
-  throw new Error(localize("frontend:translation.markerGenerationFailed"));
+  throw new Error(localize("translation:markerGenerationFailed"));
 }
 function markerMatches(value: string): MarkerMatch[] {
   return [...value.matchAll(markerPattern)].flatMap((match) => {
@@ -62,7 +62,7 @@ function restoreLineBreaks(translated: string, markers: LineBreakMarker[]) {
       }
       if (found.length > 1) {
         throw new Error(
-          localize("frontend:translation.duplicateMarker", {
+          localize("translation:duplicateMarker", {
             value0: marker.token,
           }),
         );
@@ -70,14 +70,14 @@ function restoreLineBreaks(translated: string, markers: LineBreakMarker[]) {
       return { marker, match: found[0]! };
     });
   if (missing.length > 0) {
-    console.warn(localize("frontend:translation.markerMissing"), {
+    console.warn(localize("translation:markerMissing"), {
       markers: missing.map((marker) => marker.token),
     });
   }
   for (let index = 1; index < matches.length; index += 1) {
     if (matches[index]!.match.start < matches[index - 1]!.match.end) {
       throw new Error(
-        localize("frontend:translation.markerOrderInvalid", {
+        localize("translation:markerOrderInvalid", {
           value0: matches[index]!.marker.token,
         }),
       );

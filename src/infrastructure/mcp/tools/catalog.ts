@@ -9,7 +9,6 @@ import type { Logger } from "../../logging/logger";
 import { type BuiltInToolOptions, loadBuiltInTools } from "../../toolbox/loadBuiltIns";
 import { McpClientPool } from "../client/pool";
 import {
-  emptyMcpConfiguration,
   type McpConfiguration,
   readProfileMcpConfiguration,
   readSessionMcpConfiguration,
@@ -57,10 +56,6 @@ async function initializeCatalog(
     const configuration = snapshot
       ? readSessionMcpConfiguration(context, snapshot)
       : readProfileMcpConfiguration(context, options);
-    if (!configuration) {
-      logger.info(localize("mcp:catalog.configurationMissing"));
-      return emptyMcp(emptyMcpConfiguration(), snapshot);
-    }
     return await loadMcpConfiguration(configuration, logger, context, options, snapshot);
   } catch (error) {
     if (error instanceof McpLoadError || error instanceof DomainError) {
@@ -116,7 +111,7 @@ async function connectMcp(
           ]),
         ]),
       ),
-      connectedPool = new McpClientPool(connections, configuration.stdio.restart, logger, cwd);
+      connectedPool = new McpClientPool(connections, configuration, logger, cwd);
     pool = connectedPool;
     const catalog = await loadServerTools(connectedPool, configuration.mcpServers, {
         context,

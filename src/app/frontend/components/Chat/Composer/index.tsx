@@ -1,6 +1,6 @@
 import { type SubmitEvent, useCallback, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
 
+import { useTranslation } from "../../../i18n";
 import { reportPromiseErrors } from "../../../services/errors";
 import { MarkdownEditor } from "../MarkdownEditor";
 import { useMessageCandidates } from "../MarkdownEditor/candidateBrowsing";
@@ -135,7 +135,7 @@ export function Composer({
           onNavigate={navigate}
           onPasteFiles={attachmentSettings ? pasteFiles : undefined}
           onSubmit={handleSubmit}
-          placeholder={t("messagePlaceholder")}
+          placeholder={t("conversation:messagePlaceholder")}
           value={input}
         />
       )}
@@ -150,7 +150,7 @@ export function Composer({
         sessionId={stableDraftTarget.kind === "session" ? stableDraftTarget.sessionId : undefined}
         sessionStatus={sessionStatus}
         stepAvailable={stepAvailable}
-        submitLabel={askUser ? t("answer") : t("send")}
+        submitLabel={askUser ? t("conversation:answer") : t("conversation:send")}
         submitDisabled={submitDisabled}
         usage={usage}
         onControl={onControl ? handleControl : undefined}

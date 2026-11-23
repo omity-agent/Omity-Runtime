@@ -8,7 +8,7 @@ import { buildConfiguredAiModel } from "../../../src/agent/model/provider";
 import { streamAiModel } from "../../../src/agent/model/request";
 import type { ModelToolDefinition } from "../../../src/infrastructure/mcp/tools/definitions";
 import type { ModelAdapter, ModelApi, Settings } from "../../../src/types";
-import { testSettings } from "../../support/settings";
+import { testSettings } from "../../support/configuration";
 
 export const deferredDefinition: ModelToolDefinition = {
   deferLoading: true,

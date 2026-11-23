@@ -5,12 +5,12 @@ import {
 } from "@openai-oauth/core";
 import { type LocalOpenAIOAuthOptions, openaiCredentials } from "@openai-oauth/local";
 
-import { codexProtocol } from "../../../settings/openai/codexProtocol";
 import { localize } from "../../i18n/server";
 import { fetchWithExplicitHeaders } from "../network/explicitHeaders";
 import { codexDefaultHeaders } from "./clientIdentity";
 import { type CloudflareCookieStore, sharedCloudflareStore } from "./cloudflareStore";
 import { createCodexVersionResolver } from "./codexVersion";
+import { codexProtocol } from "./protocol";
 
 interface CodexConnectionOptions extends Pick<LocalOpenAIOAuthOptions, "authFilePath" | "fetch"> {
   cookieStore?: CloudflareCookieStore;

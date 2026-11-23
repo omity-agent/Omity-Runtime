@@ -1,8 +1,8 @@
 import { GitFork } from "lucide-react";
 import { useCallback } from "react";
-import { useTranslation } from "react-i18next";
 
 import type { TimelineMessage } from "../../../../timeline";
+import { useTranslation } from "../../../i18n";
 import { reportPromiseErrors } from "../../../services/errors";
 import { Body } from "../../Transcript/Body";
 import { IconButton } from "../../ui";
@@ -33,7 +33,7 @@ export function Message({
     first = partIndex === undefined || partIndex === 0,
     last = partIndex === undefined || partIndex === item.parts.length - 1,
     classes = messageCard({ pending: item.role === "user" && item.pending, role }),
-    forkLabel = forkDisabled ? t("pauseBeforeFork") : t("fork"),
+    forkLabel = forkDisabled ? t("conversation:pauseBeforeFork") : t("conversation:fork"),
     handleFork = useCallback(() => {
       reportPromiseErrors(onFork(item.id));
     }, [item.id, onFork]);

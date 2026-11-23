@@ -1,13 +1,13 @@
-import "../../../../src/app/frontend/panda.css";
+import "../../../../src/app/frontend/presentation/panda.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useLayoutEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 
-import { translationFixture } from "../../../../settings/verification";
 import { ChatPage } from "../../../../src/app/frontend/components/Chat/ChatPage";
 import { i18nReady } from "../../../../src/app/frontend/i18n";
 import type { TimelineMessage } from "../../../../src/app/timeline";
+import { translationFixture } from "../../../support/browserOptions";
 
 interface PendingTranslation {
   resolve: (translated: string) => void;

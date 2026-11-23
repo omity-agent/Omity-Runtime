@@ -17,7 +17,7 @@ export function MarkdownSource({ content }: { content: string }) {
     const element = sourceReference.current,
       parent = containerReference.current;
     if (!element || !parent) {
-      throw new Error(localize("frontend:markdown.measureElementMissing"));
+      throw new Error(localize("diagnostics:markdown.measureElementMissing"));
     }
     fitSourceHeight(element, parent.getBoundingClientRect().height);
   });
@@ -25,7 +25,7 @@ export function MarkdownSource({ content }: { content: string }) {
     const element = sourceReference.current,
       parent = containerReference.current;
     if (!element || !parent) {
-      throw new Error(localize("frontend:markdown.sourceMeasureElementMissing"));
+      throw new Error(localize("diagnostics:markdown.sourceMeasureElementMissing"));
     }
     return observeSourceSpace(parent, element);
   }, []);

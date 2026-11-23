@@ -5,7 +5,7 @@ import { localize } from "../../i18n";
 export function restoreSessionConsole(sessions: SessionInfo[]) {
   for (const session of sessions) {
     if (session.error) {
-      console.info(localize("frontend:session.restoredFailure"), {
+      console.info(localize("diagnostics:session.restoredFailure"), {
         error: summarizeError(session.error),
         sessionId: session.id,
       });
@@ -13,7 +13,7 @@ export function restoreSessionConsole(sessions: SessionInfo[]) {
   }
 }
 export function reportSessionFailure(failure: SessionFailure) {
-  console.error(localize("frontend:session.failure"), {
+  console.error(localize("diagnostics:session.failure"), {
     error: summarizeError(failure.error),
     sessionId: failure.sessionId,
   });

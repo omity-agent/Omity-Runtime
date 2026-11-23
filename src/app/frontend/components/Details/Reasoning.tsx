@@ -1,11 +1,11 @@
 import { useCollapsibleContext } from "@ark-ui/react/collapsible";
 import { BrainCircuit } from "lucide-react";
 import { createElement } from "react";
-import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
 import type { FilePathMatch } from "../../../../fileLinks/types";
 import type { ReasoningTranslation, TimelinePart } from "../../../timeline";
+import { useTranslation } from "../../i18n";
 import { MarkdownInline, MarkdownView } from "../Markdown";
 import { Frame } from "./Frame";
 
@@ -43,12 +43,12 @@ export function Reasoning({
 }) {
   const { t } = useTranslation(),
     reasoning = translatedReasoning(part, navigator.languages),
-    title = createElement(ReasoningTitle, { label: t("reasoning"), reasoning });
+    title = createElement(ReasoningTitle, { label: t("conversation:reasoning"), reasoning });
   return (
     <Frame
       expandedInitially={latest}
       icon={BrainCircuit}
-      label={t("reasoning")}
+      label={t("conversation:reasoning")}
       stateKey={detailKey}
       title={title}
       tone="model"

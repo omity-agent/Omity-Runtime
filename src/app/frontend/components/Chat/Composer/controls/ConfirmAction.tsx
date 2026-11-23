@@ -1,8 +1,9 @@
 import { LoaderCircle } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
+import { useTranslation } from "../../../../i18n";
+import { uiBehavior } from "../../../../presentation/preferences";
 import { reportPromiseErrors } from "../../../../services/errors";
 import { IconButton } from "../../../ui";
 
@@ -38,7 +39,7 @@ export function ConfirmAction({
     }
     const timeout = globalThis.setTimeout(() => {
       setConfirming(false);
-    }, 2000);
+    }, uiBehavior.confirmWindowMs);
     return () => {
       globalThis.clearTimeout(timeout);
     };
@@ -55,7 +56,7 @@ export function ConfirmAction({
       reportPromiseErrors(runConfirmedAction(onConfirm, setBusy));
     }, [busy, confirming, onConfirm]),
     resetConfirmation = useCallback(() => setConfirming(false), []),
-    description = busy ? t("working") : confirming ? confirmation : label;
+    description = busy ? t("conversation:working") : confirming ? confirmation : label;
   return (
     <IconButton
       aria-busy={busy}

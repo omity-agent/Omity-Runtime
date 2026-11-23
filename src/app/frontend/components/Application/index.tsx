@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, PanelsTopLeft } from "lucide-react";
 import { type ComponentProps, type ReactNode, useCallback, useEffect, useId } from "react";
-import { useTranslation } from "react-i18next";
 
+import { useTranslation } from "../../i18n";
 import type { SessionInfo } from "../../services/client";
 import { useSessionAttention } from "../../services/events/attention";
 import { Sidebar } from "../Sidebar";
@@ -34,7 +34,7 @@ export function ApplicationFrame({
     classes = applicationShell({ panel: showSessions ? "sessions" : "main" }),
     sidebarId = useId(),
     unreadIds = useSessionAttention(queryClient, showSessions ? undefined : activeId),
-    toggleLabel = t(showSessions ? "returnToMain" : "sessions"),
+    toggleLabel = t(showSessions ? "shell:returnToMain" : "shell:sessions"),
     create = useCallback(() => {
       showMain();
       onCreate();
@@ -47,7 +47,7 @@ export function ApplicationFrame({
       [onSelect, showMain],
     );
   useEffect(() => {
-    const brand = t("brand");
+    const brand = t("shell:brand");
     document.title = activeSession
       ? `${t(statusLabelKey(activeSession.status))} · ${activeSession.title} · ${brand}`
       : brand;
@@ -70,7 +70,7 @@ export function ApplicationFrame({
           {showSessions ? <ArrowLeft aria-hidden /> : <PanelsTopLeft aria-hidden />}
         </IconButton>
         <span className={classes.caption} title={title}>
-          {showSessions ? t("sessions") : (title ?? t("newSession"))}
+          {showSessions ? t("shell:sessions") : (title ?? t("shell:newSession"))}
         </span>
       </header>
       <aside className={classes.sidebar} id={sidebarId}>

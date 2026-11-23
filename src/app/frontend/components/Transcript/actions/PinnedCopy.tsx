@@ -121,7 +121,7 @@ function PinnedCopy({
     const element = reference.current,
       instance = handleRef.current;
     if (!element || !instance) {
-      throw new Error(localize("frontend:transcript.copyAnchorMissing"));
+      throw new Error(localize("diagnostics:transcript.copyAnchorMissing"));
     }
     return register(instance, element, span);
   }, [handleRef, register, span]);

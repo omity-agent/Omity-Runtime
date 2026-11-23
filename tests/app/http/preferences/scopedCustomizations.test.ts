@@ -7,28 +7,27 @@ import { z } from "zod";
 import { submissionForm } from "../../../../src/app/attachments/submission";
 import { createAppMcp } from "../../../../src/app/runtime/resources/toolPool";
 import { sessionPaths } from "../../../../src/infrastructure/configuration/sessionPaths";
-import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
 import { AgentDatabase } from "../../../../src/infrastructure/database/agentDatabase";
 import { readDefinitionRecord } from "../../../../src/infrastructure/database/records/session/metadata";
 import { AskUserRuntime } from "../../../../src/infrastructure/toolbox/runtime";
 import { containingItems, partialObject } from "../../../support/asymmetric";
-import { writeToolboxConfiguration } from "../../../support/builtins";
+import { writeFixtureYaml } from "../../../support/configuration";
 import { liveApplication } from "../liveApplication";
 
 const sessionResponse = z.object({ session: z.object({ id: z.string() }) });
 test.each([true, false])(
   "MCP-owned original-name customizations survive server selection and snapshot restoration (prefix: %s)",
   async (prefixToolNameWithServerName) => {
-    await using app = liveApplication("responses-sse");
+    await using app = liveApplication({ adapter: "responses-sse" });
     const sourceName = prefixToolNameWithServerName ? "active__original" : "original",
       workspace = join(app.root, "workspace"),
-      profileDirectory = join(app.root, "home", "settings", "profiles", "custom"),
+      profileDirectory = join(app.context.userDirectory, "profiles", "custom"),
       server = {
         args: [resolve(import.meta.dir, "argumentServer.ts"), "original"],
         command: process.execPath,
         freeformToolInputs: ["original"],
         prefixToolNameWithServerName,
-        toolDescriptionOverrides: { original: "settings/prompts/original.md" },
+        toolDescriptionOverrides: { original: "prompts/original.md" },
       },
       configuration = {
         mcpServers: {
@@ -47,13 +46,14 @@ test.each([true, false])(
       };
     mkdirSync(workspace);
     mkdirSync(join(profileDirectory, "prompts"), { recursive: true });
-    writeFileSync(join(app.root, "settings", "prompts", "original.md"), "base description");
+    mkdirSync(join(app.profileDirectory, "prompts"));
+    writeFileSync(join(app.profileDirectory, "prompts", "original.md"), "base description");
     writeFileSync(join(profileDirectory, "prompts", "override.md"), "profile description");
     writeFileSync(
       join(profileDirectory, "toolbox.yaml"),
       "mcpServers:\n  active:\n    toolDescriptionOverrides:\n      original: prompts/override.md\n",
     );
-    writeToolboxConfiguration(app.root, configuration);
+    writeFixtureYaml(app.profileDirectory, "toolbox", configuration);
     const overrides = { active: true, inactive: false },
       created = await fetch(`${app.url}/api/sessions`, {
         body: submissionForm(
@@ -65,12 +65,7 @@ test.each([true, false])(
     expect(created.status).toBe(200);
     const { session } = sessionResponse.parse(await created.json()),
       database = new AgentDatabase(sessionPaths(session.id).dbPath),
-      restoredMcp = createAppMcp(
-        app.root,
-        "error",
-        createSettingsContext(app.root),
-        new AskUserRuntime(() => {}),
-      );
+      restoredMcp = createAppMcp(app.root, "error", app.context, new AskUserRuntime(() => {}));
     try {
       const deadline = Date.now() + 5000;
       while (
@@ -111,7 +106,6 @@ test.each([true, false])(
       );
       expect(Object.keys(restored.configuration.mcpServers)).toEqual(["active"]);
       expect(restored.freeformToolParameters.get("renamed_tool")).toBe("input");
-      expect(restored.tools.map(({ name }) => name)).toContain("ask_user__open_ended");
       expect(restored.tools.map(({ name }) => name)).not.toContain("unused_alias");
     } finally {
       await restoredMcp.close();

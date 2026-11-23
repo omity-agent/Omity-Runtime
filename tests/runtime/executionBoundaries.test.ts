@@ -9,8 +9,8 @@ import { streamAiModel } from "../../src/agent/model/request";
 import { buildTimeline } from "../../src/app/timeline";
 import { loadTranscript } from "../../src/app/transcript";
 import { processInput } from "../../src/runtime/consumeInputs";
+import { testSettings } from "../support/configuration";
 import { cleanupDatabaseDirs, required, workspace } from "../support/database";
-import { testSettings } from "../support/settings";
 import { agentFixture, textResponse, toolResponse } from "./support/agentFixture";
 
 afterEach(cleanupDatabaseDirs);

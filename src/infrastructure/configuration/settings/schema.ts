@@ -93,7 +93,9 @@ const promptFileSchema = z
     }),
     server: z.strictObject({
       host: z.string().min(1),
+      idleTimeoutSeconds: z.number().int().min(0).max(255),
       port: z.number().int().min(0).max(65_535),
+      requestBodyLimitBytes: z.number().int().positive(),
     }),
   });
 export function parseMainSettings(value: unknown, model: ReturnType<typeof parseModelSettings>) {
@@ -101,6 +103,14 @@ export function parseMainSettings(value: unknown, model: ReturnType<typeof parse
     .extend({
       prediction: emptyAs(createPredictionSettingsSchema(model).optional(), undefined).optional(),
     })
+    .refine(
+      ({ attachments, server }) =>
+        Number.isSafeInteger(attachments.maxSizeBytes + server.requestBodyLimitBytes),
+      {
+        error: localize("configuration:settings.schema.attachmentBodyLimitUnsafe"),
+        path: ["attachments", "maxSizeBytes"],
+      },
+    )
     .parse(prepareMainSettings(value, model));
 }
 export function parseAgentSettings(value: unknown) {

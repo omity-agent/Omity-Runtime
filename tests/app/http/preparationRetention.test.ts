@@ -26,7 +26,7 @@ test("new session drafts retain incomplete message pairs across controller reope
   expect(await saveDraft(endpoint, { message: "stale", pairs: [] }, 3)).toEqual({ revision: 4 });
   const reopened = new AppController(app.root);
   try {
-    const restored = await createApi(reopened).request("/api/session-preparation");
+    const restored = await createApi(reopened, app.settings).request("/api/session-preparation");
     expect(await restored.json()).toEqual({
       content: JSON.stringify(preparation),
       revision: 4,

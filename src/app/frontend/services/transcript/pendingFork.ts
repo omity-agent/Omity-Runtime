@@ -63,7 +63,7 @@ export function usePendingFork({
         }
         const pending = pageRef.current;
         if (!pending) {
-          throw new Error(localize("frontend:fork.pendingSessionMissing"));
+          throw new Error(localize("diagnostics:fork.pendingSessionMissing"));
         }
         activating.current = true;
         setBusy(true);
@@ -184,7 +184,7 @@ function sameForkPage(left: ForkPage | undefined, right: ForkPage) {
 async function saveMaterializedDraft(sessionId: string, content: string, minimumRevision: number) {
   const current = await loadComposerDraft(sessionId);
   if (current.revision >= Number.MAX_SAFE_INTEGER) {
-    throw new Error(localize("frontend:fork.revisionOverflow", { value0: sessionId }));
+    throw new Error(localize("diagnostics:fork.revisionOverflow", { value0: sessionId }));
   }
   const revision = Math.max(current.revision + 1, minimumRevision);
   await saveComposerDraft(sessionId, content, revision);

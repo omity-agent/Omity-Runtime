@@ -31,7 +31,6 @@ try {
   );
   const settings = await prepareBenchmarkSettings(
     directory,
-    repository,
     profile,
     history.systemPrompt,
     toolsPath,
@@ -48,7 +47,7 @@ try {
     await mkdir(home);
     process.env["OMITY_HOME"] = home;
     try {
-      const sample = await measureApplication(settings(home), profile, history, repository);
+      const sample = await measureApplication(settings, profile, history, repository);
       if (index >= profile.warmup) {
         samples.push(sample);
       }

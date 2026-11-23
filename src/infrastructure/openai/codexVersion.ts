@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { codexProtocol } from "../../../settings/openai/codexProtocol";
 import { localize } from "../../i18n/server";
+import { codexProtocol } from "./protocol";
 
 const versionSchema = z.string().regex(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/u),
   packageMetadataSchema = z.object({ version: versionSchema });

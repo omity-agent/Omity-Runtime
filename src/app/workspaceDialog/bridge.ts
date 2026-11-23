@@ -6,11 +6,12 @@ import { fileURLToPath } from "node:url";
 
 import { z } from "zod";
 
-import folderDialog from "../../../settings/folderDialog.json";
+import { localize } from "../../i18n/server";
 
 export const workspaceDialogArgument = "--internal-pick-workspace";
 const selectionSchema = z.string().min(1).nullable(),
-  exitSchema = z.tuple([z.number().nullable(), z.string().nullable()]);
+  exitSchema = z.tuple([z.number().nullable(), z.string().nullable()]),
+  knownPngWarning = "libpng warning: iCCP: known incorrect sRGB profile";
 export async function pickWorkspaceDirectory(
   [executable, ...args] = dialogCommand(),
   diagnostic: (line: string) => void = writeDiagnostic,
@@ -27,7 +28,9 @@ export async function pickWorkspaceDirectory(
       ]),
       [status, signal] = exitSchema.parse(closed);
     if (status !== 0) {
-      throw new Error(`${folderDialog.failureMessage} (${String(status ?? signal)})`);
+      throw new Error(
+        localize("application:workspaceDialog.failed", { status: String(status ?? signal) }),
+      );
     }
     return selectionSchema.parse(JSON.parse(output));
   } finally {
@@ -51,7 +54,7 @@ async function forwardDiagnostics(
     input: stderr,
   });
   for await (const line of lines) {
-    if (line !== folderDialog.ignoredWarning) {
+    if (line !== knownPngWarning) {
       diagnostic(`${line}\n`);
     }
   }

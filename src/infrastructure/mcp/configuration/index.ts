@@ -1,13 +1,9 @@
-import { resolve } from "node:path";
-
 import { isPlainObject as isRecord } from "es-toolkit";
 
 import { localize } from "../../../i18n/server";
-import { applicationAssetPath } from "../../applicationAssets";
 import { resolveConfiguredPath } from "../../configuration/configuredPath";
-import { readSettingsYamlValue, resolvePlaceholders } from "../../configuration/placeholders";
 import type { SettingsContext } from "../../configuration/settings/context";
-import { readLayeredSettingsYaml } from "../../configuration/settings/files";
+import { requireLayeredSettingsYaml } from "../../configuration/settings/files";
 import type { BuiltInPreferences } from "../../toolbox/metadata";
 import type { McpToolSnapshot } from "../tools/definitions";
 import { enableConfiguredMcpServers, omitDisabledToolboxConfiguration } from "./activation";
@@ -20,30 +16,17 @@ import {
   type ToolboxOverrides,
 } from "./selection";
 
-export function readMcpConfiguration(path: string) {
-  const parsed = resolvePlaceholders(
-    omitDisabledToolboxConfiguration(readSettingsYamlValue(path)),
-    { source: path },
-  );
-  return parseMcpConfiguration(parsed, path);
-}
 export function readProfileMcpConfiguration(
   context: SettingsContext,
   overrides: ToolboxOverrides = {},
 ) {
   return readToolboxConfiguration(context, (value) => applyToolboxOverrides(value, overrides));
 }
-export function readSessionMcpConfiguration(
-  context: SettingsContext,
-  snapshot: McpToolSnapshot,
-): McpConfiguration | undefined {
+export function readSessionMcpConfiguration(context: SettingsContext, snapshot: McpToolSnapshot) {
   const configuration = readToolboxConfiguration(context, (value) =>
-    applyServerOverrides(enableConfiguredMcpServers(value), snapshot.serverOverrides),
-  );
-  if (!configuration) {
-    return undefined;
-  }
-  const names = new Set(snapshot.tools.map(({ name }) => name));
+      applyServerOverrides(enableConfiguredMcpServers(value), snapshot.serverOverrides),
+    ),
+    names = new Set(snapshot.tools.map(({ name }) => name));
   for (const preferences of Object.values<BuiltInPreferences[keyof BuiltInPreferences]>(
     configuration.toolboxes,
   )) {
@@ -59,7 +42,7 @@ function readToolboxConfiguration(
   context: SettingsContext,
   selectTools: (value: unknown) => unknown,
 ) {
-  const file = readLayeredSettingsYaml(
+  const file = requireLayeredSettingsYaml(
     context,
     "profile",
     "toolbox.yaml",
@@ -69,19 +52,20 @@ function readToolboxConfiguration(
       override: resolveProfilePaths,
     },
   );
-  return file ? parseMcpConfiguration(file.value, file.path) : undefined;
+  return parseMcpConfiguration(file.value, file.path);
 }
 export function readProfileToolboxOptions(context: SettingsContext) {
-  const file = readLayeredSettingsYaml(
-    context,
-    "profile",
-    "toolbox.yaml",
-    {},
-    {
-      beforePlaceholders: describeToolbox,
-    },
+  return toolboxOptionsSchema.parse(
+    requireLayeredSettingsYaml(
+      context,
+      "profile",
+      "toolbox.yaml",
+      {},
+      {
+        beforePlaceholders: describeToolbox,
+      },
+    ).value,
   );
-  return file ? toolboxOptionsSchema.parse(file.value) : { builtInTools: [], mcpServers: [] };
 }
 function parseMcpConfiguration(parsed: unknown, path: string) {
   return toolboxSchema.parse(omitDisabledToolboxConfiguration(parsed), {
@@ -92,25 +76,6 @@ function parseMcpConfiguration(parsed: unknown, path: string) {
   });
 }
 export type McpConfiguration = ReturnType<typeof parseMcpConfiguration>;
-export function emptyMcpConfiguration(): McpConfiguration {
-  const path = applicationAssetPath(
-      resolve(import.meta.dir, "../../../.."),
-      "settings/toolbox.yaml",
-    ),
-    defaults = readSettingsYamlValue(path);
-  if (!isRecord(defaults)) {
-    throw new Error(localize("mcp:configuration.defaultsMustBeObject", { value0: path }));
-  }
-  return parseMcpConfiguration(
-    {
-      ...defaults,
-      mcpServers: {},
-      toolNameOverrides: {},
-      toolboxes: {},
-    },
-    path,
-  );
-}
 function resolveProfilePaths(value: unknown, override: unknown, directory: string): unknown {
   if (
     !isRecord(value) ||

@@ -49,7 +49,7 @@ export class ReadingAnchor {
       const { element, bottom } = this.pending,
         row = element.closest<HTMLElement>("[data-transcript-index]");
       if (!row) {
-        throw new Error(localize("frontend:transcript.virtualRowMissing"));
+        throw new Error(localize("diagnostics:transcript.virtualRowMissing"));
       }
       const measureDelta = () =>
         element.getBoundingClientRect().bottom - viewport.getBoundingClientRect().top - bottom;

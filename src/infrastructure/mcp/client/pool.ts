@@ -1,12 +1,11 @@
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 
-import { mcpHttpReconnection } from "../../../../settings/networking";
 import { localize } from "../../../i18n/server";
 import type { Logger } from "../../logging/logger";
+import type { McpConfiguration } from "../configuration";
 import { parseMcpConnection } from "../configuration/connections";
 import { reportMcpFailure } from "../failures/reportConstruction";
 import { AsyncResourceCache } from "../lifecycle";
-import type { StdioRestartPolicy } from "./availability";
 import { HandshakeEvidence } from "./handshakeEvidence";
 import { connectProtocolClient, type McpOperations } from "./protocol";
 import { RestartingStdioClient } from "./restarting";
@@ -18,7 +17,7 @@ export class McpClientPool {
   }>(localize("mcp:client.poolLabel"));
   constructor(
     private readonly connections: Record<string, unknown>,
-    private readonly restartPolicy: StdioRestartPolicy,
+    private readonly policy: Pick<McpConfiguration, "diagnostics" | "stdio">,
     private readonly logger: Logger,
     private readonly cwd: string,
   ) {}
@@ -40,15 +39,20 @@ export class McpClientPool {
       const client = await RestartingStdioClient.create(
         name,
         { ...connection.options, cwd: connection.options.cwd ?? this.cwd },
-        this.restartPolicy,
+        this.policy,
         this.logger,
       );
       return { client, close: () => client.close() };
     }
-    const evidence = new HandshakeEvidence(),
+    const evidence = new HandshakeEvidence(this.policy.diagnostics.transportErrors),
       transport = new StreamableHTTPClientTransport(new URL(connection.options.url), {
         fetch: (input, init) => globalThis.fetch(input, init),
-        reconnectionOptions: mcpHttpReconnection,
+        reconnectionOptions: {
+          initialReconnectionDelay: 0,
+          maxReconnectionDelay: 0,
+          maxRetries: 0,
+          reconnectionDelayGrowFactor: 1,
+        },
         requestInit: { headers: connection.options.headers },
       });
     // eslint-disable-next-line unicorn/prefer-add-event-listener -- MCP transports expose callback properties instead of EventTarget APIs.

@@ -8,8 +8,15 @@ import { mcpServerSchema, normalizeMcpServers } from "./connections";
 const nonEmpty = z.string().min(1),
   toolName = nonEmpty.refine((name) => name !== "agent", {
     error: localize("mcp:configuration.agentNameForbidden"),
+  }),
+  diagnosticsSchema = z.strictObject({
+    stderrBytes: z.number().int().nonnegative(),
+    stdoutBytes: z.number().int().nonnegative(),
+    transportErrors: z.number().int().nonnegative(),
   });
+export type McpDiagnosticLimits = z.infer<typeof diagnosticsSchema>;
 export const toolboxSchema = z.strictObject({
+  diagnostics: diagnosticsSchema,
   mcpServers: emptyAs(z.record(z.string(), mcpServerSchema), {}).transform(normalizeMcpServers),
   stdio: z.strictObject({
     restart: z.strictObject({

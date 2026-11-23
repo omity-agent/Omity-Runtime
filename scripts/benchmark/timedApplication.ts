@@ -4,7 +4,10 @@ import { raceSignal } from "race-signal";
 
 import { AppController } from "../../src/app/controller";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
-import type { SettingsContext } from "../../src/infrastructure/configuration/settings/context";
+import {
+  type SettingsContext,
+  settingsProfileNames,
+} from "../../src/infrastructure/configuration/settings/context";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import type { TypicalHistory } from "./historyFixture";
 import { RoundtripCapture } from "./timing/roundtripCapture";
@@ -25,7 +28,7 @@ export async function measureApplication(
     db.createSession(
       sessionId,
       workspace,
-      [],
+      settingsProfileNames(settingsContext),
       {
         prefix: {
           model: {

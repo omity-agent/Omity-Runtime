@@ -1,4 +1,4 @@
-import { transcriptWindow } from "../../../../../../settings/rendering";
+import { transcriptWindow } from "../../../presentation/preferences";
 import { observeScrollIntent } from "./scrollIntent";
 
 type ScrollViewport = Pick<HTMLElement, "clientHeight" | "scrollHeight" | "scrollTop">;

@@ -1,8 +1,8 @@
 import { Check, FolderOpen, History } from "lucide-react";
 import { type ChangeEvent, useCallback, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
+import { useTranslation } from "../../i18n";
 import { reportPromiseErrors } from "../../services/errors";
 import { Button, Field, Input } from "../ui";
 
@@ -87,7 +87,7 @@ export function WorkspacePicker({
     );
   return (
     <Field.Root className={className} disabled={disabled}>
-      <Field.Label>{t("workspace")}</Field.Label>
+      <Field.Label>{t("preparation:workspace")}</Field.Label>
       <span className={row}>
         <Input
           className={pathInput}
@@ -96,12 +96,12 @@ export function WorkspacePicker({
           onChange={handleInputChange}
         />
         <Button disabled={disabled || picking} onClick={handlePick} type="button">
-          <FolderOpen size={14} /> {t("chooseFolder")}
+          <FolderOpen size={14} /> {t("preparation:chooseFolder")}
         </Button>
       </span>
       {recentWorkspaces.length > 0 ? (
         <div className={recent}>
-          <span className={recentLabel}>{t("recentWorkspaces")}</span>
+          <span className={recentLabel}>{t("preparation:recentWorkspaces")}</span>
           <div className={recentList}>
             {recentWorkspaces.map((item) => (
               <RecentWorkspaceButton

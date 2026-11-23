@@ -6,8 +6,8 @@ import { completion, createPredictionFixture } from "./modelFixture";
 test.each([false, true])(
   "WebSocket prediction consumes events and reports failures: %s",
   async (failed) => {
-    await using value = await createPredictionFixture();
-    await using resources = new AsyncDisposableStack();
+    await using value = await createPredictionFixture(),
+      resources = new AsyncDisposableStack();
     const { content } = completion(value.replies).choices[0]!.message,
       item = {
         content: [{ annotations: [], text: content, type: "output_text" }],

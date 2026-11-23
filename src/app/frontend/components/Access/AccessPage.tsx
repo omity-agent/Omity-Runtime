@@ -1,7 +1,7 @@
 import { KeyRound, ShieldCheck } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
+import { useTranslation } from "../../i18n";
 import type { AccessStatus } from "../../services/access";
 import { Button, Code, LinkButton } from "../ui";
 
@@ -68,14 +68,18 @@ export function AccessPage(props: AccessPageProps) {
         ) : (
           <KeyRound className={icon} size={28} />
         )}
-        <h1 className={heading}>{t(setup ? "accessSetupTitle" : "accessLoginTitle")}</h1>
+        <h1 className={heading}>
+          {t(setup ? "credentials:setupTitle" : "credentials:loginTitle")}
+        </h1>
         <p className={description}>
-          {t(setup ? "accessSetupDescription" : "accessLoginDescription")}
+          {t(setup ? "credentials:setupDescription" : "credentials:loginDescription")}
         </p>
-        {status && !status.configured && <p className={errorText}>{t("accessNotConfigured")}</p>}
+        {status && !status.configured && (
+          <p className={errorText}>{t("credentials:notConfigured")}</p>
+        )}
         {ticketUrl && (
           <p className={description}>
-            {t("accessSetupLink")} <Code>{ticketUrl}</Code>
+            {t("credentials:setupLink")} <Code>{ticketUrl}</Code>
           </p>
         )}
         {error && <p className={errorText}>{error}</p>}
@@ -89,17 +93,17 @@ export function AccessPage(props: AccessPageProps) {
                   onClick={onTicket}
                   type="button"
                 >
-                  {t("accessCreateSetupLink")}
+                  {t("credentials:createSetupLink")}
                 </Button>
               )}
               {localSetup && setupLink && (
                 <LinkButton className={action} href={setupLink}>
-                  {t(ticketUrl ? "accessOpenSetupLink" : "accessOpenPublicOrigin")}
+                  {t(ticketUrl ? "credentials:openSetupLink" : "credentials:openPublicOrigin")}
                 </LinkButton>
               )}
               {!localSetup && (
                 <Button className={action} disabled={busy} onClick={onRegister} type="button">
-                  {t("accessRegister")}
+                  {t("credentials:register")}
                 </Button>
               )}
               {localSetup && (
@@ -110,7 +114,7 @@ export function AccessPage(props: AccessPageProps) {
                   type="button"
                   visual="ghost"
                 >
-                  {t("accessContinueLocal")}
+                  {t("credentials:continueLocal")}
                 </Button>
               )}
             </>
@@ -121,7 +125,7 @@ export function AccessPage(props: AccessPageProps) {
               onClick={onLogin}
               type="button"
             >
-              {t("accessVerify")}
+              {t("credentials:verify")}
             </Button>
           )}
         </div>

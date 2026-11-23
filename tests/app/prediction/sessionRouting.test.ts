@@ -1,13 +1,13 @@
 import { expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
-import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { stringify } from "yaml";
 
 import { AppController } from "../../../src/app/controller";
 import { createApi } from "../../../src/app/http/handler";
-import { createSettingsContext } from "../../../src/infrastructure/configuration/settings/context";
+import { settingsProfileNames } from "../../../src/infrastructure/configuration/settings/context";
 import { writeSessionConfigurationRecord } from "../../../src/infrastructure/database/records/session/sessionConfiguration";
 import { emptySessionDefinition } from "../../../src/infrastructure/database/session/sessionDefinition";
 import { writeTestConfiguration } from "../../support/configuration";
@@ -17,8 +17,8 @@ import { createPredictionFixture } from "./modelFixture";
 test.each(["inherited", "model", "connection"] as const)(
   "prediction requests use the session snapshot and profile credentials with %s overrides",
   async (mode) => {
-    await using value = await createPredictionFixture();
-    await using resources = new AsyncDisposableStack();
+    await using value = await createPredictionFixture(),
+      resources = new AsyncDisposableStack();
     const { prediction } = value.settings;
     if (
       !prediction?.enabled ||
@@ -35,9 +35,6 @@ test.each(["inherited", "model", "connection"] as const)(
         baseURL: new URL("/global/v1", origin).href,
         model: "global-model",
       },
-      defaults = writeTestConfiguration(value.home, { modelYaml: stringify(globalModel) }),
-      context = createSettingsContext(value.home, join(value.home, "user-settings"), []),
-      profileDirectory = join(context.userDirectory, "profiles", "selected"),
       connectionOverride = mode === "connection",
       overrides =
         mode === "inherited"
@@ -47,7 +44,12 @@ test.each(["inherited", "model", "connection"] as const)(
                 ? { ...globalModel, baseURL: new URL("/override/v1", origin).href }
                 : {}),
               model: "forecast-model",
-            };
+            },
+      { context } = writeTestConfiguration(value.home, {
+        model: globalModel,
+        prediction: { ...prediction, model: overrides },
+      }),
+      profileDirectory = join(context.userDirectory, "profiles", "selected");
     resources.use(scopedEnvironment({ [globalKey]: "global-credential" }));
     mkdirSync(profileDirectory, { recursive: true });
     writeFileSync(
@@ -58,20 +60,21 @@ test.each(["inherited", "model", "connection"] as const)(
         model: "changed-profile-model",
       }),
     );
-    appendFileSync(
-      join(defaults, "main.yaml"),
-      stringify({ prediction: { ...prediction, model: overrides } }),
-    );
     const definition = emptySessionDefinition();
     definition.prefix.model = {
       adapter: "completions",
       baseURL: new URL("/snapshot/v1", origin).href,
       model: "session-model",
     };
-    writeSessionConfigurationRecord(value.database.db, value.sessionId, ["selected"], definition);
+    writeSessionConfigurationRecord(
+      value.database.db,
+      value.sessionId,
+      [...settingsProfileNames(context), "selected"],
+      definition,
+    );
     const controller = new AppController(value.home, { settingsContext: context });
     resources.defer(() => controller.close());
-    const response = await createApi(controller).request(
+    const response = await createApi(controller, value.settings).request(
       `/api/sessions/${value.sessionId}/predictions`,
     );
     expect(response.status).toBe(200);

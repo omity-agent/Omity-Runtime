@@ -2,15 +2,12 @@ import { zValidator } from "@hono/zod-validator";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 
-import { jsonContentType, requestBodyLimit } from "../../../settings/networking";
 import { localize } from "../../i18n/server";
 import { safeId } from "../../infrastructure/configuration/sessionPaths";
 import { HttpError } from "./errors";
 
-export function limitRequestBody(
-  maxSize = requestBodyLimit,
-  label = localize("http:request.bodyLabel"),
-) {
+const jsonContentType = /^application\/(?:[a-z.-]+\+)?json(?:;\s*[a-z0-9-]+=[^;]+)*$/iu;
+export function limitRequestBody(maxSize: number, label = localize("http:request.bodyLabel")) {
   return bodyLimit({
     maxSize,
     onError() {
@@ -24,7 +21,6 @@ export function limitRequestBody(
     },
   });
 }
-const regularBodyLimit = limitRequestBody();
 export function validate<Target extends "json" | "form" | "query", Schema extends z.ZodType>(
   target: Target,
   schema: Schema,
@@ -41,8 +37,14 @@ export function validate<Target extends "json" | "form" | "query", Schema extend
     }
   });
 }
-export function jsonBody<Schema extends z.ZodType>(schema: Schema) {
-  return [regularBodyLimit, validate("json", schema)] as const;
+export function requestValidation(maxSize: number) {
+  const limit = limitRequestBody(maxSize);
+  return {
+    json<Schema extends z.ZodType>(this: void, schema: Schema) {
+      return [limit, validate("json", schema)] as const;
+    },
+    limit,
+  };
 }
 export function decodeSessionId(value: string) {
   let decoded: string;

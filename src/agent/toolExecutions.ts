@@ -12,11 +12,12 @@ interface ToolExecution {
   controller: AbortController;
   timer?: ReturnType<typeof setInterval>;
 }
-interface ToolExecutionsOptions {
-  cancellationRequested?: (callId: string) => number | undefined;
+type ToolExecutionsOptions = {
   now?: () => number;
-  pollMs?: number;
-}
+} & (
+  | { cancellationRequested: (callId: string) => number | undefined; pollMs: number }
+  | { cancellationRequested?: undefined }
+);
 export class ToolExecutions {
   private readonly executions = new Map<string, ToolExecution>();
   private readonly now: () => number;
@@ -82,11 +83,12 @@ export class ToolExecutions {
     };
   }
   private startPolling(callId: string, execution: ToolExecution) {
-    if (!this.options.cancellationRequested) {
+    const { cancellationRequested } = this.options;
+    if (!cancellationRequested) {
       return;
     }
     const check = () => {
-      const requestedAt = this.options.cancellationRequested?.(callId);
+      const requestedAt = cancellationRequested(callId);
       if (requestedAt !== undefined) {
         this.cancel(callId, requestedAt);
       }
@@ -95,7 +97,7 @@ export class ToolExecutions {
     if (execution.cancelledAt !== undefined) {
       return;
     }
-    execution.timer = setInterval(check, this.options.pollMs ?? 100);
+    execution.timer = setInterval(check, this.options.pollMs);
     execution.timer.unref();
   }
 }

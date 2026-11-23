@@ -1,7 +1,7 @@
 import { Plus, UserRound } from "lucide-react";
 import { useMemo } from "react";
-import { useTranslation } from "react-i18next";
 
+import { useTranslation } from "../../../i18n";
 import { composerFrame, composerRole } from "../../Chat/Composer/arrangement";
 import { ActionPanel } from "../../Chat/Composer/controls/ActionPanel";
 import { SubmitButton } from "../../Chat/Composer/controls/SubmitButton";
@@ -33,7 +33,11 @@ export function LatestMessage({
   const { t } = useTranslation(),
     footer = useMemo(
       () => (
-        <span aria-label={t("user")} className={composerRole} title={t("user")}>
+        <span
+          aria-label={t("conversation:user")}
+          className={composerRole}
+          title={t("conversation:user")}
+        >
           <UserRound aria-hidden size={20} />
         </span>
       ),
@@ -43,27 +47,27 @@ export function LatestMessage({
     <div className={composerFrame}>
       <MarkdownEditor
         disabled={disabled}
-        label={t("user")}
+        label={t("conversation:user")}
         onChange={onChange}
         onNavigate={onNavigate}
         onPasteFiles={onPasteFiles}
         onSubmit={onSubmit}
-        placeholder={t("messagePlaceholder")}
+        placeholder={t("conversation:messagePlaceholder")}
         value={message}
       />
       <ActionPanel footer={footer}>
         <IconButton
-          aria-label={t("addMessagePair")}
+          aria-label={t("preparation:addMessagePair")}
           disabled={disabled}
           onClick={onAddPair}
-          title={t("addMessagePair")}
+          title={t("preparation:addMessagePair")}
           type="button"
         >
           <Plus aria-hidden size={16} />
         </IconButton>
         <SubmitButton
           disabled={submitDisabled}
-          label={submitting ? t("creating") : t("createAndSend")}
+          label={submitting ? t("preparation:creating") : t("preparation:createAndSend")}
         />
       </ActionPanel>
     </div>

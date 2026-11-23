@@ -3,7 +3,7 @@ import { join, resolve } from "node:path";
 
 import { z } from "zod";
 
-import { executableBuild, frontendOutput } from "../../../settings/bundling";
+import { executableBuild, frontendOutput } from "../../../scripts/distribution";
 import { createTestDirectory } from "../../support/artifacts";
 
 test("AOT executables read embedded settings, schemas and HTML outside the workspace", async () => {
@@ -40,14 +40,14 @@ test("AOT executables read embedded settings, schemas and HTML outside the works
   const report = z
     .object({
       frontend: z.string(),
-      settings: z.string(),
+      settings: z.boolean(),
       standalone: z.boolean(),
       tables: z.array(z.string()),
     })
     .parse(JSON.parse(stdout));
   expect(report).toMatchObject({
     frontend: await Bun.file(frontend).text(),
-    settings: await Bun.file(resolve(executableBuild.root, "settings/main.yaml")).text(),
+    settings: true,
     standalone: true,
   });
   expect(report.tables).toContain("messages");

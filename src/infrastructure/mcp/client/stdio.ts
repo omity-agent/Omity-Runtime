@@ -3,12 +3,9 @@ import { Writable } from "node:stream";
 import type { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 
-import {
-  maximumMcpStderrBytes,
-  maximumMcpStdoutBytes,
-} from "../../../../settings/diagnosticPolicy";
 import { localize } from "../../../i18n/server";
 import type { StdioConnection } from "../configuration/connections";
+import type { McpDiagnosticLimits } from "../configuration/declaration";
 import { reportMcpFailure } from "../failures/reportConstruction";
 import { ProcessOutputCapture } from "./diagnostics";
 import { HandshakeEvidence } from "./handshakeEvidence";
@@ -25,10 +22,16 @@ export interface ConnectedStdioClient {
 type StdioConnector = (
   serverName: string,
   connection: StdioConnection,
+  limits: McpDiagnosticLimits,
   signal?: AbortSignal,
 ) => Promise<ConnectedStdioClient>;
-export const connectStdioClient: StdioConnector = async (serverName, connection, signal) => {
-  const evidence = new HandshakeEvidence(),
+export const connectStdioClient: StdioConnector = async (
+  serverName,
+  connection,
+  limits,
+  signal,
+) => {
+  const evidence = new HandshakeEvidence(limits.transportErrors),
     transport = new StdioClientTransport({
       args: connection.args,
       command: connection.command,
@@ -37,8 +40,8 @@ export const connectStdioClient: StdioConnector = async (serverName, connection,
       stderr: "pipe",
     }),
     { stderr } = transport,
-    diagnostics = new ProcessOutputCapture(maximumMcpStderrBytes),
-    stdout = new ProcessOutputCapture(maximumMcpStdoutBytes),
+    diagnostics = new ProcessOutputCapture(limits.stderrBytes),
+    stdout = new ProcessOutputCapture(limits.stdoutBytes),
     processSnapshot = observeStdioProcess(transport, (chunk) => {
       if (evidence.isRecording()) {
         stdout.append(chunk);

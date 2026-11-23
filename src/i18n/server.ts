@@ -1,8 +1,12 @@
-import { createInstance, type TOptions } from "i18next";
+import { createInstance, type ParseKeys, type TOptions } from "i18next";
 
-import { resources } from "./resources.ts";
+import { serverCatalog } from "./serverCatalog";
 
-const instance = createInstance();
+type ServerNamespace = keyof typeof serverCatalog;
+const instance = createInstance(),
+  namespaces = Object.keys(serverCatalog).filter((key): key is ServerNamespace =>
+    Object.hasOwn(serverCatalog, key),
+  );
 void instance.init({
   fallbackLng: "zh-CN",
   initAsync: false,
@@ -10,8 +14,17 @@ void instance.init({
     escapeValue: false,
   },
   lng: "zh-CN",
-  resources,
+  ns: namespaces,
+  resources: { "zh-CN": serverCatalog },
 });
-export function localize(key: string, options: TOptions = {}) {
-  return instance.t(key, options);
+export function localize(
+  key: Extract<ParseKeys<ServerNamespace[]>, `${ServerNamespace}:${string}`>,
+  options: TOptions = {},
+): string {
+  return instance.t(key, {
+    ...options,
+    ns: namespaces,
+    returnDetails: false,
+    returnObjects: false,
+  });
 }

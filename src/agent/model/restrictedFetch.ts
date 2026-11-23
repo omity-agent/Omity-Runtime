@@ -1,12 +1,28 @@
 import { z } from "zod";
 
-import { modelToolPolicy } from "../../../settings/modelToolPolicy";
 import { localize } from "../../i18n/server";
 import type { OutboundFetch } from "../../infrastructure/network/explicitHeaders";
 import type { ModelApi } from "../../types";
 import { isStrictSchema } from "./tools/eligibility";
 
-const modelRequestSchema = z.looseObject({
+const modelToolPolicy = {
+    allowedTypes: {
+      completions: ["function"],
+      "generate-content": ["functionDeclarations"],
+      interactions: ["function"],
+      messages: ["custom", "tool_search_tool_regex_20251119", "tool_search_tool_bm25_20251119"],
+      responses: ["function", "custom", "tool_search"],
+    },
+    blockedOptions: [
+      "web_search_options",
+      "mcp_servers",
+      "container",
+      "environment",
+      "agent",
+      "agent_config",
+    ],
+  } as const,
+  modelRequestSchema = z.looseObject({
     tools: z.array(z.looseObject({ type: z.string().optional() })).default([]),
   }),
   generateContentToolSchema = z.strictObject({

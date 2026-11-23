@@ -1,0 +1,123 @@
+scale:
+  accent:
+    blue:
+      value: "#7dcfff"
+    cyan:
+      value: "#2ac3de"
+    green:
+      value: "#9ece6a"
+    indigo:
+      value: "#565f89"
+    orange:
+      value: "#ff9e64"
+    purple:
+      value: "#bb9af7"
+    red:
+      value: "#f7768e"
+    selection:
+      value: "#405d9e"
+  ink:
+    "50":
+      value: "#eeeeee"
+    "300":
+      value: "#b5b5b5"
+    "500":
+      value: "#808080"
+    "600":
+      value: "#686868"
+    "800":
+      value: "#343434"
+    "850":
+      value: "#242424"
+    "875":
+      value: "#1c1c1c"
+    "900":
+      value: "#151515"
+    "925":
+      value: "#111111"
+    "950":
+      value: "#0c0c0c"
+    "975":
+      value: "#080808"
+    "990":
+      value: "#050505"
+    "1000":
+      value: "#000000"
+roles:
+  bg:
+    canvas:
+      value: "{colors.ink.1000}"
+    default:
+      value: "{colors.ink.950}"
+    disabled:
+      value: "{colors.ink.950}"
+    emphasized:
+      value: "{colors.ink.900}"
+    hover:
+      value: "{colors.ink.875}"
+    muted:
+      value: "{colors.ink.925}"
+    panel:
+      value: "{colors.ink.975}"
+    selection:
+      value: "{colors.accent.selection}"
+    subtle:
+      value: "{colors.ink.990}"
+  border:
+    default:
+      value: "{colors.ink.850}"
+    disabled:
+      value: "{colors.ink.850}"
+    emphasized:
+      value: "{colors.ink.800}"
+    error:
+      value: "{colors.accent.red}"
+    muted:
+      value: "{colors.ink.850}"
+    outline:
+      value: "{colors.ink.300}"
+    subtle:
+      value: "{colors.ink.950}"
+  fg:
+    default:
+      value: "{colors.ink.50}"
+    disabled:
+      value: "{colors.ink.600}"
+    error:
+      value: "{colors.accent.red}"
+    link:
+      value: "{colors.accent.blue}"
+    muted:
+      value: "{colors.ink.300}"
+    subtle:
+      value: "{colors.ink.500}"
+  status:
+    error:
+      value: "{colors.accent.red}"
+    idle:
+      value: "{colors.ink.600}"
+    model:
+      value: "{colors.accent.blue}"
+    paused:
+      value: "{colors.accent.orange}"
+    tool:
+      value: "{colors.accent.green}"
+  syntax:
+    addition:
+      value: "{colors.accent.green}"
+    comment:
+      value: "{colors.accent.indigo}"
+    deletion:
+      value: "{colors.accent.red}"
+    keyword:
+      value: "{colors.accent.purple}"
+    meta:
+      value: "{colors.accent.blue}"
+    number:
+      value: "{colors.accent.orange}"
+    property:
+      value: "{colors.accent.blue}"
+    string:
+      value: "{colors.accent.green}"
+    title:
+      value: "{colors.accent.cyan}"

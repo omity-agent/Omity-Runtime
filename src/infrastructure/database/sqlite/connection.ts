@@ -4,11 +4,24 @@ import { parse, resolve } from "node:path";
 
 import { DrizzleQueryError } from "drizzle-orm";
 import { drizzle, type SQLiteBunDatabase } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
+import storage from "../../../../settings/runtime/storage.yaml";
 import { localize } from "../../../i18n/server";
 import { initializeDatabase } from "./initialization";
 
-const sqliteBusyTimeoutMs = 5000,
+const nonnegativeInteger = z.number().int().nonnegative(),
+  { deletion, sqlite } = z
+    .object({
+      deletion: z.object({ maxRetries: nonnegativeInteger, retryDelayMs: nonnegativeInteger }),
+      sqlite: z.object({
+        busyTimeoutMs: nonnegativeInteger,
+        journalSizeLimitBytes: nonnegativeInteger,
+        vacuumPages: z.number().int().positive(),
+      }),
+    })
+    .parse(storage),
+  busyTimeoutPragma = `PRAGMA busy_timeout = ${sqlite.busyTimeoutMs.toString()}`,
   databases = new WeakMap<Database, SQLiteBunDatabase>(),
   transactions = new WeakMap<Database, (operation: () => void) => void>();
 export function openSessionDatabase(path: string, root = process.cwd()) {
@@ -23,14 +36,14 @@ export function openSessionDatabase(path: string, root = process.cwd()) {
   }
 }
 function configureDatabase(db: Database) {
-  db.run(`PRAGMA busy_timeout = ${sqliteBusyTimeoutMs.toString()}`);
+  db.run(busyTimeoutPragma);
   db.run("PRAGMA auto_vacuum = INCREMENTAL");
   db.run("PRAGMA journal_mode = WAL");
-  db.run("PRAGMA journal_size_limit = 4194304");
+  db.run(`PRAGMA journal_size_limit = ${sqlite.journalSizeLimitBytes.toString()}`);
   db.run("PRAGMA foreign_keys = ON");
 }
 export function configureReadonlyDatabase(db: Database) {
-  db.run(`PRAGMA busy_timeout = ${sqliteBusyTimeoutMs.toString()}`);
+  db.run(busyTimeoutPragma);
   db.run("PRAGMA foreign_keys = ON");
 }
 export function sessionDatabase(db: Database) {
@@ -67,7 +80,7 @@ function createTransaction(db: Database) {
 export function reclaimDatabasePages(db: Database) {
   db.run("PRAGMA busy_timeout = 0");
   try {
-    db.run("PRAGMA incremental_vacuum(64)");
+    db.run(`PRAGMA incremental_vacuum(${sqlite.vacuumPages.toString()})`);
     db.run("PRAGMA wal_checkpoint(PASSIVE)");
     return true;
   } catch (error) {
@@ -76,7 +89,7 @@ export function reclaimDatabasePages(db: Database) {
     }
     throw error;
   } finally {
-    db.run(`PRAGMA busy_timeout = ${sqliteBusyTimeoutMs.toString()}`);
+    db.run(busyTimeoutPragma);
   }
 }
 export function removeDatabaseDirectory(path: string) {
@@ -86,9 +99,9 @@ export function removeDatabaseDirectory(path: string) {
   }
   rmSync(target, {
     force: true,
-    maxRetries: 50,
+    maxRetries: deletion.maxRetries,
     recursive: true,
-    retryDelay: 50,
+    retryDelay: deletion.retryDelayMs,
   });
 }
 function isSqliteBusy(value: unknown) {

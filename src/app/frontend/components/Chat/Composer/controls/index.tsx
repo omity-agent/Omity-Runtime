@@ -1,9 +1,9 @@
 import { BrushCleaning, Trash2 } from "lucide-react";
 import { useCallback, useMemo } from "react";
-import { useTranslation } from "react-i18next";
 
 import type { Control, SessionStatus } from "../../../../../../types";
 import type { TokenUsage } from "../../../../../timeline";
+import { useTranslation } from "../../../../i18n";
 import { clearTemporaryFiles } from "../../../../services/client";
 import { ContextUsage } from "../../ContextUsage";
 import { ActionPanel } from "./ActionPanel";
@@ -52,7 +52,7 @@ export function Actions({
       if (sessionId) {
         const { skipped } = await clearTemporaryFiles(sessionId);
         if (skipped.length > 0) {
-          console.warn(t("cleanupSkipped", { count: skipped.length }), skipped);
+          console.warn(t("conversation:cleanupSkipped", { count: skipped.length }), skipped);
         }
       }
     }, [sessionId, t]),
@@ -67,10 +67,10 @@ export function Actions({
     <ActionPanel footer={footer}>
       {onDelete ? (
         <ConfirmAction
-          confirmation={t("confirmDelete")}
+          confirmation={t("conversation:confirmDelete")}
           disabled={deleteDisabled}
-          disabledLabel={t("pauseBeforeDelete")}
-          label={t("deleteSession")}
+          disabledLabel={t("conversation:pauseBeforeDelete")}
+          label={t("conversation:deleteSession")}
           onConfirm={onDelete}
         >
           <Trash2 aria-hidden size={16} />
@@ -78,8 +78,8 @@ export function Actions({
       ) : null}
       {sessionId ? (
         <ConfirmAction
-          confirmation={t("confirmCleanup")}
-          label={t("clearTemporaryFiles")}
+          confirmation={t("conversation:confirmCleanup")}
+          label={t("conversation:clearTemporaryFiles")}
           onConfirm={cleanup}
         >
           <BrushCleaning aria-hidden size={16} />
@@ -102,7 +102,7 @@ export function Actions({
           onChange={onProfileChange}
         />
       ) : null}
-      <SubmitButton disabled={submitDisabled} label={submitLabel ?? t("send")} />
+      <SubmitButton disabled={submitDisabled} label={submitLabel ?? t("conversation:send")} />
     </ActionPanel>
   );
 }

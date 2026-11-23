@@ -7,13 +7,14 @@ import { z } from "zod";
 import { submissionForm } from "../../../../src/app/attachments/submission";
 import type { AppController } from "../../../../src/app/controller";
 import { sessionPaths } from "../../../../src/infrastructure/configuration/sessionPaths";
+import { settingsProfileNames } from "../../../../src/infrastructure/configuration/settings/context";
 import { AgentDatabase } from "../../../../src/infrastructure/database/agentDatabase";
 import { readDefinitionRecord } from "../../../../src/infrastructure/database/records/session/metadata";
 import { liveApplication } from "../liveApplication";
 
 test("idle sessions can move a profile to the top without changing frozen tool schemas", async () => {
   await using app = liveApplication();
-  const profileDirectory = join(app.root, "home", "settings", "profiles", "alternate");
+  const profileDirectory = join(app.context.userDirectory, "profiles", "alternate");
   mkdirSync(profileDirectory, { recursive: true });
   writeFileSync(join(profileDirectory, "model.yaml"), "model: alternate-model\n");
   const created = await fetch(`${app.url}/api/sessions`, {
@@ -36,7 +37,10 @@ test("idle sessions can move a profile to the top without changing frozen tool s
       session: { id: sessionId, profile: "alternate" },
     });
     const after = readDefinitionRecord(database.db, sessionId);
-    expect(database.profiles(sessionId)).toEqual(["alternate"]);
+    expect(database.profiles(sessionId)).toEqual([
+      ...settingsProfileNames(app.context),
+      "alternate",
+    ]);
     expect(after.prefix.model).toMatchObject({ model: "alternate-model" });
     expect(after.prefix.tools).toEqual(before.prefix.tools);
     await fetch(`${app.url}/api/sessions/${sessionId}/messages`, {

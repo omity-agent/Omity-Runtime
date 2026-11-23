@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 
-import { maximumMcpStderrBytes } from "../../../../settings/diagnosticPolicy";
 import { mcpLoadDetailsSchema } from "../../../../src/infrastructure/mcp/failures/wireFormat";
 import {
   anyValue,
@@ -9,6 +8,7 @@ import {
   containingText,
   partialObject,
 } from "../../../support/asymmetric";
+import { fixtureDiagnosticLimits } from "../../../support/builtins";
 import { failedCatalog, failingStartupPath } from "./isolatedCatalog";
 
 test("a real stdio startup exit preserves structured process, stderr, and sanitized launch diagnostics", async () => {
@@ -51,7 +51,7 @@ test("a real stdio startup exit preserves structured process, stderr, and saniti
     server: "broken",
     stage: "initialize",
     stderr: {
-      capturedBytes: maximumMcpStderrBytes,
+      capturedBytes: fixtureDiagnosticLimits.stderrBytes,
       discardedBytes: anyValue(Number),
       text: containingText("fatal startup failure: [REDACTED]"),
     },

@@ -1,6 +1,6 @@
 import { type MouseEvent, useCallback } from "react";
-import { useTranslation } from "react-i18next";
 
+import { useTranslation } from "../../../i18n";
 import { navigateLink, pagePath } from "../../../route";
 import type { SessionInfo } from "../../../services/client";
 import { conversationEntry, sessions } from "./itemRecipe";
@@ -35,11 +35,11 @@ function SessionItem({ active, language, onSelect, session, unread }: SessionIte
     <li className={classes.root}>
       <a
         aria-current={active ? "page" : undefined}
-        aria-label={unread ? `${title}, ${t("sessionStoppedUnread")}` : title}
+        aria-label={unread ? `${title}, ${t("shell:sessionStoppedUnread")}` : title}
         className={classes.trigger}
         href={pagePath({ id: session.id, kind: "session" })}
         onClick={handleSelect}
-        title={`${title}${unread ? ` · ${t("sessionStoppedUnread")}` : ""}\n${session.workspace}`}
+        title={`${title}${unread ? ` · ${t("shell:sessionStoppedUnread")}` : ""}\n${session.workspace}`}
       >
         <OverflowCaption className={classes.caption} text={title} />
         <Status compact error={session.error} status={session.status} />

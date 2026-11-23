@@ -1,10 +1,10 @@
-import { maximumMcpTransportErrors } from "../../../../settings/diagnosticPolicy";
-
 export class HandshakeEvidence {
   private active = true;
   private readonly started = performance.now();
   private readonly errors: Error[] = [];
   private discarded = 0;
+  private spawnFailure = false;
+  constructor(private readonly maximumErrors: number) {}
   isRecording() {
     return this.active;
   }
@@ -12,7 +12,9 @@ export class HandshakeEvidence {
     if (!this.active || this.errors.includes(error)) {
       return;
     }
-    if (this.errors.length < maximumMcpTransportErrors) {
+    const syscall: unknown = Reflect.get(error, "syscall");
+    this.spawnFailure ||= typeof syscall === "string" && syscall.startsWith("spawn");
+    if (this.errors.length < this.maximumErrors) {
       this.errors.push(error);
     } else {
       this.discarded += 1;
@@ -22,10 +24,7 @@ export class HandshakeEvidence {
     this.active = false;
   }
   spawnFailed() {
-    return this.errors.some((failure) => {
-      const syscall: unknown = Reflect.get(failure, "syscall");
-      return typeof syscall === "string" && syscall.startsWith("spawn");
-    });
+    return this.spawnFailure;
   }
   snapshot() {
     return {

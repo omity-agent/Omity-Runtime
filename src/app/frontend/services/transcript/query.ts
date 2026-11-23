@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 
 import type { DisplayEvent } from "../../../timeline";
 import { localize } from "../../i18n";
+import { uiBehavior } from "../../presentation/preferences";
 import { contentEvents, loadTranscript } from "../client";
 import { reportError } from "../errors";
 import { readContentSyncEvent, readTranscriptEvent } from "../events/data";
@@ -42,9 +43,9 @@ export function useSessionTranscript(
       {
         asyncRetryerOptions: {
           backoff: "exponential",
-          baseWait: Math.max(snapshotThrottleMs ?? 0, 250),
-          maxAttempts: 4,
-          maxWait: 2000,
+          baseWait: Math.max(snapshotThrottleMs ?? 0, uiBehavior.transcriptRetry.minimumWaitMs),
+          maxAttempts: uiBehavior.transcriptRetry.maxAttempts,
+          maxWait: uiBehavior.transcriptRetry.maxWaitMs,
         },
         onError: (error) => {
           reportError(error);
@@ -98,7 +99,7 @@ async function refreshTranscript(
 }
 function requiredId(sessionId: string | undefined) {
   if (!sessionId) {
-    throw new Error(localize("frontend:transcript.sessionIdMissing"));
+    throw new Error(localize("diagnostics:transcript.sessionIdMissing"));
   }
   return sessionId;
 }

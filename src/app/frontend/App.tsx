@@ -79,8 +79,8 @@ function AuthenticatedApp() {
       queryClient,
       saveDelayMs: bootstrap.data?.frontend.draftSaveDelayMs,
       sourceWorkspace: sourceSession?.workspace,
-    });
-  const workspaces = useMemo(() => recentWorkspaces(sessions), [sessions]),
+    }),
+    workspaces = useMemo(() => recentWorkspaces(sessions), [sessions]),
     userMessageContents = useMemo(
       () => userMessages.data?.messages.map(({ content }) => content) ?? [],
       [userMessages.data],

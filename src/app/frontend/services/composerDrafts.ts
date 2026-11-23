@@ -52,7 +52,7 @@ export function flushComposerDraft(target: ComposerDraftTarget, content: string,
 }
 export function clearTemporaryComposerDraft(target: ComposerDraftTarget) {
   if (target.kind !== "fork") {
-    throw new Error(localize("frontend:drafts.temporaryStorageOnly"));
+    throw new Error(localize("diagnostics:drafts.temporaryStorageOnly"));
   }
   globalThis.sessionStorage.removeItem(storageKey(target));
 }

@@ -8,8 +8,8 @@ import { sessionPaths } from "../../../src/infrastructure/configuration/sessionP
 import { AgentDatabase } from "../../../src/infrastructure/database/agentDatabase";
 import { removeDatabaseDirectory } from "../../../src/infrastructure/database/sqlite/connection";
 import { createTestDirectory } from "../../support/artifacts";
+import { testSettings } from "../../support/configuration";
 import { scopedEnvironment } from "../../support/scopedEnvironment";
-import { testSettings } from "../../support/settings";
 
 export async function createPredictionFixture(outputCount = 2) {
   await using cleanup = new AsyncDisposableStack();

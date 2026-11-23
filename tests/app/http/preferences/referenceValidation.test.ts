@@ -3,14 +3,14 @@ import { resolve } from "node:path";
 
 import { submissionForm } from "../../../../src/app/attachments/submission";
 import { containingItems, containingText, partialObject } from "../../../support/asymmetric";
-import { defaultBuiltIns, writeToolboxConfiguration } from "../../../support/builtins";
+import { writeFixtureYaml } from "../../../support/configuration";
 import { liveApplication } from "../liveApplication";
 
 test.each(["freeformToolInputs", "toolDescriptionOverrides"] as const)(
   "enabled MCP validates original tool names in %s",
   async (field) => {
     await using app = liveApplication();
-    writeToolboxConfiguration(app.root, {
+    writeFixtureYaml(app.profileDirectory, "toolbox", {
       mcpServers: {
         active: {
           args: [resolve(import.meta.dir, "argumentServer.ts"), "original"],
@@ -48,7 +48,7 @@ test.each(["freeformToolInputs", "toolDescriptionOverrides"] as const)(
 );
 test("all disabled MCP customizations and unavailable global renames are ignored with no tools loaded", async () => {
   await using app = liveApplication();
-  writeToolboxConfiguration(app.root, {
+  writeFixtureYaml(app.profileDirectory, "toolbox", {
     mcpServers: {
       inactive: {
         command: `\${OMITY_INACTIVE_COMMAND}`,
@@ -58,12 +58,6 @@ test("all disabled MCP customizations and unavailable global renames are ignored
       },
     },
     toolNameOverrides: { unavailable: "ignored_alias" },
-    toolboxes: Object.fromEntries(
-      Object.entries(defaultBuiltIns()).map(([name, configuration]) => [
-        name,
-        { ...configuration, enabled: false },
-      ]),
-    ),
   });
   const response = await fetch(`${app.url}/api/sessions`, {
     body: submissionForm(

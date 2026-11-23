@@ -1,4 +1,4 @@
-import "../../../../src/app/frontend/panda.css";
+import "../../../../src/app/frontend/presentation/panda.css";
 import { useLayoutEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
