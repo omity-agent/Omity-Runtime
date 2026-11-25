@@ -55,6 +55,7 @@ const classes = sva({
     listStyleType: "disc",
   }),
   ordered = css({ listStyleType: "decimal" }),
+  minorHeading = cx(classes.heading, css({ "--heading-size": "{fontSizes.editor}" })),
   math = css({
     maxWidth: "full",
     overflowX: "auto",
@@ -75,12 +76,12 @@ function element<Tag extends keyof Components>(tag: Tag, className: string) {
 
 export const markupComponents = {
   blockquote: element("blockquote", classes.quote),
-  h1: element("h1", cx(classes.heading, css({ fontSize: "xl" }))),
-  h2: element("h2", cx(classes.heading, css({ fontSize: "lg" }))),
-  h3: element("h3", cx(classes.heading, css({ fontSize: "md" }))),
-  h4: element("h4", cx(classes.heading, css({ fontSize: "editor" }))),
-  h5: element("h5", cx(classes.heading, css({ fontSize: "editor" }))),
-  h6: element("h6", cx(classes.heading, css({ fontSize: "editor" }))),
+  h1: element("h1", cx(classes.heading, css({ "--heading-size": "{fontSizes.xl}" }))),
+  h2: element("h2", cx(classes.heading, css({ "--heading-size": "{fontSizes.lg}" }))),
+  h3: element("h3", classes.heading),
+  h4: element("h4", minorHeading),
+  h5: element("h5", minorHeading),
+  h6: element("h6", minorHeading),
   hr: element("hr", classes.rule),
   img: element("img", classes.image),
   input: ({ node: _node, ...props }) =>

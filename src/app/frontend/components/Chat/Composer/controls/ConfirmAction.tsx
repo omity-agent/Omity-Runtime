@@ -67,6 +67,7 @@ export function ConfirmAction({
       onClick={handleClick}
       title={disabled && disabledLabel ? disabledLabel : description}
       type="button"
+      visual="ghost"
     >
       {busy ? <LoaderCircle aria-hidden className={busyIcon} size={16} /> : children}
     </IconButton>

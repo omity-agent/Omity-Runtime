@@ -3,6 +3,7 @@ import { css } from "styled-system/css";
 import type { VirtualizerHandle } from "virtua";
 
 import { localize } from "../../../i18n";
+import { conversationLane } from "../../Chat/layout";
 import { CopyButton } from "../../Chat/messages/CopyButton";
 import type { segmentTranscript } from "../segments";
 import { type MessageSpan, messageSpans, visibleCopies } from "./messageSpans";
@@ -12,8 +13,6 @@ interface MountedCopy {
   span: MessageSpan;
 }
 const boundary = css({
-    '&[data-first="true"]': { paddingBlockStart: { _short: "3", base: "4", md: "6" } },
-    '&[data-last="true"]': { paddingBlockEnd: { _short: "3", base: "4", md: "6" } },
     insetBlockStart: "0",
     insetInlineStart: "0",
     pointerEvents: "none",
@@ -21,24 +20,14 @@ const boundary = css({
     width: "full",
     zIndex: "pinned",
   }),
-  inset = css({
-    borderColor: "transparent",
-    borderWidth: "hairline",
-    height: "full",
-    maxWidth: { base: "full", sm: "twoThirds" },
-    paddingBlockEnd: "8",
-    paddingBlockStart: "4",
-    paddingInline: "4",
-    width: "full",
-  }),
+  inset = css(conversationLane, { height: "full", paddingBlock: "2" }),
   toolbar = css({
     display: "flex",
-    insetBlockStart: "0",
+    insetBlockStart: "2",
     justifyContent: "flex-end",
-    minHeight: "controlTarget",
     position: "sticky",
   }),
-  button = css({ background: "bg.default", color: "status.model", pointerEvents: "auto" });
+  button = css({ color: "speaker.assistant", pointerEvents: "auto" });
 function placeCopy(instance: VirtualizerHandle, { element, span }: MountedCopy) {
   const first = instance.getItemOffset(span.first),
     end = instance.getItemOffset(span.last) + instance.getItemSize(span.last),
@@ -84,11 +73,9 @@ export function useMessageCopies(segments: ReturnType<typeof segmentTranscript>)
 export function MessageCopies({
   handleRef,
   registry,
-  segments,
 }: {
   handleRef: RefObject<VirtualizerHandle | null>;
   registry: ReturnType<typeof useMessageCopies>;
-  segments: ReturnType<typeof segmentTranscript>;
 }) {
   useLayoutEffect(() => {
     if (handleRef.current) {
@@ -99,7 +86,6 @@ export function MessageCopies({
     <PinnedCopy
       handleRef={handleRef}
       key={span.message.key}
-      last={span.last === segments.length - 1}
       register={registry.register}
       span={span}
     />
@@ -107,12 +93,10 @@ export function MessageCopies({
 }
 function PinnedCopy({
   handleRef,
-  last,
   register,
   span,
 }: {
   handleRef: RefObject<VirtualizerHandle | null>;
-  last: boolean;
   register: ReturnType<typeof useMessageCopies>["register"];
   span: MessageSpan;
 }) {
@@ -126,13 +110,7 @@ function PinnedCopy({
     return register(instance, element, span);
   }, [handleRef, register, span]);
   return (
-    <div
-      className={boundary}
-      data-first={span.first === 0}
-      data-last={last}
-      data-message-actions={span.message.key}
-      ref={reference}
-    >
+    <div className={boundary} data-message-actions={span.message.key} ref={reference}>
       <div className={inset}>
         <div className={toolbar}>
           <CopyButton className={button} value={span.message.copyContent ?? span.message.content} />

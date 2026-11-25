@@ -4,7 +4,7 @@ import { useTranslation } from "../../../i18n";
 import { reportPromiseErrors } from "../../../services/errors";
 import { MarkdownEditor } from "../MarkdownEditor";
 import { useMessageCandidates } from "../MarkdownEditor/candidateBrowsing";
-import { composerFrame } from "./arrangement";
+import { composerDock, composerInput, composerLayout } from "./arrangement";
 import { AskUserPrompt } from "./AskUser/Prompt";
 import { useQuestionAnswerState } from "./AskUser/state";
 import { Actions } from "./controls";
@@ -118,45 +118,49 @@ export function Composer({
         (askUser.kind === "choice" && selectedOptions.length === 0 && askNote.trim().length === 0)
       : editorDisabled || !input.trim();
   return (
-    <form className={composerFrame} onSubmit={handleFormSubmit}>
-      {askUser ? (
-        <AskUserPrompt
-          note={askNote}
-          onNoteChange={answerState.handleNoteChange}
-          onOptionsChange={answerState.handleOptionsChange}
-          onSubmit={handleSubmit}
-          question={askUser}
-          selectedOptions={selectedOptions}
+    <form className={composerDock} onSubmit={handleFormSubmit}>
+      <div className={composerLayout}>
+        <div className={composerInput}>
+          {askUser ? (
+            <AskUserPrompt
+              note={askNote}
+              onNoteChange={answerState.handleNoteChange}
+              onOptionsChange={answerState.handleOptionsChange}
+              onSubmit={handleSubmit}
+              question={askUser}
+              selectedOptions={selectedOptions}
+            />
+          ) : (
+            <MarkdownEditor
+              disabled={editorDisabled}
+              onChange={handleContentChange}
+              onNavigate={navigate}
+              onPasteFiles={attachmentSettings ? pasteFiles : undefined}
+              onSubmit={handleSubmit}
+              placeholder={t("conversation:messagePlaceholder")}
+              value={input}
+            />
+          )}
+        </div>
+        <Actions
+          availableProfiles={availableProfiles}
+          cacheHitWarningRatio={cacheHitWarningRatio}
+          controlDisabled={controlDisabled || loading || submitting}
+          currentProfile={currentProfile}
+          deleteDisabled={deleteDisabled}
+          profileChangeDisabled={profileChangeDisabled || loading || submitting}
+          profileChangePending={profileChangePending}
+          sessionId={stableDraftTarget.kind === "session" ? stableDraftTarget.sessionId : undefined}
+          sessionStatus={sessionStatus}
+          stepAvailable={stepAvailable}
+          submitLabel={askUser ? t("conversation:answer") : t("conversation:send")}
+          submitDisabled={submitDisabled}
+          usage={usage}
+          onControl={onControl ? handleControl : undefined}
+          onDelete={onDelete ? handleDelete : undefined}
+          onProfileChange={onProfileChange}
         />
-      ) : (
-        <MarkdownEditor
-          disabled={editorDisabled}
-          onChange={handleContentChange}
-          onNavigate={navigate}
-          onPasteFiles={attachmentSettings ? pasteFiles : undefined}
-          onSubmit={handleSubmit}
-          placeholder={t("conversation:messagePlaceholder")}
-          value={input}
-        />
-      )}
-      <Actions
-        availableProfiles={availableProfiles}
-        cacheHitWarningRatio={cacheHitWarningRatio}
-        controlDisabled={controlDisabled || loading || submitting}
-        currentProfile={currentProfile}
-        deleteDisabled={deleteDisabled}
-        profileChangeDisabled={profileChangeDisabled || loading || submitting}
-        profileChangePending={profileChangePending}
-        sessionId={stableDraftTarget.kind === "session" ? stableDraftTarget.sessionId : undefined}
-        sessionStatus={sessionStatus}
-        stepAvailable={stepAvailable}
-        submitLabel={askUser ? t("conversation:answer") : t("conversation:send")}
-        submitDisabled={submitDisabled}
-        usage={usage}
-        onControl={onControl ? handleControl : undefined}
-        onDelete={onDelete ? handleDelete : undefined}
-        onProfileChange={onProfileChange}
-      />
+      </div>
     </form>
   );
 }

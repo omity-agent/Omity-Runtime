@@ -20,11 +20,6 @@ dimensions:
       value: 120ms
     medium:
       value: 150ms
-  letterSpacings:
-    caption:
-      value: 0.04em
-    selected:
-      value: 0.08em
   lineHeights:
     code:
       value: "1.65"
@@ -39,28 +34,18 @@ dimensions:
       value: 32rem
     appSidebar:
       value: clamp(15rem, 22vw, 20rem)
-    chatCanvas:
-      value: 120rem
-    composerEditor:
-      value: clamp(5rem, 24dvh, 12rem)
+    composerLimit:
+      value: 50dvh
     content:
       value: 52rem
     detailHeader:
       value: 2.25rem
-    editorCompact:
-      value: 8rem
-    editorShort:
-      value: 24dvh
-    messageLimit:
-      value: 66.666667cqh
     sourceLine:
       value: 1lh
     toolOutput:
       value: 16rem
     toolOutputMinimum:
       value: 3rem
-    twoThirds:
-      value: 66.666667%
     viewport:
       value: 100dvh
   spacing:
@@ -104,8 +89,6 @@ adaptive:
         _compact: 0.9375rem
         base: "{fontSizes.sm}"
   sizes:
-    composerActions:
-      value: calc(5 * {sizes.controlTarget} + 4 * {spacing.1})
     controlTarget:
       value:
         _coarse: "{sizes.11}"
@@ -116,8 +99,6 @@ adaptive:
         _coarse: "{sizes.4.5}"
         _compact: "{sizes.4.5}"
         base: "{sizes.4}"
-    runtimeControls:
-      value: calc(2 * {sizes.controlTarget} + {spacing.1})
     smallIcon:
       value:
         _compact: "{sizes.4}"

@@ -30,10 +30,8 @@ export const input = defineRecipe({
 export const badge = defineRecipe({
   base: {
     alignItems: "center",
-    background: "bg.muted",
-    borderColor: "border.emphasized",
-    borderRadius: "l1",
-    borderWidth: "hairline",
+    background: "bg.emphasized",
+    borderRadius: "md",
     color: "fg.muted",
     display: "inline-flex",
     gap: "1",
@@ -48,10 +46,8 @@ export const badge = defineRecipe({
 });
 export const code = defineRecipe({
   base: {
-    background: "bg.subtle",
-    borderColor: "border.default",
-    borderRadius: "l1",
-    borderWidth: "hairline",
+    background: "var(--inset-surface, {colors.bg.default})",
+    borderRadius: "sm",
     color: "fg.default",
     display: "inline",
     overflowWrap: "anywhere",

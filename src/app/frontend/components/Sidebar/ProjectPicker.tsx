@@ -8,9 +8,9 @@ import { type WorkspaceGroup, workspaceLabel } from "./sessions";
 
 const projects = css({ display: "grid", gap: "1", paddingBlockEnd: "2" }),
   button = css({
-    _hover: { background: "bg.emphasized" },
+    _hover: { background: "bg.hover" },
     alignItems: "center",
-    borderColor: "transparent",
+    borderRadius: "md",
     color: "fg.muted",
     display: "grid",
     gap: "2",
@@ -24,7 +24,6 @@ const projects = css({ display: "grid", gap: "1", paddingBlockEnd: "2" }),
   }),
   selected = css({
     background: "bg.emphasized",
-    borderColor: "border.emphasized",
     color: "fg.default",
   }),
   name = css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),

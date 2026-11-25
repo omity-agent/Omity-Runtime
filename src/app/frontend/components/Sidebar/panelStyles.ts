@@ -14,8 +14,6 @@ export const collections = css({
   touchAction: "pan-y",
 });
 export const section = css({
-  borderBlockEndWidth: "hairline",
-  borderBottomColor: "border.default",
   display: "grid",
   minWidth: "0",
 });

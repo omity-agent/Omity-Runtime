@@ -13,9 +13,8 @@ export const copyButton = css({
 });
 export const block = cva({
   base: {
-    background: "bg.subtle",
-    borderColor: "border.default",
-    borderWidth: "hairline",
+    background: "var(--inset-surface, {colors.bg.default})",
+    borderRadius: "md",
     color: "fg.default",
     display: "block",
     maxWidth: "full",

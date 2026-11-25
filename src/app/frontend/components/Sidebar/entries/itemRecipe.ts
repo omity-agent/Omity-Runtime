@@ -9,19 +9,15 @@ export const conversationEntry = sva({
       color: "fg.muted",
       display: "flex",
       gap: "1.5",
-      letterSpacing: "caption",
       minWidth: "0",
       overflow: "hidden",
       whiteSpace: "nowrap",
     },
     root: {
-      _focusWithin: { background: "bg.emphasized" },
-      _hover: { background: "bg.emphasized" },
+      _focusWithin: { background: "bg.hover" },
+      _hover: { background: "bg.hover" },
       _motionReduce: { transitionProperty: "none" },
-      borderBlockEndColor: "border.default",
-      borderBlockEndWidth: "hairline",
-      borderInlineStartColor: "transparent",
-      borderInlineStartWidth: "accent",
+      borderRadius: "md",
       minWidth: "0",
       transitionDuration: "fast",
       transitionProperty: "background",
@@ -50,7 +46,7 @@ export const conversationEntry = sva({
     active: {
       true: {
         caption: { color: "fg.default", textStyle: "selectedCaption" },
-        root: { background: "bg.muted", borderInlineStartColor: "fg.default" },
+        root: { background: "bg.emphasized" },
       },
     },
     unread: {

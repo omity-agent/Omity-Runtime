@@ -15,8 +15,6 @@ import { Frame } from "./Frame";
 import { useToolAccessory } from "./ToolAccessory";
 
 const ioGrid = css({
-    borderBlockStartWidth: "hairline",
-    borderTopColor: "border.default",
     display: "grid",
     gap: "3",
     gridTemplateColumns: {

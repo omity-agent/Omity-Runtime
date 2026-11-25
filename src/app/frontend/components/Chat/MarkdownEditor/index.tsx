@@ -10,7 +10,7 @@ import { token } from "styled-system/tokens";
 import { markdownSyntax } from "../../Markdown/syntax";
 import type { InputDirection } from "./candidateBrowsing";
 import { EditorHandlerStore, editorInteractions } from "./interactions";
-import { editorFrame, editorTheme, editorWrapper, fixedTheme, fluidTheme } from "./presentation";
+import { editorFrame, editorTheme } from "./presentation";
 
 const basicSetup = {
   autocompletion: false,
@@ -20,10 +20,7 @@ const basicSetup = {
   lineNumbers: true,
 };
 export function MarkdownEditor({
-  bare = false,
   disabled,
-  fill = false,
-  fluid = false,
   label,
   onChange,
   onPasteFiles,
@@ -32,10 +29,7 @@ export function MarkdownEditor({
   placeholder,
   value,
 }: {
-  bare?: boolean;
   disabled: boolean;
-  fill?: boolean;
-  fluid?: boolean;
   label?: string;
   onChange: (value: string) => void;
   onPasteFiles?: (files: File[]) => string | undefined;
@@ -79,26 +73,17 @@ export function MarkdownEditor({
       }),
       markdownSyntax,
       editorTheme,
-      fluid ? fluidTheme : fixedTheme,
       ...editorInteractions(handlers.read),
     ],
-    [fluid, handlers],
+    [handlers],
   );
   return (
-    <div
-      className={editorFrame({
-        disabled,
-        mode: fill ? "fill" : fluid ? "fluid" : "fixed",
-        visual: bare ? "bare" : "outline",
-      })}
-    >
+    <div className={editorFrame} data-disabled={disabled ? "" : undefined}>
       <CodeMirror
         aria-label={label ?? placeholder}
         basicSetup={basicSetup}
-        className={editorWrapper({ fill: !fluid || fill })}
         editable={!disabled}
         extensions={extensions}
-        height={fluid && !fill ? "auto" : "100%"}
         indentWithTab
         onChange={onChange}
         placeholder={placeholder}

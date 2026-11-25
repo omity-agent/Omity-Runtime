@@ -1,5 +1,3 @@
-import { css } from "styled-system/css";
-
 import { type Control, isRunningStatus, type SessionStatus } from "../../../../types";
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
 import type { InitialSessionState } from "../../../initialState";
@@ -15,25 +13,9 @@ import { FileLinkProvider } from "../FileLink/context";
 import { NewSessionPage } from "../NewSession";
 import { Transcript } from "../Transcript";
 import { Composer } from "./Composer";
+import { chatPage, emptyChat } from "./layout";
 import type { AskUserAnswer, AskUserQuestion } from "./toolActions";
 
-const page = css({
-    display: "grid",
-    gridTemplateRows: "minmax(0, 1fr) auto",
-    height: "full",
-    justifySelf: "center",
-    maxWidth: { _largeCanvas: "chatCanvas" },
-    minHeight: "0",
-    minWidth: "0",
-    overflow: "hidden",
-    width: "full",
-  }),
-  empty = css({
-    color: "fg.subtle",
-    display: "grid",
-    height: "full",
-    placeItems: "center",
-  });
 export function ChatPage({
   activeId,
   actionPending = false,
@@ -110,7 +92,7 @@ export function ChatPage({
     if (newSession && preparation) {
       return (
         <NewSessionPage
-          pageClassName={page}
+          pageClassName={chatPage}
           preparation={preparation}
           recentWorkspaces={recentWorkspaces}
           availableProfiles={availableProfiles}
@@ -121,16 +103,16 @@ export function ChatPage({
       );
     }
     return (
-      <div className={page}>
-        <div className={empty}>{t("shell:empty")}</div>
+      <div className={chatPage}>
+        <div className={emptyChat}>{t("shell:empty")}</div>
       </div>
     );
   }
   return (
-    <div className={page}>
+    <div className={chatPage}>
       <FileLinkProvider sessionId={activeId}>
         {view.length === 0 ? (
-          <div className={empty}>{t("conversation:noMessages")}</div>
+          <div className={emptyChat}>{t("conversation:noMessages")}</div>
         ) : (
           <Transcript
             allowFork={allowFork}

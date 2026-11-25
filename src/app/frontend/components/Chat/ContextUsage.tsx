@@ -1,32 +1,21 @@
 import { DatabaseZap } from "lucide-react";
 import { css } from "styled-system/css";
+import { hstack } from "styled-system/patterns";
 
 import type { TokenUsage } from "../../../timeline";
 import { useTranslation } from "../../i18n";
 import { formatTokens } from "../../presentation/tokenUnits";
 
-const panel = css({
-    alignItems: "end",
-    borderBlockStartWidth: "hairline",
-    borderTopColor: "border.default",
-    color: "fg.subtle",
-    display: { base: "flex", md: "grid" },
+const panel = hstack({
+    color: "fg.muted",
+    columnGap: "3",
     flexWrap: "wrap",
-    gap: "2",
-    gridTemplateColumns: { base: "repeat(2, auto)", md: "1fr" },
-    justifyContent: "space-between",
-    paddingBlockStart: "3",
+    rowGap: "1",
     textStyle: "contextUsage",
     whiteSpace: "nowrap",
-    width: "full",
   }),
-  row = css({
-    alignItems: "center",
-    display: "flex",
-    gap: "1.5",
-    justifyContent: "space-between",
-  }),
-  value = css({ color: "fg.muted" }),
+  row = hstack({ gap: "1.5" }),
+  value = css({ color: "fg.default" }),
   cacheNormal = css({ color: "status.tool" }),
   cacheWarning = css({ color: "status.error" });
 export function ContextUsage({

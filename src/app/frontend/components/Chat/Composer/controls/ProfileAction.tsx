@@ -11,6 +11,7 @@ const action = css({
     alignItems: "center",
     display: "flex",
     gap: "1",
+    maxWidth: "full",
     minWidth: "0",
   }),
   field = css({
@@ -19,9 +20,13 @@ const action = css({
     flexDirection: "row",
     flexGrow: 1,
     gap: "1",
+    maxWidth: "full",
     minWidth: "0",
   }),
   select = css({
+    background: "bg.emphasized",
+    borderColor: "transparent",
+    borderRadius: "md",
     flexGrow: 1,
     minWidth: "0",
     width: "full",
@@ -81,6 +86,7 @@ export function ProfileAction({
         onClick={confirm}
         title={t("conversation:confirmProfile")}
         type="button"
+        visual="ghost"
       >
         {pending ? (
           <LoaderCircle aria-hidden className={busyIcon} size={16} />

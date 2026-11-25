@@ -64,6 +64,7 @@ export function RuntimeControl({
             onClick={resume}
             title={resumeLabel}
             type="button"
+            visual="ghost"
           >
             <Play size={16} />
           </IconButton>
@@ -74,6 +75,7 @@ export function RuntimeControl({
               onClick={step}
               title={controlState === "stepping" ? controlLabel : stepLabel}
               type="button"
+              visual="ghost"
             >
               <StepForward
                 className={controlState === "stepping" ? activeIcon : undefined}
@@ -89,6 +91,7 @@ export function RuntimeControl({
           onClick={controlState === "pause" ? pause : resume}
           title={controlState === "pausing" ? cancelPauseLabel : controlLabel}
           type="button"
+          visual="ghost"
         >
           {controlState === "pausing" ? (
             <LoaderCircle className={activeIcon} size={16} />

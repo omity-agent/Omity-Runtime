@@ -10,8 +10,6 @@ import { MarkdownInline, MarkdownView } from "../Markdown";
 import { Frame } from "./Frame";
 
 const content = css({
-    borderBlockStartWidth: "hairline",
-    borderTopColor: "border.default",
     layerStyle: "reasoningText",
     minWidth: "0",
     padding: "3",

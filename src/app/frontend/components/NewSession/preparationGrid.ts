@@ -1,10 +1,11 @@
 import { css } from "styled-system/css";
 
-export const scroll = css({
+import { conversationLane, stableScrollbar } from "../Chat/layout";
+
+export const scroll = css(stableScrollbar, {
   minHeight: "0",
   overflowY: "auto",
   overscrollBehavior: "contain",
-  scrollbarGutter: "stable",
 });
 export const scrollContent = css({
   display: "flex",
@@ -12,7 +13,7 @@ export const scrollContent = css({
   justifyContent: "space-between",
   minHeight: "full",
 });
-export const setup = css({
+export const setup = css(conversationLane, {
   alignContent: "start",
   alignItems: "start",
   alignSelf: "center",
@@ -22,10 +23,8 @@ export const setup = css({
     base: "minmax(0, 1fr)",
     xl: "minmax(0, 1fr) minmax(0, 1.6fr)",
   },
-  justifySelf: "center",
   maxWidth: "breakpoint-xl",
-  padding: { _short: "4", base: "4", md: "8" },
-  width: "full",
+  paddingBlock: { base: "4", md: "6" },
 });
 export const configuration = css({
   alignContent: "start",

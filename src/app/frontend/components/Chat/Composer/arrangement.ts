@@ -1,55 +1,44 @@
 import { css } from "styled-system/css";
+import { hstack } from "styled-system/patterns";
 
-export const composerFrame = css({
+import { conversationLane, stableScrollbar } from "../layout";
+
+const surface = css.raw({
   background: "bg.default",
-  borderBlockStartWidth: "hairline",
-  borderTopColor: "border.default",
   display: "grid",
-  gap: { _short: "2", base: "3" },
-  gridTemplateColumns: {
-    base: "minmax(0, 1fr)",
-    md: "minmax(0, 1fr) auto",
-  },
-  padding: { _short: "2", base: "3", lg: "6", md: "4" },
-  width: "full",
+  gridTemplateRows: "minmax(0, 1fr)",
+  maxBlockSize: "composerLimit",
+  overflow: "hidden",
 });
-export const composerActions = css({
-  display: "flex",
-  flexDirection: "column",
-  gap: "3",
-  height: "full",
-  justifyContent: "space-between",
+export const composerDock = css(surface, stableScrollbar);
+export const draftDock = css(surface);
+export const composerLayout = css(conversationLane, {
+  display: "grid",
+  gap: "2",
+  gridTemplateRows: "minmax(0, 1fr) auto",
+  minHeight: "0",
+  paddingBlock: "2",
+});
+export const composerInput = css({
+  minHeight: "0",
   minWidth: "0",
-  width: { base: "full", md: "composerActions" },
+  overflowY: "auto",
+  scrollbarWidth: "thin",
 });
-export const composerControls = css({
-  alignItems: "center",
+export const composerActions = hstack({ columnGap: "3", flexWrap: "wrap", rowGap: "1" });
+export const composerControls = hstack({
   borderWidth: "0",
-  display: "flex",
+  flexGrow: 1,
   flexWrap: "wrap",
   gap: "1",
   justifyContent: "flex-end",
-  minHeight: "controlTarget",
   minWidth: "0",
-  order: { base: 1, md: 0 },
   padding: "0",
-  width: "full",
 });
-export const runtimeControls = css({
+export const runtimeControls = hstack({
   borderWidth: "0",
-  display: "flex",
   flexShrink: 0,
   gap: "1",
-  justifyContent: "flex-end",
   minWidth: "0",
   padding: "0",
-  width: "runtimeControls",
-});
-export const composerRole = css({
-  alignItems: "center",
-  color: "fg.muted",
-  display: { base: "none", md: "flex" },
-  justifyContent: "flex-end",
-  minHeight: "controlTarget",
-  paddingInlineEnd: { _coarse: "3", base: "1.5" },
 });

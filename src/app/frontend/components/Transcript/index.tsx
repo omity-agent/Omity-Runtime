@@ -5,29 +5,27 @@ import { Virtualizer, type VirtualizerHandle } from "virtua";
 import type { TimelineMessage } from "../../../timeline";
 import { useTranslation } from "../../i18n";
 import { transcriptWindow } from "../../presentation/preferences";
+import { stableScrollbar } from "../Chat/layout";
 import { findLatestDetails } from "../Chat/messages/detailFocus";
 import { Message } from "../Chat/messages/Message";
 import { MessageCopies, useMessageCopies } from "./actions/PinnedCopy";
 import { DisclosureProvider } from "./disclosures";
+import { endShade, startShade } from "./scrolling/cues";
 import { FlowItem, FlowWindow } from "./scrolling/FlowWindow";
 import { useTranscriptScroll } from "./scrolling/viewportTracking";
 import { segmentTranscript } from "./segments";
 
-const viewport = css({
-    containerType: "size",
+const viewport = css(stableScrollbar, {
+    "&[data-overflow-end]": { "--transcript-end": 1 },
+    "&[data-overflow-start]": { "--transcript-start": 1 },
+    background: "bg.canvas",
     minHeight: "0",
     overflowAnchor: "none",
     overflowY: "auto",
     overscrollBehavior: "contain",
-    paddingInline: { _short: "3", base: "4", md: "6" },
-    scrollbarGutter: "stable",
+    position: "relative",
   }),
-  content = css({ minWidth: "0", position: "relative", width: "full" }),
-  segment = css({
-    '&[data-first="true"]': { paddingBlockStart: { _short: "3", base: "4", md: "6" } },
-    '&[data-last="true"]': { paddingBlockEnd: { _short: "3", base: "4", md: "6" } },
-    display: "flow-root",
-  });
+  content = css({ minWidth: "0", position: "relative", width: "full" });
 type MessageActions = Pick<
   ComponentProps<typeof Message>,
   "forkDisabled" | "onCancelTool" | "onFork"
@@ -66,6 +64,7 @@ export function Transcript({
         // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- The virtual viewport must accept focus for keyboard scrolling.
         tabIndex={0}
       >
+        <div aria-hidden className={startShade} />
         <div className={content} ref={contentRef}>
           <Virtualizer
             as={FlowWindow}
@@ -76,41 +75,34 @@ export function Transcript({
             ref={handleRef}
             scrollRef={scrollRef}
           >
-            {({ key, message: item, partIndex }, index) => (
-              <div
-                className={segment}
-                data-first={index === 0}
-                data-last={index === segments.length - 1}
+            {({ emphasized, key, message: item, partIndex }) => (
+              <Message
+                canFork={
+                  allowFork && item.role === "user" && item.id > 0 && item.id !== firstUserMessageId
+                }
+                emphasized={emphasized}
+                forkDisabled={forkDisabled}
+                item={item}
                 key={key}
-              >
-                <Message
-                  canFork={
-                    allowFork &&
-                    item.role === "user" &&
-                    item.id > 0 &&
-                    item.id !== firstUserMessageId
-                  }
-                  forkDisabled={forkDisabled}
-                  item={item}
-                  latestReasoningIndex={
-                    item.key === latestDetails.reasoning?.messageKey
-                      ? latestDetails.reasoning.partIndex
-                      : undefined
-                  }
-                  latestToolIndex={
-                    item.key === latestDetails.tool?.messageKey
-                      ? latestDetails.tool.partIndex
-                      : undefined
-                  }
-                  onCancelTool={onCancelTool}
-                  onFork={onFork}
-                  partIndex={partIndex}
-                />
-              </div>
+                latestReasoningIndex={
+                  item.key === latestDetails.reasoning?.messageKey
+                    ? latestDetails.reasoning.partIndex
+                    : undefined
+                }
+                latestToolIndex={
+                  item.key === latestDetails.tool?.messageKey
+                    ? latestDetails.tool.partIndex
+                    : undefined
+                }
+                onCancelTool={onCancelTool}
+                onFork={onFork}
+                partIndex={partIndex}
+              />
             )}
           </Virtualizer>
-          <MessageCopies handleRef={handleRef} registry={copies} segments={segments} />
+          <MessageCopies handleRef={handleRef} registry={copies} />
         </div>
+        <div aria-hidden className={endShade} />
       </section>
     </DisclosureProvider>
   );

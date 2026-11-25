@@ -7,10 +7,11 @@ import { reportPromiseErrors } from "../../../services/errors";
 import { Body } from "../../Transcript/Body";
 import { IconButton } from "../../ui";
 import { CopyButton } from "./CopyButton";
-import { messageCard } from "./messageCard";
+import { messageRow } from "./messageRow";
 
 export function Message({
   canFork,
+  emphasized,
   forkDisabled,
   item,
   latestReasoningIndex,
@@ -20,6 +21,7 @@ export function Message({
   partIndex,
 }: {
   canFork: boolean;
+  emphasized: boolean;
   forkDisabled: boolean;
   item: TimelineMessage;
   latestReasoningIndex?: number;
@@ -29,46 +31,47 @@ export function Message({
   partIndex?: number;
 }) {
   const { t } = useTranslation(),
-    role = item.role === "system" ? "user" : item.role,
+    { role } = item,
     first = partIndex === undefined || partIndex === 0,
     last = partIndex === undefined || partIndex === item.parts.length - 1,
-    classes = messageCard({ pending: item.role === "user" && item.pending, role }),
+    copyable = role === "user" || role === "system",
+    classes = messageRow({ emphasized, pending: role === "user" && item.pending, role }),
     forkLabel = forkDisabled ? t("conversation:pauseBeforeFork") : t("conversation:fork"),
     handleFork = useCallback(() => {
       reportPromiseErrors(onFork(item.id));
     }, [item.id, onFork]);
   return (
-    <div className={classes.root} data-last={last}>
-      <article className={classes.body} data-first={first} data-last={last}>
-        {first ? (
-          <div className={classes.header}>
-            <span className={classes.actions}>
-              {canFork ? (
-                <IconButton
-                  aria-label={forkLabel}
-                  className={classes.action}
-                  disabled={forkDisabled}
-                  onClick={handleFork}
-                  title={forkLabel}
-                  visual="ghost"
-                >
-                  <GitFork aria-hidden size={14} />
-                </IconButton>
-              ) : null}
-              {role === "user" ? (
-                <CopyButton className={classes.action} value={item.copyContent ?? item.content} />
-              ) : null}
-            </span>
+    <article className={classes.root}>
+      <div className={classes.inner} data-last={last}>
+        <div className={classes.content} data-first={first}>
+          <Body
+            item={item}
+            latestReasoningIndex={latestReasoningIndex}
+            latestToolIndex={latestToolIndex}
+            onCancelTool={onCancelTool}
+            partIndex={partIndex}
+          />
+        </div>
+        {first && (canFork || copyable) ? (
+          <div className={classes.actions}>
+            {canFork ? (
+              <IconButton
+                aria-label={forkLabel}
+                className={classes.action}
+                disabled={forkDisabled}
+                onClick={handleFork}
+                title={forkLabel}
+                visual="ghost"
+              >
+                <GitFork aria-hidden size={14} />
+              </IconButton>
+            ) : null}
+            {copyable ? (
+              <CopyButton className={classes.action} value={item.copyContent ?? item.content} />
+            ) : null}
           </div>
         ) : null}
-        <Body
-          item={item}
-          latestReasoningIndex={latestReasoningIndex}
-          latestToolIndex={latestToolIndex}
-          onCancelTool={onCancelTool}
-          partIndex={partIndex}
-        />
-      </article>
-    </div>
+      </div>
+    </article>
   );
 }

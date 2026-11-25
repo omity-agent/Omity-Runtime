@@ -1,40 +1,15 @@
-import { css, cx } from "styled-system/css";
+import { css } from "styled-system/css";
+import { grid, stack } from "styled-system/patterns";
 
 import { useTranslation } from "../../../../i18n";
 import { MarkdownEditor } from "../../MarkdownEditor";
 import type { AskUserQuestion } from "../../toolActions";
 import { ChoiceOptions } from "./Options";
 
-const choiceLayout = css({
-    borderColor: "border.emphasized",
-    borderWidth: "hairline",
-    display: "grid",
-    gridTemplateColumns: { base: "minmax(0, 1fr)", md: "repeat(2, minmax(0, 1fr))" },
-    minHeight: "composerEditor",
-    minWidth: "0",
-  }),
-  choicePane = css({
-    alignContent: "start",
-    display: "grid",
-    gap: "3",
-    minWidth: "0",
-    padding: "3",
-  }),
-  promptLabel = css({
-    color: "fg.default",
-    textStyle: "formPrompt",
-    whiteSpace: "pre-wrap",
-  }),
-  noteLabel = css({ color: "fg.muted", fontSize: "metadata" }),
-  notePane = css({
-    alignContent: "stretch",
-    borderBlockStartWidth: { base: "hairline", md: "0" },
-    borderInlineStartWidth: { md: "hairline" },
-    borderLeftColor: { md: "border.emphasized" },
-    borderTopColor: { base: "border.emphasized", md: "transparent" },
-    gridTemplateRows: "auto minmax(0, 1fr)",
-    minHeight: "0",
-  });
+const choiceLayout = grid({ columns: { base: 1, md: 2 }, gap: "2", minWidth: "0" }),
+  choicePane = stack({ background: "bg.canvas", borderRadius: "md", gap: "2", padding: "3" }),
+  promptLabel = css({ color: "fg.default", textStyle: "formPrompt", whiteSpace: "pre-wrap" }),
+  noteLabel = css({ color: "fg.muted", fontSize: "metadata" });
 export function AskUserPrompt({
   note,
   question,
@@ -53,12 +28,10 @@ export function AskUserPrompt({
   const { t } = useTranslation();
   if (question.kind === "open_ended") {
     return (
-      <div className={css({ display: "grid", gap: "2" })}>
+      <div className={choicePane}>
         <p className={promptLabel}>{question.question}</p>
         <MarkdownEditor
-          bare
           disabled={false}
-          fluid
           label={question.question}
           onChange={onNoteChange}
           onSubmit={onSubmit}
@@ -78,12 +51,10 @@ export function AskUserPrompt({
           onOptionsChange={onOptionsChange}
         />
       </section>
-      <section className={cx(choicePane, notePane)}>
+      <section className={choicePane}>
         <p className={noteLabel}>{t("conversation:answerNote")}</p>
         <MarkdownEditor
-          bare
           disabled={false}
-          fill
           label={t("conversation:answerNote")}
           onChange={onNoteChange}
           onSubmit={onSubmit}

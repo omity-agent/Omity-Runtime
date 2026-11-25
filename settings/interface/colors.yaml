@@ -7,7 +7,7 @@ scale:
     green:
       value: "#9ece6a"
     indigo:
-      value: "#565f89"
+      value: "#aab6e8"
     orange:
       value: "#ff9e64"
     purple:
@@ -18,29 +18,15 @@ scale:
       value: "#405d9e"
   ink:
     "50":
-      value: "#eeeeee"
+      value: "#f5f5f5"
     "300":
-      value: "#b5b5b5"
+      value: "#c4c4c4"
     "500":
-      value: "#808080"
-    "600":
-      value: "#686868"
-    "800":
-      value: "#343434"
+      value: "#888888"
+    "700":
+      value: "#494949"
     "850":
-      value: "#242424"
-    "875":
-      value: "#1c1c1c"
-    "900":
-      value: "#151515"
-    "925":
-      value: "#111111"
-    "950":
-      value: "#0c0c0c"
-    "975":
-      value: "#080808"
-    "990":
-      value: "#050505"
+      value: "#262626"
     "1000":
       value: "#000000"
 roles:
@@ -48,41 +34,39 @@ roles:
     canvas:
       value: "{colors.ink.1000}"
     default:
-      value: "{colors.ink.950}"
+      value: "{colors.ink.850}"
     disabled:
-      value: "{colors.ink.950}"
+      value: "{colors.bg.default}"
     emphasized:
-      value: "{colors.ink.900}"
+      value: "{colors.ink.700}"
     hover:
-      value: "{colors.ink.875}"
+      value: "{colors.bg.emphasized}"
     muted:
-      value: "{colors.ink.925}"
-    panel:
-      value: "{colors.ink.975}"
+      value: "{colors.bg.default}"
     selection:
       value: "{colors.accent.selection}"
     subtle:
-      value: "{colors.ink.990}"
+      value: "{colors.bg.canvas}"
   border:
     default:
-      value: "{colors.ink.850}"
+      value: "{colors.ink.700}"
     disabled:
-      value: "{colors.ink.850}"
+      value: "{colors.border.default}"
     emphasized:
-      value: "{colors.ink.800}"
+      value: "{colors.border.default}"
     error:
       value: "{colors.accent.red}"
     muted:
-      value: "{colors.ink.850}"
+      value: "{colors.border.default}"
     outline:
       value: "{colors.ink.300}"
     subtle:
-      value: "{colors.ink.950}"
+      value: "{colors.border.default}"
   fg:
     default:
       value: "{colors.ink.50}"
     disabled:
-      value: "{colors.ink.600}"
+      value: "{colors.ink.500}"
     error:
       value: "{colors.accent.red}"
     link:
@@ -90,12 +74,17 @@ roles:
     muted:
       value: "{colors.ink.300}"
     subtle:
-      value: "{colors.ink.500}"
+      value: "{colors.fg.muted}"
+  speaker:
+    assistant:
+      value: "{colors.accent.blue}"
+    user:
+      value: "{colors.accent.orange}"
   status:
     error:
       value: "{colors.accent.red}"
     idle:
-      value: "{colors.ink.600}"
+      value: "{colors.ink.500}"
     model:
       value: "{colors.accent.blue}"
     paused:

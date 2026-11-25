@@ -2,6 +2,7 @@ import { type RefObject, useCallback, useEffectEvent, useLayoutEffect, useRef } 
 import type { VirtualizerHandle } from "virtua";
 
 import { localize } from "../../../i18n";
+import { updateOverflowCues } from "./cues";
 import { ReadingAnchor } from "./ReadingAnchor";
 
 export function useTranscriptScroll({
@@ -34,6 +35,7 @@ export function useTranscriptScroll({
       resize = () => {
         notify(handle);
         layout.stabilize();
+        updateOverflowCues(element);
       },
       schedule = () => {
         frame ??= requestAnimationFrame(() => {

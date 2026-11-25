@@ -1,6 +1,6 @@
 fonts:
   body:
-    value: ui-monospace, SFMono-Regular, Consolas, monospace
+    value: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif
   mono:
     value: ui-monospace, SFMono-Regular, Consolas, monospace
 styles:
@@ -44,6 +44,7 @@ styles:
       lineHeight: tight
   markdownHeading:
     value:
+      fontSize: calc(1em + var(--heading-size, {fontSizes.md}) - {fontSizes.md})
       fontWeight: bold
       lineHeight: markdownHeading
   pathUnderline:
@@ -53,8 +54,7 @@ styles:
       textUnderlineOffset: 0.15em
   selectedCaption:
     value:
-      fontWeight: bold
-      letterSpacing: selected
+      fontWeight: semibold
   sidebarCount:
     value:
       fontSize: metadata
