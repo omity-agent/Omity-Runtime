@@ -84,12 +84,6 @@ export function sessionPage(id: string): Page {
 export function forkPage(sourceSessionId: string, beforeMessageId: number): ForkPage {
   return { beforeMessageId, kind: "fork", sourceSessionId };
 }
-function pageSessionId(page: Page) {
-  if (page.kind === "new") {
-    return;
-  }
-  return page.kind === "session" ? page.id : page.sourceSessionId;
-}
 export function transcriptSessionId(
   sessionId: string | undefined,
   deletingSessionId: string | undefined,
@@ -97,13 +91,10 @@ export function transcriptSessionId(
   return sessionId === deletingSessionId ? undefined : sessionId;
 }
 function resolvePage(page: Page, sessions: { id: string }[], ready: boolean) {
-  if (!ready) {
+  if (!ready || page.kind === "new") {
     return page;
   }
-  if (page.kind === "new") {
-    return page;
-  }
-  const sessionId = pageSessionId(page);
+  const sessionId = page.kind === "session" ? page.id : page.sourceSessionId;
   return sessions.some((session) => session.id === sessionId) ? page : ({ kind: "new" } as const);
 }
 export function usePageRouting(sessions: { id: string }[], ready: boolean) {
@@ -119,10 +110,12 @@ export function usePageRouting(sessions: { id: string }[], ready: boolean) {
       startTransition(() => setRequestedPage(nextPage));
     }, []),
     selectSession = useCallback((id: string) => navigate(sessionPage(id)), [navigate]),
-    captureNavigation = useCallback(() => {
+    captureNavigation = useCallback((expectedPage?: Page) => {
       const currentRevision = revision.current,
-        { hash } = globalThis.location;
-      return () => revision.current === currentRevision && globalThis.location.hash === hash;
+        { hash } = globalThis.location,
+        matchesPage = expectedPage === undefined || isEqual(pageFromHash(hash), expectedPage);
+      return () =>
+        matchesPage && revision.current === currentRevision && globalThis.location.hash === hash;
     }, []);
   useEffect(() => {
     const syncPage = () => navigate(readPage(), "history");

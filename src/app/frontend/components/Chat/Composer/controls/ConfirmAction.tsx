@@ -35,7 +35,7 @@ export function ConfirmAction({
     [busy, setBusy] = useState(false);
   useEffect(() => {
     if (!confirming) {
-      return;
+      return undefined;
     }
     const timeout = globalThis.setTimeout(() => {
       setConfirming(false);

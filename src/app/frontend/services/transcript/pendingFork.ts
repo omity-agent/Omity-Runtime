@@ -1,10 +1,10 @@
-import { type QueryClient, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRef, useState } from "react";
 
 import type { Control } from "../../../../types";
 import type { PendingAttachment } from "../../../attachments/contract";
 import { localize } from "../../i18n";
-import { type ForkPage, forkPage, type Page, sessionPage } from "../../route";
+import { type ForkPage, forkPage, sessionPage, type usePageRouting } from "../../route";
 import {
   deleteSession,
   loadComposerDraft,
@@ -15,178 +15,108 @@ import {
 import {
   clearTemporaryComposerDraft,
   composerDraftKey,
-  type ComposerDraftTarget,
   readComposerDraft,
 } from "../composerDrafts";
 import { addSession, removeSession } from "../queries";
 import type { OptimisticUser } from "./optimistic";
 
-type Navigate = (page: Page, replace?: boolean) => void;
 type SubmitMessage = (
   optimistic: OptimisticUser,
   draftRevision: number,
   attachments: PendingAttachment[],
 ) => Promise<void>;
-type MaterializedSession = Awaited<ReturnType<typeof materializeFork>>["session"];
-export function forkDraftTarget(page: ForkPage): ComposerDraftTarget {
-  return {
-    beforeMessageId: page.beforeMessageId,
-    kind: "fork",
-    sourceSessionId: page.sourceSessionId,
-  };
-}
-export function forkSubmissionKey(page: ForkPage) {
-  return composerDraftKey(forkDraftTarget(page));
-}
+type ForkControl = Extract<Control, "running" | "step" | "pause">;
+type ForkAction =
+  | { kind: "control"; value: ForkControl }
+  | { kind: "discard" }
+  | {
+      kind: "send";
+      optimistic: OptimisticUser;
+      draftRevision: number;
+      attachments: PendingAttachment[];
+    };
 export function usePendingFork({
+  captureNavigation,
   navigate,
   page,
   submit,
-}: {
-  navigate: Navigate;
+}: Pick<ReturnType<typeof usePageRouting>, "captureNavigation" | "navigate"> & {
   page?: ForkPage;
   submit: SubmitMessage;
 }) {
-  "use no memo";
   const queryClient = useQueryClient(),
-    [busy, setBusy] = useState(false),
-    [pendingMessage, setPendingMessage] = useState<OptimisticUser | null>(null),
-    activating = useRef(false),
-    materializations = useRef(new Map<string, Promise<MaterializedSession>>()),
-    navigateRef = useLatest(navigate),
-    pageRef = useLatest(page),
-    queryClientRef = useLatest(queryClient),
-    activate = useCallback(
-      async (action: (sessionId: string, pending: ForkPage) => Promise<void>) => {
-        if (activating.current) {
-          return;
+    [action, setAction] = useState<ForkAction>(),
+    locked = useRef(false),
+    materialized = useRef(new Map<string, string>());
+  async function run(next: ForkAction) {
+    if (!page) {
+      throw new Error(localize("diagnostics:fork.pendingSessionMissing"));
+    }
+    if (locked.current) {
+      throw new Error(localize("diagnostics:fork.actionInProgress"));
+    }
+    const canNavigate = captureNavigation(page),
+      key = composerDraftKey(page),
+      sessions = materialized.current;
+    let sessionId = sessions.get(key);
+    locked.current = true;
+    setAction(next);
+    try {
+      if (next.kind === "discard") {
+        if (sessionId !== undefined) {
+          await deleteSession(sessionId);
+          removeSession(queryClient, sessionId);
         }
-        const pending = pageRef.current;
-        if (!pending) {
-          throw new Error(localize("diagnostics:fork.pendingSessionMissing"));
+        sessionId = page.sourceSessionId;
+      } else {
+        if (sessionId === undefined) {
+          const { session } = await materializeFork(page.sourceSessionId, page.beforeMessageId);
+          sessionId = session.id;
+          sessions.set(key, sessionId);
+          addSession(queryClient, session);
         }
-        activating.current = true;
-        setBusy(true);
-        try {
-          const session = await materializePending(
-            queryClientRef.current,
-            materializations.current,
-            pending,
-          );
-          await action(session.id, pending);
-          materializations.current.delete(forkSubmissionKey(pending));
-          clearTemporaryComposerDraft(forkDraftTarget(pending));
-          if (sameForkPage(pageRef.current, pending)) {
-            navigateRef.current(sessionPage(session.id), true);
-          }
-        } finally {
-          activating.current = false;
-          setBusy(false);
+        if (next.kind === "control") {
+          await transferDraft(page, sessionId);
+          await setControl(sessionId, next.value);
+        } else {
+          await submit({ ...next.optimistic, sessionId }, next.draftRevision, next.attachments);
         }
-      },
-      [navigateRef, pageRef, queryClientRef, setBusy],
-    ),
-    begin = useCallback(
-      (nextSourceSessionId: string, nextMessageId: number) => {
-        if (!pageRef.current) {
-          materializations.current.clear();
-        }
-        navigate(forkPage(nextSourceSessionId, nextMessageId), pageRef.current !== undefined);
-      },
-      [navigate, pageRef],
-    ),
-    control = useCallback(
-      (value: Extract<Control, "running" | "step" | "pause">) =>
-        activate(async (sessionId, pending) => {
-          const draft = await readComposerDraft(forkDraftTarget(pending), "");
-          await saveMaterializedDraft(sessionId, draft.content, draft.revision);
-          await setControl(sessionId, value);
-        }),
-      [activate],
-    ),
-    discard = useCallback(async () => {
-      const pending = pageRef.current;
-      if (!pending) {
-        return;
       }
-      const key = forkSubmissionKey(pending),
-        materialized = materializations.current.get(key);
-      if (materialized) {
-        const session = await materialized;
-        await deleteSession(session.id);
-        removeSession(queryClientRef.current, session.id);
+      sessions.delete(key);
+      clearTemporaryComposerDraft(page);
+      if (canNavigate()) {
+        navigate(sessionPage(sessionId), true);
       }
-      materializations.current.delete(key);
-      clearTemporaryComposerDraft(forkDraftTarget(pending));
-      navigate(sessionPage(pending.sourceSessionId), true);
-    }, [navigate, pageRef, queryClientRef]),
-    send = useCallback(
-      async (
-        optimistic: OptimisticUser,
-        draftRevision: number,
-        attachments: PendingAttachment[],
-      ) => {
-        setPendingMessage(optimistic);
-        try {
-          await activate(async (sessionId) => {
-            await submit({ ...optimistic, sessionId }, draftRevision, attachments);
-          });
-        } finally {
-          setPendingMessage(null);
-        }
-      },
-      [activate, setPendingMessage, submit],
-    );
-  return { begin, busy, control, discard, pendingMessage, send };
-}
-function useLatest<Value>(value: Value) {
-  const reference = useRef(value);
-  useLayoutEffect(() => {
-    reference.current = value;
-  }, [value]);
-  return reference;
-}
-function materializePending(
-  queryClient: QueryClient,
-  materializations: Map<string, Promise<MaterializedSession>>,
-  page: ForkPage,
-) {
-  const key = forkSubmissionKey(page),
-    current = materializations.get(key);
-  if (current) {
-    return current;
+    } finally {
+      locked.current = false;
+      setAction(undefined);
+    }
   }
-  const creation = createMaterializedFork(queryClient, materializations, key, page);
-  materializations.set(key, creation);
-  return creation;
+  return {
+    begin: (sourceSessionId: string, beforeMessageId: number) => {
+      if (!page && !locked.current) {
+        materialized.current.clear();
+      }
+      navigate(forkPage(sourceSessionId, beforeMessageId), page !== undefined);
+    },
+    busy: page !== undefined && action !== undefined,
+    control: (value: ForkControl) => run({ kind: "control", value }),
+    discard: () => run({ kind: "discard" }),
+    pendingMessage:
+      action?.kind === "send" && page && action.optimistic.sessionId === composerDraftKey(page)
+        ? action.optimistic
+        : null,
+    send: (...[optimistic, draftRevision, attachments]: Parameters<SubmitMessage>) =>
+      run({ attachments, draftRevision, kind: "send", optimistic }),
+  };
 }
-async function createMaterializedFork(
-  queryClient: QueryClient,
-  materializations: Map<string, Promise<MaterializedSession>>,
-  key: string,
-  page: ForkPage,
-) {
-  try {
-    const { session } = await materializeFork(page.sourceSessionId, page.beforeMessageId);
-    addSession(queryClient, session);
-    return session;
-  } catch (error) {
-    materializations.delete(key);
-    throw error;
-  }
-}
-function sameForkPage(left: ForkPage | undefined, right: ForkPage) {
-  return (
-    left?.sourceSessionId === right.sourceSessionId &&
-    left.beforeMessageId === right.beforeMessageId
-  );
-}
-async function saveMaterializedDraft(sessionId: string, content: string, minimumRevision: number) {
-  const current = await loadComposerDraft(sessionId);
+async function transferDraft(page: ForkPage, sessionId: string) {
+  const [draft, current] = await Promise.all([
+    readComposerDraft(page, ""),
+    loadComposerDraft(sessionId),
+  ]);
   if (current.revision >= Number.MAX_SAFE_INTEGER) {
     throw new Error(localize("diagnostics:fork.revisionOverflow", { value0: sessionId }));
   }
-  const revision = Math.max(current.revision + 1, minimumRevision);
-  await saveComposerDraft(sessionId, content, revision);
-  return revision;
+  await saveComposerDraft(sessionId, draft.content, Math.max(current.revision + 1, draft.revision));
 }

@@ -70,7 +70,6 @@ export async function runGraphUntilBoundary(
     const input = prepareGraphInput(ctx, run, state),
       operation = input === null ? next : undefined;
     if (input === null && state?.next.length === 0) {
-      ctx.observer?.activity?.(ctx.sessionId, "idle");
       finishRun(ctx, run, state.values.messages, state.values.hookPlan);
       return;
     }

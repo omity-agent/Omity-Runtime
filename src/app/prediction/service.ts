@@ -71,12 +71,9 @@ export class PredictionService {
     return runTransaction(db, () => {
       const context = readPredictionContext(db, sessionId),
         previous = this.pending.get(sessionId);
-      if (!context) {
+      if (!context || readPredictionRecord(db, sessionId, context.revision)) {
         previous?.controller.abort();
-        return;
-      }
-      if (readPredictionRecord(db, sessionId, context.revision)) {
-        return;
+        return undefined;
       }
       if (previous?.revision === context.revision && !previous.controller.signal.aborted) {
         return previous;
@@ -84,7 +81,7 @@ export class PredictionService {
       previous?.controller.abort();
       const samples = this.examples.select(loadPredictionSnapshot(db), config);
       if (!samples) {
-        return;
+        return undefined;
       }
       const controller = new AbortController(),
         task = {

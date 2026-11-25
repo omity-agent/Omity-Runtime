@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-unassigned-import -- KaTeX emits global classes that require its stylesheet.
 import "katex/dist/katex.min.css";
 import type { Root } from "hast";
 import { useMemo } from "react";
@@ -102,7 +103,7 @@ function inlineMarkdown() {
         parent.children.splice(index, 1, ...node.children);
         return [SKIP, index];
       }
-      return;
+      return undefined;
     });
   };
 }

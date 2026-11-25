@@ -10,9 +10,8 @@
     "#settings/*": "./settings/*"
   },
   "scripts": {
-    "format": "bun fmt .",
-    "lint": "bun lint --format=agent --fix --fix-suggestions",
-    "test": "cross-env AGENT=1 bun run --bun scripts/build.ts --test",
+    "check": "bun lint --format=agent && bun run --bun knip",
+    "test": "bun run --bun scripts/build.ts --test",
     "benchmark:mcp": "bun run --bun scripts/build.ts --benchmark-mcp",
     "omity": "bun run --bun src/cli.ts",
     "build": "bun run --bun scripts/build.ts"
@@ -114,14 +113,13 @@
     "@types/react-dom": "latest",
     "@vitejs/plugin-react": "latest",
     "babel-plugin-react-compiler": "latest",
-    "cross-env": "latest",
     "detect-libc": "latest",
     "drizzle-kit": "rc",
-    "eslint": "9.39.5",
     "eventsource-parser": "latest",
     "knip": "latest",
     "playwright": "latest",
     "postcss": "latest",
+    "typescript": "next",
     "unified": "latest",
     "vite": "latest"
   },

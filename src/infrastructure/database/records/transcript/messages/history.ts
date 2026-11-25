@@ -28,13 +28,10 @@ export function inputMessageId(sessionId: string, inputId: number) {
   return `input:${sessionId}:${inputId.toString()}`;
 }
 export function messageInputId(sessionId: string, message: BaseMessage) {
-  if (message.type !== "human" || !message.id) {
-    return;
+  if (message.type !== "human" || !message.id?.startsWith("input:")) {
+    return undefined;
   }
   const prefix = `input:${sessionId}:`;
-  if (!message.id.startsWith("input:")) {
-    return;
-  }
   if (!message.id.startsWith(prefix)) {
     throw new Error(
       localize("database:messages.foreignUserMessage", {

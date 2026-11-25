@@ -1,17 +1,15 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 
 import type { Page } from "playwright";
 
 import type { ReasoningTranslation, TimelineMessage } from "../../../../src/app/timeline";
 import { reasoningTranslationSchema } from "../../../../src/app/timeline/contracts/records";
-import { BrowserSession, settleLayout } from "../scrolling/browserSession";
+import { browserFixture, settleLayout } from "../scrolling/browserSession";
 
-const session = new BrowserSession(),
+const session = browserFixture(),
   source = "First thought.",
   grown = `${source} Extra tail.`,
   translated = "已经翻译的思考。";
-beforeAll(() => session.start(), 60_000);
-afterAll(() => session.stop());
 function message(id: string, content: string, streaming = true): TimelineMessage {
   return {
     content: "",

@@ -3,7 +3,7 @@ import { spyOn } from "bun:test";
 import type { SpanRecorder } from "./spanRecorder";
 
 const [
-  aiMessages,
+  outgoingMessages,
   incomingMessages,
   modelProvider,
   modelRequests,
@@ -13,8 +13,8 @@ const [
   largeOutput,
   tokenizer,
 ] = await Promise.all([
-  import("../../../src/agent/aiMessages"),
-  import("../../../src/agent/fromAiMessages"),
+  import("../../../src/agent/messages/encode"),
+  import("../../../src/agent/messages/decode"),
   import("../../../src/agent/model/provider"),
   import("../../../src/agent/model/request"),
   import("../../../src/fileLinks/messageSources"),
@@ -37,13 +37,13 @@ export class FunctionTracing {
       request: modelRequests.streamAiModel,
       stream: streamEvents.recordAiStreamPart,
       sync: historySync.prepareMessageSync,
-      toModel: aiMessages.toModelMessages,
+      toModel: outgoingMessages.toModelMessages,
       toolStarted: streamEvents.recordToolStarted,
     };
     try {
       const probes = [
         () =>
-          spyOn(aiMessages, "toModelMessages").mockImplementation(
+          spyOn(outgoingMessages, "toModelMessages").mockImplementation(
             this.wrap(originals.toModel, "历史转换为模型消息"),
           ),
         () =>

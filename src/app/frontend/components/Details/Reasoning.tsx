@@ -95,7 +95,7 @@ function preferredTranslation(
       return match;
     }
   }
-  return;
+  return undefined;
 }
 function translatedReasoning(
   part: Extract<TimelinePart, { type: "reasoning" }>,

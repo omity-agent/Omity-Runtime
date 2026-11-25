@@ -4,7 +4,7 @@ import { localize } from "../../../i18n/server";
 
 export function structuredToolOutput(value: unknown) {
   if (!Array.isArray(value)) {
-    return;
+    return undefined;
   }
   const matches = value.filter(isStructuredArtifact);
   if (matches.length > 1) {
@@ -12,7 +12,7 @@ export function structuredToolOutput(value: unknown) {
   }
   const [artifact] = matches;
   if (!artifact) {
-    return;
+    return undefined;
   }
   if (!("data" in artifact)) {
     throw new Error(localize("mcp:structured.dataMissing"));

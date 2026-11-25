@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-unassigned-import -- This entry imports the global reset and Panda CSS layers.
 import "./presentation/panda.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createRoot } from "react-dom/client";

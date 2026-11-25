@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-unassigned-import -- The browser fixture needs the application's global stylesheet.
 import "../../../../src/app/frontend/presentation/panda.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useLayoutEffect, useMemo, useState } from "react";

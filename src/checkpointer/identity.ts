@@ -15,7 +15,7 @@ export function checkpointRunId(value: unknown) {
 }
 function optionalString(value: unknown, name: string) {
   if (value == null) {
-    return;
+    return undefined;
   }
   if (typeof value !== "string") {
     throw new TypeError(localize("checkpoint:identity.fieldMustBeString", { value0: name }));

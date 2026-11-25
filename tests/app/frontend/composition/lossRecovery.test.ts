@@ -1,15 +1,13 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 
 import { expect as browserExpect } from "playwright/test";
 import { z } from "zod";
 
 import { sessionSubmissionSchema } from "../../../../src/app/attachments/submission";
-import { BrowserSession } from "../scrolling/browserSession";
+import { browserFixture } from "../scrolling/browserSession";
 import { openPreparation, projectPaths } from "./preparationBrowser";
 
-const browser = new BrowserSession();
-beforeAll(() => browser.start(), 60_000);
-afterAll(() => browser.stop());
+const browser = browserFixture();
 test("new session restores all edits and pasted file bytes after navigation and reload", async () => {
   const fixture = await openPreparation(browser),
     { errors } = fixture;

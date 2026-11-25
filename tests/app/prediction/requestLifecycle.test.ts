@@ -54,6 +54,25 @@ test("a late completion cannot persist suggestions after a new user input", asyn
       .get()?.total,
   ).toBe(0);
 });
+test("prediction examples adapt when the configured sample count changes", async () => {
+  await using value = await createPredictionFixture();
+  const { database, service, sessionId, settings } = value,
+    { prediction } = settings;
+  if (!prediction?.enabled) {
+    throw new Error("The fixture must enable prediction");
+  }
+  expect(await service.get(sessionId)).toEqual(value.replies);
+  prediction.sampleCount = 2;
+  await database.syncHistory(sessionId, [
+    ...database.history(sessionId),
+    new HumanMessage({ content: "新问题", id: "later-user" }),
+    new AIMessage({ content: "新回复", id: "later-assistant" }),
+  ]);
+  expect(await service.get(sessionId)).toEqual(value.replies);
+  const request = JSON.stringify(value.requests[1]);
+  expect(request).toContain("历史回复");
+  expect(request).toContain("当前回复");
+});
 test("model failures are visible to callers and do not prevent a subsequent retry", async () => {
   await using value = await createPredictionFixture();
   value.respondWith(() =>

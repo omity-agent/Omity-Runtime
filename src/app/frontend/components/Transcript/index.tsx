@@ -63,6 +63,7 @@ export function Transcript({
         aria-label={t("conversation:conversation")}
         className={viewport}
         ref={scrollRef}
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- The virtual viewport must accept focus for keyboard scrolling.
         tabIndex={0}
       >
         <div className={content} ref={contentRef}>

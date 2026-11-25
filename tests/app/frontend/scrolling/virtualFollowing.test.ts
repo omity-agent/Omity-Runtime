@@ -1,11 +1,9 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 
-import { BrowserSession, readScrollPositions, settleLayout } from "./browserSession";
+import { browserFixture, readScrollPositions, settleLayout } from "./browserSession";
 import { collapseLatestTool, expandOffscreenTool, expandTallTool } from "./disclosureScenarios";
 
-const session = new BrowserSession();
-beforeAll(() => session.start(), 60_000);
-afterAll(() => session.stop());
+const session = browserFixture();
 test.each(["tools", "timeline"])(
   "virtual %s keep following through streaming remeasurement without user input",
   async (mode) => {
@@ -60,7 +58,8 @@ test.each(["wheel", "keyboard", "scrollbar"])(
       await page.mouse.move(x, y);
       await page.mouse.wheel(0, -240);
     } else if (input === "keyboard") {
-      await page.mouse.click(x, y);
+      await page.keyboard.press("Tab");
+      expect(await viewport.evaluate((element) => element === document.activeElement)).toBe(true);
       await page.keyboard.press("PageUp");
     } else {
       const scrollbarX = bounds.x + bounds.width - 5;

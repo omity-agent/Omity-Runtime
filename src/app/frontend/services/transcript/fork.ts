@@ -1,18 +1,10 @@
 import type { TimelineMessage } from "../../../timeline";
-import type { ForkPage, Page } from "../../route";
-import type { ComposerDraftTarget } from "../composerDrafts";
+import { composerDraftKey, type ComposerDraftTarget } from "../composerDrafts";
 import { optimisticTimelineMessage, type OptimisticUser } from "./optimistic";
-import { forkDraftTarget, forkSubmissionKey, usePendingFork } from "./pendingFork";
+import { usePendingFork } from "./pendingFork";
 import { useSessionTranscript } from "./query";
 import { useUserMessageSubmissions } from "./submissions";
 
-type Navigate = (page: Page, replace?: boolean) => void;
-function chatDraftTarget(page: ForkPage | undefined, sessionId: string | undefined) {
-  if (page) {
-    return forkDraftTarget(page);
-  }
-  return sessionId ? ({ kind: "session", sessionId } as const) : ({ kind: "new" } as const);
-}
 function previewFork(
   view: TimelineMessage[],
   beforeMessageId: number,
@@ -34,22 +26,29 @@ function previewFork(
 }
 export function useForkableTranscript({
   activeSessionId,
+  captureNavigation,
   navigate,
   page,
   snapshotThrottleMs,
   sourceSessionId,
-}: {
+}: Omit<Parameters<typeof usePendingFork>[0], "submit"> & {
   activeSessionId?: string;
-  navigate: Navigate;
-  page?: ForkPage;
   snapshotThrottleMs?: number;
   sourceSessionId?: string;
 }) {
   const transcript = useSessionTranscript(sourceSessionId, snapshotThrottleMs),
-    draftTarget: ComposerDraftTarget = chatDraftTarget(page, activeSessionId),
-    submissionSessionId = page ? forkSubmissionKey(page) : activeSessionId,
-    submissions = useUserMessageSubmissions(submissionSessionId, transcript),
-    { busy, ...flow } = usePendingFork({ navigate, page, submit: submissions.send }),
+    draftTarget: ComposerDraftTarget =
+      page ?? (activeSessionId ? { kind: "session", sessionId: activeSessionId } : { kind: "new" }),
+    submissions = useUserMessageSubmissions(
+      page ? composerDraftKey(page) : activeSessionId,
+      transcript,
+    ),
+    { busy, ...flow } = usePendingFork({
+      captureNavigation,
+      navigate,
+      page,
+      submit: submissions.send,
+    }),
     pendingPreview = page
       ? previewFork(submissions.view, page.beforeMessageId, flow.pendingMessage)
       : undefined;

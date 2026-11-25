@@ -5,7 +5,7 @@ import { AccessGate } from "./components/Access/AccessGate";
 import { ApplicationFrame } from "./components/Application";
 import { ChatPage } from "./components/Chat/ChatPage";
 import { useSessionToolActions } from "./components/Chat/toolActions";
-import { pagePath, transcriptSessionId, usePageRouting } from "./route";
+import { pagePath, sessionPage, transcriptSessionId, usePageRouting } from "./route";
 import { deleteSession, pickWorkspacePath, type SessionInfo } from "./services/client";
 import {
   createControlChangeHandler,
@@ -63,6 +63,7 @@ function AuthenticatedApp() {
       submissions,
     } = useForkableTranscript({
       activeSessionId: activeSession?.id,
+      captureNavigation,
       navigate,
       page: pendingFork,
       snapshotThrottleMs: bootstrap.data?.frontend.transcriptSnapshotThrottleMs,
@@ -104,14 +105,25 @@ function AuthenticatedApp() {
       if (!activeSession) {
         return;
       }
-      const sessionId = activeSession.id;
+      const sessionId = activeSession.id,
+        canNavigate = captureNavigation(sessionPage(sessionId));
       setDeletingId(sessionId);
       await deleteSession(sessionId).finally(() => {
         setDeletingId(undefined);
       });
       removeSession(queryClient, sessionId);
-      navigate({ kind: "new" });
-    }, [activeSession, discardPendingFork, navigate, pendingFork, queryClient, setDeletingId]),
+      if (canNavigate()) {
+        navigate({ kind: "new" });
+      }
+    }, [
+      activeSession,
+      captureNavigation,
+      discardPendingFork,
+      navigate,
+      pendingFork,
+      queryClient,
+      setDeletingId,
+    ]),
     beginFork = useCallback<ChatPageProps["onFork"]>(
       (messageId) =>
         Promise.try(() => {

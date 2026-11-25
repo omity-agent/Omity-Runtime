@@ -10,6 +10,7 @@ export const retryableNames = new Set([
     "basispoints_upstream_error",
     "server_error",
     "server_is_overloaded",
+    "upstream_stream_break",
   ]),
   retryableApiErrorTypes = new Set(["service_unavailable_error"]),
   retryableHttpStatuses = new Set([520]),

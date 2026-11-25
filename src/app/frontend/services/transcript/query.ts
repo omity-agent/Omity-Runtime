@@ -1,5 +1,11 @@
-import { AsyncThrottler } from "@tanstack/pacer/async-throttler";
-import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AsyncQueuer } from "@tanstack/pacer/async-queuer";
+import {
+  focusManager,
+  type QueryClient,
+  skipToken,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useEffect } from "react";
 
 import type { DisplayEvent } from "../../../timeline";
@@ -22,70 +28,81 @@ export function useSessionTranscript(
   snapshotThrottleMs: number | undefined,
 ) {
   const queryClient = useQueryClient(),
-    queryKey = transcriptKey(sessionId ?? ""),
-    query = useQuery({
-      queryFn:
-        sessionId === undefined
-          ? skipToken
-          : async ({ signal }) =>
-              reconcileTranscript(
-                await loadTranscript(sessionId, signal),
-                queryClient.getQueryData<TranscriptData>(queryKey),
-              ),
-      queryKey,
+    { data } = useQuery<TranscriptData>({
+      queryFn: skipToken,
+      queryKey: transcriptKey(sessionId ?? ""),
     });
-  useEffect(() => {
-    if (!sessionId || snapshotThrottleMs === undefined) {
-      return;
-    }
-    const key = transcriptKey(sessionId),
-      controller = new AbortController(),
-      { signal } = controller,
-      deltas = new FrameBatcher<DisplayEvent>((batch) => {
-        queryClient.setQueryData<TranscriptData>(key, (current) =>
-          appendTranscriptEvents(current ?? emptyTranscriptData, batch),
-        );
-      }),
-      refresh = new AsyncThrottler(
-        async () => {
-          const snapshot = await loadTranscript(sessionId, signal);
+  useEffect(
+    () =>
+      sessionId && snapshotThrottleMs !== undefined
+        ? followTranscript(queryClient, sessionId, snapshotThrottleMs)
+        : undefined,
+    [queryClient, sessionId, snapshotThrottleMs],
+  );
+  return data ?? emptyTranscriptData;
+}
+function followTranscript(queryClient: QueryClient, sessionId: string, waitMs: number) {
+  const key = transcriptKey(sessionId),
+    controller = new AbortController(),
+    { signal } = controller,
+    deltas = new FrameBatcher<DisplayEvent>((batch) => {
+      queryClient.setQueryData<TranscriptData>(key, (current) =>
+        appendTranscriptEvents(current ?? emptyTranscriptData, batch),
+      );
+    }),
+    snapshots = new AsyncQueuer<"snapshot">(
+      async () => {
+        const snapshot = await loadTranscript(sessionId, signal);
+        if (!signal.aborted) {
+          queryClient.setQueryData<TranscriptData>(key, (current) =>
+            reconcileTranscript(snapshot, current),
+          );
+        }
+      },
+      {
+        asyncRetryerOptions: {
+          backoff: "exponential",
+          baseWait: Math.max(waitMs, uiBehavior.transcriptRetry.minimumWaitMs),
+          maxAttempts: uiBehavior.transcriptRetry.maxAttempts,
+          maxWait: uiBehavior.transcriptRetry.maxWaitMs,
+        },
+        concurrency: 1,
+        maxSize: 1,
+        onError: (error) => {
           if (!signal.aborted) {
-            queryClient.setQueryData<TranscriptData>(key, (current) =>
-              reconcileTranscript(snapshot, current),
-            );
+            reportError(error);
           }
         },
-        {
-          asyncRetryerOptions: {
-            backoff: "exponential",
-            baseWait: Math.max(snapshotThrottleMs, uiBehavior.transcriptRetry.minimumWaitMs),
-            maxAttempts: uiBehavior.transcriptRetry.maxAttempts,
-            maxWait: uiBehavior.transcriptRetry.maxWaitMs,
-          },
-          onError: (error) => {
-            if (!signal.aborted) {
-              reportError(error);
-            }
-          },
-          wait: snapshotThrottleMs,
-        },
-      ),
-      close = subscribeEvents(contentEvents(sessionId), {
-        delta(event) {
-          deltas.add(readTranscriptEvent(event));
-        },
-        sync(event) {
-          readContentSyncEvent(event);
-          void refresh.maybeExecute();
-        },
-      });
-    return () => {
-      close();
-      deltas.cancel();
-      controller.abort();
-      refresh.setOptions({ enabled: false });
-      refresh.abort();
-    };
-  }, [queryClient, sessionId, snapshotThrottleMs]);
-  return query.data ?? emptyTranscriptData;
+        wait: () => (signal.aborted ? 0 : waitMs),
+      },
+    ),
+    requestSnapshot = () => {
+      if (!snapshots.store.state.isFull) {
+        snapshots.addItem("snapshot");
+      }
+    },
+    disconnect = subscribeEvents(contentEvents(sessionId), {
+      delta(event) {
+        deltas.add(readTranscriptEvent(event));
+      },
+      sync(event) {
+        readContentSyncEvent(event);
+        requestSnapshot();
+      },
+    }),
+    unfollowFocus = focusManager.subscribe((focused) => {
+      if (focused) {
+        requestSnapshot();
+      }
+    });
+  requestSnapshot();
+  return () => {
+    disconnect();
+    unfollowFocus();
+    deltas.cancel();
+    controller.abort();
+    snapshots.stop();
+    snapshots.clear();
+    snapshots.abort();
+  };
 }

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { AIMessage, type BaseMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { sum } from "es-toolkit";
 
-import type { StoredAiSdkPart } from "../../src/agent/fromAiMessages";
+import type { StoredAssistantPart } from "../../src/agent/messages/assistantContent";
 import type { ModelToolDefinition } from "../../src/infrastructure/mcp/tools/definitions";
 import { countTokens } from "../../src/runtime/tokenizer";
 import type { TypicalContext } from "./typicalProfile";
@@ -135,7 +135,7 @@ export function createTypicalHistory(context: TypicalContext) {
         index < context.assistantTextMessages - context.assistantOnlyMessages || index >= rounds
           ? texts[textIndex]!
           : "",
-      parts: StoredAiSdkPart[] = [];
+      parts: StoredAssistantPart[] = [];
     if (index < reasoningGroups.length) {
       const count = reasoningGroups[index]!;
       for (let part = 0; part < count; part += 1) {

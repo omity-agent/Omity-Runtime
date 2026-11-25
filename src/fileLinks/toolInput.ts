@@ -17,7 +17,7 @@ export function formatToolInput(call: ToolInputSource) {
 }
 export function parseToolInput(text: string) {
   if (!text) {
-    return;
+    return undefined;
   }
   try {
     return JSON.parse(text) as unknown;

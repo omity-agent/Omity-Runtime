@@ -1,8 +1,8 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 
 import { expect as browserExpect } from "playwright/test";
 
-import { BrowserSession } from "../scrolling/browserSession";
+import { browserFixture } from "../scrolling/browserSession";
 import {
   emitState,
   fixtureSessions,
@@ -11,14 +11,12 @@ import {
   setPreparationLayout,
 } from "./preparationBrowser";
 
-const browser = new BrowserSession({
+const browser = browserFixture({
   "interaction.yaml": {
     recentSessions: fixtureSessions.length,
     recentWorkspaces: projectPaths.length,
   },
 });
-beforeAll(() => browser.start(), 60_000);
-afterAll(() => browser.stop());
 test.each(["wide", "compact"] as const)(
   "project selection stays independent of recent sessions in %s layout",
   async (layout) => {

@@ -1,11 +1,9 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 
-import { BrowserSession, settleLayout } from "../scrolling/browserSession";
+import { browserFixture, settleLayout } from "../scrolling/browserSession";
 import { openPreparation } from "./preparationBrowser";
 
-const browser = new BrowserSession();
-beforeAll(() => browser.start(), 60_000);
-afterAll(() => browser.stop());
+const browser = browserFixture();
 test("message selections remain visible through the active line background", async () => {
   const { errors, page: openedPage } = await openPreparation(browser);
   await using page = openedPage;

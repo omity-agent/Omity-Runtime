@@ -3,3 +3,4 @@
 /styled-system/
 *.bun-build
 .DS_Store
+.env

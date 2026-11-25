@@ -27,7 +27,7 @@ export function useUserMessageSubmissions(
     ];
   useEffect(() => {
     if (pending.length === staged.length) {
-      return;
+      return undefined;
     }
     const frame = requestAnimationFrame(() => {
       setStaged((current) => (current === staged ? pending : current));

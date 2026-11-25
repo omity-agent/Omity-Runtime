@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 
 import { HumanMessage, ToolMessage } from "@langchain/core/messages";
 
-import { toModelMessages } from "../../../src/agent/aiMessages";
+import { toModelMessages } from "../../../src/agent/messages/encode";
 import { type AiStreamEvent, streamAiModel } from "../../../src/agent/model/request";
 import { aiModelTools } from "../../../src/agent/model/tools";
 import { containingItems } from "../../support/asymmetric";
@@ -84,18 +84,13 @@ test.each([...geminiApis])(
             type: "function_call",
           },
           {
-            content: [
-              {
-                call_id: "echo-call",
-                name: "echo",
-                result: [
-                  { text: "hello", type: "text" },
-                  { data: "aGVsbG8=", mime_type: "image/png", type: "image" },
-                ],
-                type: "function_result",
-              },
+            call_id: "echo-call",
+            name: "echo",
+            result: [
+              { text: "hello", type: "text" },
+              { data: "aGVsbG8=", mime_type: "image/png", type: "image" },
             ],
-            type: "user_input",
+            type: "function_result",
           },
         ]),
         store: false,

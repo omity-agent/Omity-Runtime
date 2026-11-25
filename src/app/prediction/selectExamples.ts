@@ -1,15 +1,11 @@
-import { isEqual, uniqBy } from "es-toolkit";
+import { uniqBy } from "es-toolkit";
 
 import type { Settings } from "../../types";
-import type { loadPredictionSnapshot, PredictionSample } from "./samples";
+import type { loadPredictionSnapshot } from "./samples";
 
 export type PredictionSettings = Extract<NonNullable<Settings["prediction"]>, { enabled: true }>;
-interface SampleCache {
-  ids: string[];
-  samples: PredictionSample[];
-}
 export class PredictionExamples {
-  private cache: SampleCache | undefined;
+  private selectedIds: string[] = [];
   select(snapshot: ReturnType<typeof loadPredictionSnapshot>, config: PredictionSettings) {
     const eligible = uniqBy(
       snapshot.samples
@@ -21,30 +17,24 @@ export class PredictionExamples {
           (left, right) => right.createdAt - left.createdAt || right.id.localeCompare(left.id),
         ),
       (sample) => sample.assistant,
-    ).toReversed();
+    );
     if (eligible.length < config.sampleCount) {
-      return;
+      return undefined;
     }
-    const latest = eligible.slice(-config.sampleCount),
-      ids = latest.map(({ id }) => id);
-    if (!this.cache || this.shouldRefresh(snapshot, config, ids)) {
-      this.cache = { ids, samples: latest };
+    const latest = eligible.slice(0, config.sampleCount).toReversed(),
+      cutoff = Math.floor(Date.now() / 1000) - config.refreshIntervalHours * 3600;
+    if (
+      this.selectedIds.length === config.sampleCount &&
+      latest.some(({ id }) => this.selectedIds.includes(id)) &&
+      snapshot.sessionUpdates.some((updatedAt) => updatedAt >= cutoff)
+    ) {
+      const byId = new Map(eligible.map((sample) => [sample.id, sample] as const)),
+        retained = this.selectedIds.map((id) => byId.get(id));
+      if (retained.every((sample) => sample !== undefined)) {
+        return retained;
+      }
     }
-    return this.cache.samples;
-  }
-  private shouldRefresh(
-    snapshot: ReturnType<typeof loadPredictionSnapshot>,
-    config: PredictionSettings,
-    latestIds: string[],
-  ) {
-    const cachedIds = this.cache?.ids ?? [],
-      changed = !isEqual(cachedIds, latestIds),
-      hasCurrentSample = latestIds.some((id) => cachedIds.includes(id)),
-      now = Math.floor(Date.now() / 1000),
-      staleAfter = config.refreshIntervalHours * 60 * 60,
-      allSessionsStale =
-        snapshot.sessionUpdates.size > 0 &&
-        [...snapshot.sessionUpdates.values()].every((updatedAt) => now - updatedAt > staleAfter);
-    return !hasCurrentSample || (allSessionsStale && changed);
+    this.selectedIds = latest.map(({ id }) => id);
+    return latest;
   }
 }

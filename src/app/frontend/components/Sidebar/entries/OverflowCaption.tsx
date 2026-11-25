@@ -24,7 +24,7 @@ export function OverflowCaption({ text, className }: { text: string; className: 
     leave = useCallback(() => setHovered(false), [setHovered]);
   useEffect(() => {
     if (!hovered || text.length === 0) {
-      return;
+      return undefined;
     }
     const element = ref.current;
     if (!element) {

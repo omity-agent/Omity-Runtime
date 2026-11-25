@@ -84,7 +84,7 @@ export function updatedAtRefreshDelay(updatedAt: number, now = Date.now()) {
   if (elapsedMs < weekMs) {
     return dayMs - (elapsedMs % dayMs);
   }
-  return;
+  return undefined;
 }
 function toGroup([workspace, source]: [string, SessionInfo[]]): WorkspaceGroup {
   const sessions = [...source].toSorted(compareSessions);

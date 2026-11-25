@@ -68,7 +68,7 @@ export async function openPreparation(
             value: class extends EventTarget {
               constructor(url: string) {
                 super();
-                if (url.endsWith("/state")) {
+                if (url.endsWith("/state") || url.endsWith("/content")) {
                   this.addEventListener = globalThis.addEventListener.bind(globalThis);
                 }
               }
@@ -96,6 +96,7 @@ export async function openPreparation(
                 frontend: {
                   ...frontend,
                   reasoningTranslation: { ...frontend.reasoningTranslation, enabled: false },
+                  transcriptSnapshotThrottleMs: 20,
                 },
                 profiles: { available: ["alternate", "limited"] },
                 sessions: fixtureSessions,

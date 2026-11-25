@@ -1,7 +1,6 @@
 import type { Database } from "bun:sqlite";
 
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
-import { groupBy } from "es-toolkit";
 
 import { localize } from "../../i18n/server";
 import { decodeMessage } from "../../infrastructure/database/records/transcript/messages/hydration";
@@ -12,16 +11,10 @@ import { countTokens } from "../../runtime/tokenizer";
 
 interface MessageRow {
   created_at: number;
-  id: number;
   message_json: string;
-  position: number;
   session_id: string;
   source_id: string;
   token_count: number | null;
-}
-interface SessionRow {
-  id: string;
-  updated_at: number;
 }
 export interface PredictionSample {
   assistant: string;
@@ -34,16 +27,14 @@ export interface PredictionSample {
 export function loadPredictionSnapshot(db: Database) {
   const messages = queryAll<MessageRow>(
       db,
-      `SELECT id, session_id, source_id, message_json, position, created_at, token_count
+      `SELECT session_id, source_id, message_json, created_at, token_count
      FROM messages
      WHERE position IS NOT NULL
      ORDER BY session_id, position`,
     ),
-    sessionUpdates = new Map(
-      queryAll<SessionRow>(
-        db,
-        `SELECT s.id,
-        MAX(
+    sessionUpdates = queryAll<{ updated_at: number }>(
+      db,
+      `SELECT MAX(
           s.updated_at,
           COALESCE(
             (SELECT MAX(m.created_at) FROM messages m
@@ -52,10 +43,9 @@ export function loadPredictionSnapshot(db: Database) {
           )
         ) AS updated_at
        FROM sessions s`,
-      ).map(({ id, updated_at }) => [id, updated_at]),
-    ),
+    ).map(({ updated_at }) => updated_at),
     samples: PredictionSample[] = [];
-  for (const sessionMessages of Object.values(groupBy(messages, (row) => row.session_id))) {
+  for (const sessionMessages of Map.groupBy(messages, (row) => row.session_id).values()) {
     let contextTokens = 0,
       latestAssistant: { content: string; id: string } | undefined;
     for (const row of sessionMessages) {
@@ -70,14 +60,13 @@ export function loadPredictionSnapshot(db: Database) {
             ? { content, id: row.source_id }
             : undefined;
       } else if (HumanMessage.isInstance(message) && latestAssistant) {
-        const userTokens = row.token_count ?? countTokens(content);
         samples.push({
           assistant: latestAssistant.content,
           contextTokens: contextTokens - tokenCount,
           createdAt: row.created_at,
           id: `${row.session_id}:${latestAssistant.id}:${row.source_id}`,
           user: content,
-          userTokens,
+          userTokens: tokenCount,
         });
         latestAssistant = undefined;
       }

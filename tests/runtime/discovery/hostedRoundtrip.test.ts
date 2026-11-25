@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 
 import { HumanMessage, ToolMessage } from "@langchain/core/messages";
 
-import { toModelMessages } from "../../../src/agent/aiMessages";
+import { toModelMessages } from "../../../src/agent/messages/encode";
 import { streamAiModel } from "../../../src/agent/model/request";
 import { aiModelTools } from "../../../src/agent/model/tools";
 import { modelTokenUsage } from "../../../src/app/timeline/tokenCounts";

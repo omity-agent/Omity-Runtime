@@ -1,8 +1,10 @@
 import { AIMessage, type BaseMessage } from "@langchain/core/messages";
 import { isPlainObject } from "es-toolkit";
 
-import { assistantContent } from "../../../agent/aiMessages";
-import type { StoredAiSdkPart } from "../../../agent/fromAiMessages";
+import {
+  assistantContent,
+  type StoredAssistantPart,
+} from "../../../agent/messages/assistantContent";
 import { localize } from "../../../i18n/server";
 import { rawFreeformInput } from "../../../runtime/freeform";
 import {
@@ -14,7 +16,7 @@ import {
 import type { DisplayMessage, DisplayToolCall } from "../contracts/projection";
 import { toolInputTokens } from "../tokenCounts";
 
-type StoredToolResult = Extract<StoredAiSdkPart, { type: "tool-result" }>;
+type StoredToolResult = Extract<StoredAssistantPart, { type: "tool-result" }>;
 export function extractToolActivity(
   message: BaseMessage,
 ): Pick<DisplayMessage, "toolCalls" | "toolOutputs"> {

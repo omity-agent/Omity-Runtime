@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 
 import { expect as browserExpect } from "playwright/test";
 import { z } from "zod";
@@ -7,15 +7,13 @@ import {
   messageSubmissionSchema,
   sessionSubmissionSchema,
 } from "../../../../src/app/attachments/submission";
-import { BrowserSession } from "../scrolling/browserSession";
+import { browserFixture } from "../scrolling/browserSession";
 import { emitState, fixtureSessions, openPreparation } from "./preparationBrowser";
 
-const browser = new BrowserSession(),
+const browser = browserFixture(),
   messages = ["earlier question", "recent question"],
   predictions = ["next question", "another question"],
   draft = "unfinished current question";
-beforeAll(() => browser.start(), 60_000);
-afterAll(() => browser.stop());
 test.each(["new", "session"])(
   "%s input traverses suggestions in both directions without saving previews",
   async (kind) => {

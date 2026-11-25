@@ -1,11 +1,11 @@
 import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
 import { z } from "zod";
 
+import { isProviderOptions } from "../../../../../agent/messages/providerOptions";
 import {
   reportedUsageSchema,
   tokenCountSchema,
 } from "../../../../../agent/model/usage/reportedTokens";
-import { isProviderOptions } from "../../../../../agent/toolProviderOptions";
 
 export const toolProviderOptionsSchema = z.record(
   z.string(),

@@ -73,7 +73,7 @@ export function useMessageCandidates(
     navigate = (direction: InputDirection) => {
       const next = stepCandidate(stateRef.current, direction, messages, predictions);
       if (!next) {
-        return;
+        return undefined;
       }
       stateRef.current = next;
       contentRef.current = next.content;

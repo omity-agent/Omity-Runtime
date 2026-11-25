@@ -49,7 +49,7 @@ export function extendToolPart(part: ToolPart, delta: ToolDelta) {
 }
 export function latestParsedInput(part: ToolPart) {
   if (part.freeform) {
-    return;
+    return undefined;
   }
   for (let index = part.argumentEnds.length - 1; index >= 0; index -= 1) {
     const input = parseToolInput(part.args.slice(0, part.argumentEnds[index]));
@@ -57,5 +57,5 @@ export function latestParsedInput(part: ToolPart) {
       return input;
     }
   }
-  return;
+  return undefined;
 }

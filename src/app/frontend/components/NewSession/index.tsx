@@ -50,7 +50,7 @@ export function NewSessionPage({
       node = scrollRef.current;
     previousPairCountRef.current = pairs.length;
     if (!node || !appended) {
-      return;
+      return undefined;
     }
     const followTail = () => {
       node.scrollTop = node.scrollHeight;

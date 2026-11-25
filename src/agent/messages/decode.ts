@@ -2,11 +2,12 @@ import { AIMessage, type BaseMessage, type ToolCall, ToolMessage } from "@langch
 import type { LanguageModelUsage, ModelMessage } from "ai";
 import { isPlainObject as isRecord } from "es-toolkit";
 
-import { localize } from "../i18n/server";
-import { trimFreeformInput } from "../runtime/freeform";
-import type { ModelApi } from "../types";
-import { reportedModelUsage } from "./model/usage/providerCounts";
-import { omitToolItemIds } from "./toolProviderOptions";
+import { localize } from "../../i18n/server";
+import { trimFreeformInput } from "../../runtime/freeform";
+import type { ModelApi } from "../../types";
+import { reportedModelUsage } from "../model/usage/providerCounts";
+import { isStoredAssistantPart, type ModelAssistantContent } from "./assistantContent";
+import { omitToolItemIds } from "./providerOptions";
 
 export function fromModelMessages(
   messages: ModelMessage[],
@@ -24,7 +25,7 @@ export function fromModelMessages(
             aiSdkContent: storedAssistantContent(message.content),
             ...(providerOptions ? { aiSdkToolProviderOptions: providerOptions } : {}),
           },
-          content: assistantText(message.content).join(""),
+          content: assistantText(message.content),
           id: `${assistantId}:assistant:${index.toString()}`,
           response_metadata: usage ? { usage: reportedModelUsage(usage, api) } : undefined,
           tool_calls: toolCalls(message.content),
@@ -49,28 +50,17 @@ export function fromModelMessages(
   }
   return result;
 }
-function storedAssistantContent(content: Extract<ModelMessage, { role: "assistant" }>["content"]) {
+function storedAssistantContent(content: ModelAssistantContent) {
   return typeof content === "string"
     ? [{ text: content, type: "text" as const }]
     : content.filter(isStoredAssistantPart);
 }
-export function isStoredAssistantPart(
-  part: Exclude<Extract<ModelMessage, { role: "assistant" }>["content"], string>[number],
-): part is StoredAiSdkPart {
-  return (
-    part.type === "text" ||
-    part.type === "reasoning" ||
-    part.type === "tool-result" ||
-    (part.type === "tool-call" && part.providerExecuted === true)
-  );
+function assistantText(content: ModelAssistantContent) {
+  return typeof content === "string"
+    ? content
+    : content.flatMap((part) => (part.type === "text" ? [part.text] : [])).join("");
 }
-function assistantText(content: Extract<ModelMessage, { role: "assistant" }>["content"]) {
-  if (typeof content === "string") {
-    return [content];
-  }
-  return content.flatMap((part) => (part.type === "text" ? [part.text] : []));
-}
-function toolCalls(content: Extract<ModelMessage, { role: "assistant" }>["content"]): ToolCall[] {
+function toolCalls(content: ModelAssistantContent): ToolCall[] {
   if (typeof content === "string") {
     return [];
   }
@@ -100,9 +90,9 @@ function toolCalls(content: Extract<ModelMessage, { role: "assistant" }>["conten
       };
     });
 }
-function toolProviderOptions(content: Extract<ModelMessage, { role: "assistant" }>["content"]) {
+function toolProviderOptions(content: ModelAssistantContent) {
   if (typeof content === "string") {
-    return;
+    return undefined;
   }
   const entries = content.flatMap((part) => {
     if (part.type !== "tool-call" || part.providerExecuted || !part.providerOptions) {
@@ -129,7 +119,3 @@ function outputText(output: ToolResult["output"]) {
   }
   return output.value.flatMap((part) => ("text" in part ? [part.text] : [])).join("");
 }
-export type StoredAiSdkPart = Extract<
-  Exclude<Extract<ModelMessage, { role: "assistant" }>["content"], string>[number],
-  { type: "reasoning" | "text" | "tool-call" | "tool-result" }
->;

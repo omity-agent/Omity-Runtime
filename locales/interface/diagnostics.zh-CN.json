@@ -10,6 +10,7 @@
     "errorResponseInvalid": "API 错误响应结构无效：HTTP {{value0}}"
   },
   "fork": {
+    "actionInProgress": "正在处理此 Fork 的操作",
     "pendingSessionMissing": "没有等待创建的 Fork 会话",
     "revisionOverflow": "Composer 草稿版本号溢出：{{value0}}"
   },

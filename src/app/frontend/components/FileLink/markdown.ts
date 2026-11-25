@@ -28,7 +28,7 @@ export function matchInsideNode(node: PositionedNode | undefined, matches: FileP
   const start = node?.position?.start.offset,
     end = node?.position?.end.offset;
   if (start === undefined || end === undefined) {
-    return;
+    return undefined;
   }
   return matches.find((match) => match.position.start >= start && match.position.end <= end);
 }

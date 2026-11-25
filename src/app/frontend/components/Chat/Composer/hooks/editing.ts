@@ -42,7 +42,7 @@ export function useComposerDraft({
   }, [draft, target]);
   useEffect(() => {
     if (draftSaveDelayMs === undefined) {
-      return;
+      return undefined;
     }
     const saver = new DraftSaver(target, draftSaveDelayMs, reportError);
     saverRef.current = saver;

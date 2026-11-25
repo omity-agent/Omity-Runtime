@@ -53,10 +53,11 @@ function HighlightedCodeView({
     <div className={container}>
       <CopyButton className={copyButton} value={code} />
       <pre
-        aria-label={t("conversation:codeBlock")}
+        aria-label={layout === "contained" ? t("conversation:codeBlock") : undefined}
         className={cx(block({ layout }), className)}
         ref={blockRef}
         onScroll={onScroll}
+        role={layout === "contained" ? "region" : undefined}
         tabIndex={layout === "contained" ? 0 : undefined}
       >
         <code className={codeElement({ layout })}>

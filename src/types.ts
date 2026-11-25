@@ -4,7 +4,6 @@ export type { BrowserWarning } from "./app/events/contracts";
 export { streamEventSchema } from "./infrastructure/database/schema/streamEvent";
 export type {
   StreamEvent,
-  StreamEventDraft,
   StreamEventKind,
   StreamEventValues,
   ToolOutputSnapshot,

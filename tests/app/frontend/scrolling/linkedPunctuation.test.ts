@@ -1,10 +1,10 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, expect, test } from "bun:test";
 
 import { createCodeHighlighter } from "../../../../src/app/frontend/components/HighlightedCode/background/tokenization";
 import type { FilePathMatch } from "../../../../src/fileLinks/types";
-import { BrowserSession, settleLayout } from "./browserSession";
+import { browserFixture, settleLayout } from "./browserSession";
 
-const session = new BrowserSession(),
+const session = browserFixture(),
   paths = [
     String.raw`crates\protocol\src\archive\measure.rs`,
     String.raw`crates\frontend\build_support\emission.rs`,
@@ -13,11 +13,7 @@ const session = new BrowserSession(),
   ],
   command = `command: Get-Content -LiteralPath ${paths.join(", ")} -Raw`,
   highlighter = createCodeHighlighter();
-beforeAll(() => session.start(), 60_000);
-afterAll(async () => {
-  highlighter.release("linked-punctuation");
-  await session.stop();
-});
+afterAll(() => highlighter.release("linked-punctuation"));
 test("linked code preserves punctuation through streaming and syntax retokenization", async () => {
   await using page = await session.open("append");
   const diagnostics: string[] = [];

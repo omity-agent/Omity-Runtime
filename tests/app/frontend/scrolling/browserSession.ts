@@ -1,7 +1,8 @@
+import { afterAll, beforeAll } from "bun:test";
 import { resolve as resolvePath } from "node:path";
 
 import { type Browser, chromium, type Page } from "playwright";
-import { createServer, type ViteDevServer } from "vite";
+import { createServer } from "vite";
 
 import {
   createYamlAssets,
@@ -17,12 +18,12 @@ import {
 } from "../../../support/browserOptions";
 
 export class BrowserSession {
+  private readonly resources = new AsyncDisposableStack();
   private browser?: Browser;
-  private server?: ViteDevServer;
   private origin?: string;
   constructor(private readonly overrides?: YamlAssetOverrides) {}
   async start() {
-    this.server = await createServer({
+    const server = await createServer({
       ...viteConfig,
       cacheDir: resolvePath("node_modules/.cache/scrolling-vite"),
       configFile: false,
@@ -34,16 +35,19 @@ export class BrowserSession {
       root: resolvePath(import.meta.dir, "../../../.."),
       server: fixtureServer,
     });
-    await this.server.listen();
-    const address = this.server.httpServer?.address();
+    this.resources.defer(() => server.close());
+    await server.listen();
+    const address = server.httpServer?.address();
     if (!address || typeof address === "string") {
       throw new Error("Scrolling fixture server has no TCP address");
     }
     this.origin = `http://${fixtureServer.host}:${address.port.toString()}`;
-    this.browser = await chromium.launch({
+    const browser = await chromium.launch({
       ...scrollingBrowser,
       channel: process.env["OMITY_TEST_BROWSER_CHANNEL"],
     });
+    this.resources.defer(() => browser.close());
+    this.browser = browser;
   }
   async open(mode: string) {
     const page = await this.openFixture(
@@ -59,15 +63,24 @@ export class BrowserSession {
     if (!this.browser || !this.origin) {
       throw new Error("Browser fixture session has not started");
     }
-    const page = await this.browser.newPage({ locale: "zh-CN", viewport: regressionViewport });
+    await using cleanup = new AsyncDisposableStack();
+    const page = cleanup.use(
+      await this.browser.newPage({ locale: "zh-CN", viewport: regressionViewport }),
+    );
     await setup?.(page);
     await page.goto(`${this.origin}${path}`, { waitUntil: "networkidle" });
+    cleanup.move();
     return page;
   }
-  async stop() {
-    await this.browser?.close();
-    await this.server?.close();
+  stop() {
+    return this.resources.disposeAsync();
   }
+}
+export function browserFixture(overrides?: YamlAssetOverrides) {
+  const session = new BrowserSession(overrides);
+  beforeAll(() => session.start(), 60_000);
+  afterAll(() => session.stop());
+  return session;
 }
 export async function settleLayout(page: Page) {
   await page.evaluate(async () => {
@@ -89,7 +102,7 @@ export async function readScrollPositions(page: Page, expectedCount?: number) {
   const snapshot = await page.waitForFunction((count) => {
     const elements = [...document.querySelectorAll("#root > section, pre")];
     if (count !== undefined && elements.length !== count) {
-      return;
+      return undefined;
     }
     return elements.map((element) => ({
       gap: element.scrollHeight - element.clientHeight - element.scrollTop,

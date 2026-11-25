@@ -131,10 +131,14 @@ function failedEvent(error: Record<string, string>) {
     headers: { "content-type": "text/event-stream" },
   });
 }
-export function recoveringModel(response: () => Response | Promise<Response>) {
+export function recoveringModel(response: (signal?: AbortSignal) => Response | Promise<Response>) {
   const provider = createOpenAI({
     apiKey: "test",
-    fetch: Object.assign(async () => response(), { preconnect: fetch.preconnect }),
+    fetch: Object.assign(
+      async (input: Parameters<typeof fetch>[0], init?: RequestInit) =>
+        response(init?.signal ?? (input instanceof Request ? input.signal : undefined)),
+      { preconnect: fetch.preconnect },
+    ),
   }).responses("gpt-6.1-sol");
   let attempts = 0;
   return new MockLanguageModelV4({

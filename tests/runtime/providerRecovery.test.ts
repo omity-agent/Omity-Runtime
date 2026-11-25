@@ -84,34 +84,44 @@ test.each(modelFailures)("handles $name through the model graph", async (failure
   }
 });
 test.each(websocketFailures)("handles $name through the model graph", async (failure) => {
+  await using resources = new AsyncDisposableStack();
   const target = Bun.serve({
-      fetch: (request, server) =>
-        server.upgrade(request) ? undefined : new Response(null, { status: 404 }),
-      port: 0,
-      websocket: {
-        message(socket) {
-          if (failure.event) {
-            socket.send(JSON.stringify(failure.event));
-          } else {
-            socket.terminate();
-          }
-        },
+    fetch: (request, server) =>
+      server.upgrade(request) ? undefined : new Response(null, { status: 404 }),
+    hostname: "127.0.0.1",
+    port: 0,
+    websocket: {
+      message(socket) {
+        if (failure.event) {
+          socket.send(JSON.stringify(failure.event));
+        } else {
+          socket.terminate();
+        }
       },
-    }),
-    runtime = createNetworkRuntime(async () => {}),
-    previousFetch = globalThis.fetch,
-    model = recoveringModel(() =>
-      createResponsesWebsocketFetch({ apiKey: "test-key" })(new URL("/responses", target.url), {
+    },
+  });
+  resources.defer(() => target.stop(true));
+  const runtime = createNetworkRuntime(async () => {}),
+    previousFetch = globalThis.fetch;
+  resources.defer(() => runtime.close());
+  resources.defer(() => {
+    globalThis.fetch = previousFetch;
+  });
+  const fetchResponse = createResponsesWebsocketFetch({ apiKey: "test-key" }),
+    model = recoveringModel((signal) => {
+      const timeout = AbortSignal.timeout(3000);
+      return fetchResponse(new URL("/responses", target.url), {
         body: JSON.stringify({ input: [], model: "test-model" }),
         method: "POST",
-      }),
-    );
-  using fixture = agentFixture({ model });
+        signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+      });
+    });
+  using fixture = agentFixture({ model }),
+    loggedError = spyOn(fixture.context.logger, "error").mockReturnValue(),
+    loggedWarning = spyOn(console, "warn").mockReturnValue();
   const { context, db } = fixture,
     warnings: BrowserWarning[] = [],
-    reportedFailures: ErrorDetails[] = [],
-    loggedError = spyOn(context.logger, "error").mockReturnValue(),
-    loggedWarning = spyOn(console, "warn").mockReturnValue();
+    reportedFailures: ErrorDetails[] = [];
   globalThis.fetch = runtime.fetch;
   context.settings.model.maxConcurrentRequests = 1;
   context.settings.model.retryDelayMs = 1;
@@ -120,59 +130,52 @@ test.each(websocketFailures)("handles $name through the model graph", async (fai
     token: () => {},
     warning: (_sessionId, warning) => warnings.push(warning),
   };
-  try {
-    db.resetSession("target", workspace);
-    db.appendUser("target", "hello");
-    await processInput(context, required(db.nextInput("target")));
-    expect(model.doStreamCalls).toHaveLength(failure.retryable ? 2 : 1);
-    let error: ErrorDetails;
-    if (failure.retryable) {
-      expect(db.history("target").at(-1)?.text).toBe("recovered");
-      expect(db.nextInput("target")).toBeNull();
-      expect(loggedError).not.toHaveBeenCalled();
-      expect(reportedFailures).toEqual([]);
-      expect(warnings).toHaveLength(1);
-      const warning = required(warnings[0]);
-      expect(warning.details.attempt).toBe(1);
-      ({ error } = warning.details);
-      reportBrowserWarning(warning);
-      expect(loggedWarning).toHaveBeenCalledWith(warning.message, {
-        ...warning.details,
-        error: summarizeError(error),
-      });
-    } else {
-      const paused = required(db.nextInput("target"));
-      expect(paused.status).toBe("paused");
-      error = required(
-        transcriptInputRows(db.db, "target").find(({ id }) => id === paused.id)?.error,
-      );
-      expect(loggedError).toHaveBeenCalledTimes(1);
-      expect(reportedFailures).toEqual([error]);
-      expect(warnings).toEqual([]);
-      expect(loggedWarning).not.toHaveBeenCalled();
-    }
-    expect(error).toMatchObject({
-      cause: {
-        details: failure.errorDetails,
-        ...(failure.message === undefined ? {} : { message: failure.message }),
-        name: failure.errorName,
-      },
-      name: "AI_APICallError",
+  db.resetSession("target", workspace);
+  db.appendUser("target", "hello");
+  await processInput(context, required(db.nextInput("target")));
+  expect(model.doStreamCalls).toHaveLength(failure.retryable ? 2 : 1);
+  let error: ErrorDetails;
+  if (failure.retryable) {
+    expect(db.history("target").at(-1)?.text).toBe("recovered");
+    expect(db.nextInput("target")).toBeNull();
+    expect(loggedError).not.toHaveBeenCalled();
+    expect(reportedFailures).toEqual([]);
+    expect(warnings).toHaveLength(1);
+    const warning = required(warnings[0]);
+    expect(warning.details.attempt).toBe(1);
+    ({ error } = warning.details);
+    reportBrowserWarning(warning);
+    expect(loggedWarning).toHaveBeenCalledWith(warning.message, {
+      ...warning.details,
+      error: summarizeError(error),
     });
-    expect(isRetryableModelError(error)).toBe(failure.retryable);
-    const summary = summarizeError(error);
-    expect(summary.causes).toHaveLength(1);
-    expect(JSON.stringify(summary)).not.toContain("Unknown error");
-    if (failure.message === undefined) {
-      expect(required(summary.causes?.[0])).not.toHaveProperty("message");
-    } else {
-      expect(required(summary.causes?.[0]).message).toBe(failure.message);
-    }
-  } finally {
-    globalThis.fetch = previousFetch;
-    loggedError.mockRestore();
-    loggedWarning.mockRestore();
-    await runtime.close();
-    await target.stop(true);
+  } else {
+    const paused = required(db.nextInput("target"));
+    expect(paused.status).toBe("paused");
+    error = required(
+      transcriptInputRows(db.db, "target").find(({ id }) => id === paused.id)?.error,
+    );
+    expect(loggedError).toHaveBeenCalledTimes(1);
+    expect(reportedFailures).toEqual([error]);
+    expect(warnings).toEqual([]);
+    expect(loggedWarning).not.toHaveBeenCalled();
+  }
+  expect(error).toMatchObject({
+    cause: {
+      details: failure.errorDetails,
+      ...(failure.message === undefined ? {} : { message: failure.message }),
+      name: failure.errorName,
+    },
+    name: "AI_APICallError",
+  });
+  expect(isRetryableModelError(error)).toBe(failure.retryable);
+  const summary = summarizeError(error),
+    cause = required(summary.causes?.[0]);
+  expect(summary.causes).toHaveLength(1);
+  expect(JSON.stringify(summary)).not.toContain("Unknown error");
+  if (failure.message === undefined) {
+    expect(cause).not.toHaveProperty("message");
+  } else {
+    expect(cause.message).toBe(failure.message);
   }
 });

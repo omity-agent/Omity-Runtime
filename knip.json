@@ -1,7 +1,13 @@
 {
   "$schema": "./node_modules/knip/schema.json",
   "entry": ["scripts/**/*.ts", "tests/**/*.{ts,tsx}"],
-  "ignoreDependencies": ["drizzle-kit", "@pandacss/preset-base"],
+  "ignoreBinaries": ["lint"],
+  "ignoreDependencies": [
+    "@pandacss/eslint-plugin",
+    "@pandacss/preset-base",
+    "@tanstack/eslint-plugin-query",
+    "drizzle-kit"
+  ],
   "includeEntryExports": true,
   "ignoreExportsUsedInFile": false,
   "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "tests/**/*.{ts,tsx}", "*.config.ts"]

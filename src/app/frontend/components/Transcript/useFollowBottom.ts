@@ -17,7 +17,7 @@ export function useFollowBottom<T extends HTMLElement>({
     const element = ref.current,
       content = contentRef?.current ?? element?.firstElementChild;
     if (!enabled || !element || !content) {
-      return;
+      return undefined;
     }
     const controller = new BottomFollower(),
       stopObserving = controller.observe(element);

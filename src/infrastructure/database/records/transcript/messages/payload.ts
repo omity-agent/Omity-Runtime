@@ -7,8 +7,8 @@ import {
 } from "@langchain/core/messages";
 import { isPlainObject as isRecord } from "es-toolkit";
 
+import { omitToolItemIds } from "../../../../../agent/messages/providerOptions";
 import { readReportedUsage } from "../../../../../agent/model/usage/reportedTokens";
-import { omitToolItemIds } from "../../../../../agent/toolProviderOptions";
 import { localize } from "../../../../../i18n/server";
 import { structuredToolOutput } from "../../../../mcp/tools/structured";
 import {
@@ -98,7 +98,7 @@ function storedReasoning(message: AIMessage) {
       ? output.find((item) => isRecord(item) && item["type"] === "reasoning")
       : undefined;
   if (!direct && !isRecord(raw)) {
-    return;
+    return undefined;
   }
   return {
     ...direct,

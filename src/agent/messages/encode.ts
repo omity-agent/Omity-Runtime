@@ -1,25 +1,15 @@
 import type { SharedV4ProviderOptions as ProviderOptions } from "@ai-sdk/provider";
-import {
-  AIMessage,
-  type BaseMessage,
-  HumanMessage,
-  type MessageContent,
-  ToolMessage,
-} from "@langchain/core/messages";
-import { assistantModelMessageSchema, type ModelMessage } from "ai";
-import { isJSONValue, isPlainObject } from "es-toolkit";
+import { AIMessage, type BaseMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
+import type { ModelMessage } from "ai";
+import { isPlainObject } from "es-toolkit";
 
-import { localize } from "../i18n/server";
-import { modelToolOutput } from "../runtime/multimodal";
-import type { ModelApi } from "../types";
-import { isStoredAssistantPart, type StoredAiSdkPart } from "./fromAiMessages";
-import { isProviderOptions } from "./toolProviderOptions";
+import { localize } from "../../i18n/server";
+import { modelToolOutput } from "../../runtime/multimodal";
+import type { ModelApi } from "../../types";
+import { assistantContent, type ModelAssistantPart, textContent } from "./assistantContent";
+import { isProviderOptions } from "./providerOptions";
 
-type AssistantPart = Exclude<
-  Extract<ModelMessage, { role: "assistant" }>["content"],
-  string
->[number];
-type AiToolCallPart = Extract<AssistantPart, { type: "tool-call" }>;
+type ModelToolCallPart = Extract<ModelAssistantPart, { type: "tool-call" }>;
 export function toModelMessages(
   messages: BaseMessage[],
   api: ModelApi = "completions",
@@ -56,11 +46,11 @@ export function toModelMessages(
 function modelToolCall(
   message: AIMessage,
   call: NonNullable<AIMessage["tool_calls"]>[number],
-): AiToolCallPart {
+): ModelToolCallPart {
   if (!call.id) {
     throw new Error(localize("agent:messages.toolCallIdMissing", { value0: call.name }));
   }
-  const part: AiToolCallPart = {
+  const part: ModelToolCallPart = {
       input: customToolInput(call),
       toolCallId: call.id,
       toolName: call.name,
@@ -88,35 +78,4 @@ function customToolInput(call: NonNullable<AIMessage["tool_calls"]>[number]) {
     throw new TypeError(localize("agent:messages.freeformInputNotString", { value0: call.name }));
   }
   return input;
-}
-export function assistantContent(message: AIMessage): StoredAiSdkPart[] {
-  const stored = message.additional_kwargs["aiSdkContent"];
-  if (stored !== undefined) {
-    const parsed = assistantModelMessageSchema.safeParse({ content: stored, role: "assistant" });
-    if (
-      !parsed.success ||
-      typeof parsed.data.content === "string" ||
-      !parsed.data.content.every(isStoredAssistantPart) ||
-      parsed.data.content.some((part) => part.type === "tool-call" && !isJSONValue(part.input))
-    ) {
-      throw new Error(localize("agent:messages.persistedContentInvalid"));
-    }
-    return parsed.data.content;
-  }
-  const text = textContent(message.content);
-  return text ? [{ text, type: "text" }] : [];
-}
-function textContent(content: MessageContent) {
-  if (typeof content === "string") {
-    return content;
-  }
-  return content
-    .flatMap((part) =>
-      typeof part === "string"
-        ? [part]
-        : part.type === "text" && typeof part["text"] === "string"
-          ? [part["text"]]
-          : [],
-    )
-    .join("");
 }

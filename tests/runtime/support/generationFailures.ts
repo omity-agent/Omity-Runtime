@@ -38,6 +38,17 @@ export const generationFailures = [
     retryable: true,
   },
   {
+    name: "an upstream stream break without a sequence number after partial output",
+    response: () =>
+      partialFailure({
+        response: {
+          error: { code: "upstream_stream_break", message: "The upstream connection closed early" },
+        },
+        type: "response.failed",
+      }),
+    retryable: true,
+  },
+  {
     errorName: "AI_StreamProviderError",
     expectedError: {
       details: { code: "invalid_request", isRetryable: false, statusCode: 400 },

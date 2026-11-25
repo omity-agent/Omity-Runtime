@@ -1,4 +1,5 @@
 [test]
+onlyFailures = true
 preload = ["./tests/setup.ts"]
 
 [install]
@@ -23,15 +24,53 @@ plugins = [
 
 [lint.categories]
 correctness = "error"
-nursery = "warn"
 perf = "warn"
-style = "warn"
 suspicious = "warn"
 
 [lint.rules]
 
-"import/no-unused-modules" = ["warn", { unusedExports = true }]
-"import/no-unassigned-import" = ["warn", { allow = ["**/*.css"] }]
+"complexity" = "off"
+"func-style" = "off"
+"id-length" = "off"
+"max-classes-per-file" = "off"
+"max-lines-per-function" = "off"
+"max-statements" = "off"
+"no-await-in-loop" = "off"
+"no-console" = "off"
+"no-duplicate-imports" = "off"
+"no-ternary" = "off"
+"no-undefined" = "off"
+"no-useless-return" = "off"
+"one-var" = "off"
+"require-unicode-regexp" = "off"
+"sort-imports" = "off"
+"sort-vars" = "off"
+"@typescript-eslint/max-params" = "off"
+"@typescript-eslint/explicit-function-return-type" = "off"
+"@typescript-eslint/prefer-readonly-parameter-types" = "off"
+"@typescript-eslint/no-magic-numbers" = "off"
+"import/no-relative-parent-imports" = "off"
+"import/extensions" = "off"
+"import/exports-last" = "off"
+"import/max-dependencies" = "off"
+"import/no-named-export" = "off"
+"import/group-exports" = "off"
+"import/consistent-type-specifier-style" = "off"
+"import/no-nodejs-modules" = "off"
+"n/no-process-env" = "off"
+"n/no-sync" = "off"
+"oxc/no-async-await" = "off"
+"oxc/no-rest-spread-properties" = "off"
+"oxc/no-optional-chaining" = "off"
+"react/jsx-max-depth" = "off"
+"unicorn/max-nested-calls" = "off"
+"unicorn/no-null" = "off"
+
+
+"@typescript-eslint/no-deprecated" = "warn"
+"react/jsx-filename-extension" = ["warn", { extensions = [".jsx", ".tsx"] }]
+
+
 "@pandacss/file-not-included" = "error"
 "@pandacss/no-debug" = "warn"
 "@pandacss/consistent-property-style" = "warn"
@@ -56,47 +95,3 @@ suspicious = "warn"
 "@tanstack/query/infinite-query-property-order" = "error"
 "@tanstack/query/no-void-query-fn" = "error"
 "@tanstack/query/mutation-property-order" = "error"
-"@typescript-eslint/no-deprecated" = "warn"
-
-
-"consistent-return" = "off"
-"@typescript-eslint/consistent-return" = "off"
-"react-hooks/memo-dependencies" = "off"
-"jsx-a11y/no-noninteractive-tabindex" = "off"
-"capitalized-comments" = "off"
-"import/consistent-type-specifier-style" = "off"
-"import/exports-last" = "off"
-"unicorn/filename-case" = "off"
-"func-style" = "off"
-"import/group-exports" = "off"
-"id-length" = "off"
-"react/jsx-max-depth" = "off"
-"init-declarations" = "off"
-"one-var" = "off"
-"max-lines-per-function" = "off"
-"unicorn/max-nested-calls" = "off"
-"max-params" = "off"
-"max-statements" = "off"
-"new-cap" = "off"
-"no-await-in-loop" = "off"
-"no-magic-numbers" = "off"
-"import/no-named-export" = "off"
-"no-nested-ternary" = "off"
-"n/no-sync" = "off"
-"unicorn/no-nested-ternary" = "off"
-"import/no-nodejs-modules" = "off"
-"unicorn/no-null" = "off"
-"no-ternary" = "off"
-"no-undef" = "off"
-"unicorn/no-useless-undefined" = "off"
-"@typescript-eslint/parameter-properties" = "off"
-"@typescript-eslint/prefer-readonly-parameter-types" = "off"
-"import/prefer-default-export" = "off"
-"react/react-in-jsx-scope" = "off"
-"bun:test/require-hook" = "off"
-"jest/require-hook" = "off"
-"sort-imports" = "off"
-
-[[lint.overrides]]
-files = ["panda.config.ts", "vite.config.ts"]
-rules = { "import/no-unused-modules" = "off" }

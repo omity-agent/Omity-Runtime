@@ -9,6 +9,7 @@ import { streamAiModel } from "../../src/agent/model/request";
 import { buildTimeline } from "../../src/app/timeline";
 import { loadTranscript } from "../../src/app/transcript";
 import { processInput } from "../../src/runtime/consumeInputs";
+import { hostLoop } from "../../src/runtime/loop";
 import { testSettings } from "../support/configuration";
 import { cleanupDatabaseDirs, required, workspace } from "../support/database";
 import { agentFixture, textResponse, toolResponse } from "./support/agentFixture";
@@ -54,6 +55,25 @@ test.each([false, true])(
     }
   },
 );
+test("the host reports idle only after marking the active run done", async () => {
+  using fixture = agentFixture();
+  const { context, db } = fixture;
+  db.resetSession("target", workspace);
+  db.appendUser("target", "run before idle");
+  const { runId } = required(db.nextInput("target")),
+    statusAtIdle = Promise.withResolvers<ReturnType<typeof db.runStatus>>();
+  context.observer = {
+    activity: (_, activity) => {
+      if (activity === "idle") {
+        statusAtIdle.resolve(db.runStatus(runId));
+        context.controller.abort();
+      }
+    },
+    token: () => {},
+  };
+  await hostLoop(context);
+  expect(await statusAtIdle.promise).toBe("done");
+});
 test("paused cancellation is visible immediately and survives host reconstruction", async () => {
   let called = 0;
   const echo = tool(
