@@ -3,7 +3,7 @@ import type { BaseMessage } from "@langchain/core/messages";
 import type { ErrorDetails } from "../../failures/details";
 import type { Control, QueuedInput, RunStatus } from "../../types";
 import { syncIndexedHistory } from "./indexing/historySync";
-import { appendFileLinkStream } from "./indexing/streamAppend";
+import { appendFileLinkStream, appendPlainStreams } from "./indexing/streamAppend";
 import { FileLinkIndexer } from "./indexing/surfaceIndexer";
 import { deleteSessionStorage, resetSessionStorage } from "./maintenance";
 import { InputSubmissionStore } from "./records/execution/acceptance";
@@ -38,7 +38,7 @@ import {
   insertUserBoundaryEvent,
   streamEventCursor,
 } from "./records/transcript/streamEvents";
-import type { StreamEvent, StreamEventDraft } from "./schema/streamEvent";
+import type { PlainStreamEventDraft, StreamEvent, StreamEventDraft } from "./schema/streamEvent";
 import { emptySessionDefinition, type SessionDefinition } from "./session/sessionDefinition";
 import {
   closeDatabase,
@@ -180,14 +180,11 @@ export class AgentDatabase extends RecoverableDatabase {
     return readToolCancellation(this.db, sessionId, callId);
   }
   appendStream(sessionId: string, event: StreamEventDraft) {
-    return appendFileLinkStream({
-      db: this.db,
-      event,
-      fileLinks: this.fileLinks,
-      notify: this.notify,
-      sessionId,
-      workspace: this.workspace(sessionId),
-    });
+    const { db, fileLinks, notify } = this;
+    return appendFileLinkStream({ db, fileLinks, notify, sessionId }, event);
+  }
+  appendPlainStreams(sessionId: string, events: readonly PlainStreamEventDraft[]) {
+    return appendPlainStreams({ db: this.db, notify: this.notify, sessionId }, events);
   }
   discardInputStream(inputId: number) {
     runTransaction(this.db, () => {

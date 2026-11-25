@@ -56,7 +56,7 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
     if (type !== metadataType) {
       throw new Error(localize("checkpoint:saver.metadataTypeMismatch"));
     }
-    this.storage.put(
+    await this.storage.put(
       {
         ...identity,
         checkpoint: Buffer.from(value),
@@ -93,7 +93,7 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
           };
         }),
       );
-    this.storage.putWrites({ ...identity, checkpointId }, rows);
+    await this.storage.putWrites({ ...identity, checkpointId }, rows);
   }
   deleteThread(threadId: string) {
     return Promise.try(() => this.storage.delete(checkpointRunId(threadId)));

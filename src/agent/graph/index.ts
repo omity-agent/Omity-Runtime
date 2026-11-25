@@ -72,16 +72,14 @@ export function buildGraph(
   hooks: HookRuntime,
   options: Pick<GraphOptions, "codexVersion" | "freeformToolParameters" | "toolExecutions"> = {},
 ) {
-  const checkpointer = new BunSqliteSaver(database),
-    graph = createAgentGraph({
-      checkpointer,
-      hooks,
-      settings,
-      toolDefinitions,
-      tools,
-      ...options,
-    });
-  return { checkpointer, graph };
+  return createAgentGraph({
+    checkpointer: new BunSqliteSaver(database),
+    hooks,
+    settings,
+    toolDefinitions,
+    tools,
+    ...options,
+  });
 }
 export function createAgentGraph(options: GraphOptions) {
   const freeform = options.freeformToolParameters ?? new Map(),

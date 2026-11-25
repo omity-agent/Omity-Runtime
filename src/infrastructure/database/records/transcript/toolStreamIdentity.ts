@@ -1,11 +1,7 @@
 import type { Database } from "bun:sqlite";
 
-import { and, asc, eq } from "drizzle-orm";
-import { isPlainObject as isRecord } from "es-toolkit";
-
 import { localize } from "../../../../i18n/server";
-import { events } from "../../schema";
-import { sessionDatabase } from "../../sqlite/connection";
+import { cachedQuery } from "../../sqlite/connection";
 
 interface ToolStreamIdentity {
   messageId: string;
@@ -16,29 +12,18 @@ export function findToolStreamIdentity(
   sessionId: string,
   callId: string,
 ): ToolStreamIdentity | null {
-  const rows = sessionDatabase(db)
-      .select({
-        messageId: events.messageId,
-        partId: events.partId,
-        payload: events.payload,
-      })
-      .from(events)
-      .where(and(eq(events.sessionId, sessionId), eq(events.kind, "tool_call_delta")))
-      .orderBy(asc(events.id))
-      .all(),
-    matches = rows.filter(
-      (row) => isRecord(row.payload) && Reflect.get(row.payload, "idDelta") === callId,
-    ),
-    identities = new Map(
-      matches.map((row) => [
-        `${row.messageId}\u0000${row.partId}`,
-        { messageId: row.messageId, partId: row.partId },
-      ]),
-    );
-  if (identities.size > 1) {
+  const identities = cachedQuery<ToolStreamIdentity>(
+    db,
+    `SELECT DISTINCT message_id AS messageId, part_id AS partId FROM events
+     WHERE session_id = ? AND kind = 'tool_call_delta'
+       AND json_type(payload_json, '$.idDelta') = 'text'
+       AND json_extract(payload_json, '$.idDelta') = ?
+     LIMIT 2`,
+  ).all(sessionId, callId);
+  if (identities.length > 1) {
     throw new Error(
       localize("database:transcript.formalCallStreamIdentityDuplicate", { value0: callId }),
     );
   }
-  return identities.values().next().value ?? null;
+  return identities[0] ?? null;
 }

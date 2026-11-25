@@ -4,6 +4,7 @@ import { and, eq, ne, sql } from "drizzle-orm";
 
 import { localize } from "../../../i18n/server";
 import { checkpoints, checkpointWrites } from "../schema";
+import { CommitQueue } from "../sqlite/commitQueue";
 import { runTransaction, sessionDatabase } from "../sqlite/connection";
 
 type Head = typeof checkpoints.$inferSelect;
@@ -12,11 +13,13 @@ export type RecoverySnapshot = Head & {
   pendingWrites: (typeof checkpointWrites.$inferSelect)[];
 };
 export class RecoveryStore {
+  private readonly commits;
   private readonly orm;
   private readonly head;
   private readonly currentId;
   private readonly pending;
   constructor(private readonly db: Database) {
+    this.commits = new CommitQueue(db);
     this.orm = sessionDatabase(db);
     const identity = and(
       eq(checkpoints.runId, sql.placeholder("runId")),
@@ -42,12 +45,14 @@ export class RecoveryStore {
       .prepare();
   }
   get(identity: Identity) {
+    this.commits.flush();
     return runTransaction(this.db, () => {
       const head = this.head.get(identity);
       return head ? this.snapshot(head) : undefined;
     });
   }
   list(filter: Partial<Identity> & { limit?: number }) {
+    this.commits.flush();
     return runTransaction(this.db, () =>
       this.orm
         .select()
@@ -66,7 +71,7 @@ export class RecoveryStore {
     );
   }
   put(row: Head, expectedId?: string) {
-    runTransaction(this.db, () => {
+    return this.commits.commit(() => {
       const current = this.currentId.get(row);
       if (current && current.checkpointId !== expectedId) {
         throw new Error(
@@ -106,7 +111,7 @@ export class RecoveryStore {
       replace: boolean;
     })[],
   ) {
-    runTransaction(this.db, () => {
+    return this.commits.enqueue(() => {
       if (this.currentId.get(identity)?.checkpointId !== identity.checkpointId) {
         throw new Error(
           localize("database:restoration.pendingWriteExpired", {
@@ -135,6 +140,7 @@ export class RecoveryStore {
     });
   }
   delete(runId: number) {
+    this.commits.flush();
     this.orm.delete(checkpoints).where(eq(checkpoints.runId, runId)).run();
   }
   private snapshot(head: Head): RecoverySnapshot {

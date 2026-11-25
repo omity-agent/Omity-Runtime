@@ -5,6 +5,7 @@ import type { AiStreamEvent } from "../../agent/model/request";
 import { captureError } from "../../failures/details";
 import { localize } from "../../i18n/server";
 import { findToolStreamIdentity } from "../../infrastructure/database/records/transcript/toolStreamIdentity";
+import type { PlainStreamEventDraft } from "../../infrastructure/database/schema/streamEvent";
 import type { HostContext } from "../context";
 import type { StreamLogState } from "../stream";
 import { displayToolInput, textOutputSnapshot, toolOutputText, toolValueText } from "../toolOutput";
@@ -24,15 +25,16 @@ export const hookInvocationSchema = z.object({
 });
 export type HookInvocation = z.infer<typeof hookInvocationSchema>;
 
-export async function recordHookToolStarted(
+export function recordHookToolStarted(
   ctx: InvocationContext,
   inputId: number,
   { argumentsText, callId, freeform, name }: HookInvocation,
 ) {
   const existing = findToolStreamIdentity(ctx.db.db, ctx.sessionId, callId),
-    identity = existing ?? { messageId: callId, partId: callId };
+    identity = existing ?? { messageId: callId, partId: callId },
+    events: PlainStreamEventDraft[] = [];
   if (!existing) {
-    await ctx.db.appendStream(ctx.sessionId, {
+    events.push({
       ...identity,
       inputId,
       kind: "tool_call_delta",
@@ -45,21 +47,21 @@ export async function recordHookToolStarted(
       },
     });
   }
-  await emitToolStarted(ctx, inputId, callId, identity);
+  events.push(toolStartedEvent(inputId, callId, identity));
+  ctx.db.appendPlainStreams(ctx.sessionId, events);
 }
-export function emitToolStarted(
-  ctx: InvocationContext,
+export function toolStartedEvent(
   inputId: number,
   callId: string,
   { messageId, partId }: ToolIdentity,
-) {
-  return ctx.db.appendStream(ctx.sessionId, {
+): Extract<PlainStreamEventDraft, { kind: "tool_started" }> {
+  return {
     inputId,
     kind: "tool_started",
     messageId,
     partId,
     value: callId,
-  });
+  };
 }
 export async function recordInvocation(
   ctx: InvocationContext,
@@ -97,18 +99,20 @@ export async function recordInvocation(
     });
   } else if (chunk?.type === "tool-input-available" && chunk.providerExecuted) {
     const identity = invocationIdentity(state, chunk.toolCallId);
-    await ctx.db.appendStream(ctx.sessionId, {
-      inputId,
-      kind: "tool_call_delta",
-      messageId: identity.messageId,
-      partId: identity.partId,
-      value: {
-        argumentsText: toolValueText(displayToolInput(chunk.input)),
-        index: identity.index,
-        providerExecuted: true,
+    ctx.db.appendPlainStreams(ctx.sessionId, [
+      {
+        inputId,
+        kind: "tool_call_delta",
+        messageId: identity.messageId,
+        partId: identity.partId,
+        value: {
+          argumentsText: toolValueText(displayToolInput(chunk.input)),
+          index: identity.index,
+          providerExecuted: true,
+        },
       },
-    });
-    await emitToolStarted(ctx, inputId, chunk.toolCallId, identity);
+      toolStartedEvent(inputId, chunk.toolCallId, identity),
+    ]);
   } else if (
     (chunk?.type === "tool-output-available" || chunk?.type === "tool-output-error") &&
     chunk.providerExecuted

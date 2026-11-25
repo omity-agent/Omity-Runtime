@@ -75,7 +75,13 @@ test("checkpoint heads observe another database connection's writes and replacem
       checkpoint = { ...emptyCheckpoint(), channel_values: { result: ["first"] } },
       head = await saver.put(config, checkpoint, metadata);
     await saver.getTuple(config);
-    await external.putWrites(head, [["result", { value: "pending" }]], "task");
+    const stale = { configurable: { ...head.configurable, checkpoint_id: "expired" } },
+      [expired, committed] = await Promise.allSettled([
+        external.putWrites(stale, [["result", "stale"]], "expired-task"),
+        external.putWrites(head, [["result", { value: "pending" }]], "task"),
+      ]);
+    expect(expired.status).toBe("rejected");
+    expect(committed.status).toBe("fulfilled");
     const withWrite = required(await saver.getTuple(config));
     expect(withWrite.pendingWrites).toEqual([["task", "result", { value: "pending" }]]);
     withWrite.pendingWrites![0]![2] = "mutated";

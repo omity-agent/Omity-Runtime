@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { cpus, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { createTypicalHistory } from "./historyFixture";
@@ -36,12 +36,6 @@ try {
     toolsPath,
   );
   process.env[profile.model.apiKeyEnv] = "local-benchmark-placeholder";
-  console.log(`工具调用性能测试：${process.platform} / Bun ${Bun.version} / ${cpus()[0]?.model}`);
-  console.log(`上下文约 ${history.estimatedTokens.toLocaleString("zh-CN")} tokens`);
-  console.log(
-    `历史 ${history.messages.length} 条 + 本轮用户输入；${history.tools.length} 个工具定义；合成推理载荷 ${profile.context.encryptedReasoningCharacters} 字符`,
-  );
-  console.log(`预热 ${profile.warmup} 次，正式测量 ${profile.samples} 次。`);
   for (let index = 0; index < profile.warmup + profile.samples; index += 1) {
     const home = join(directory, `sample-${index.toString()}`);
     await mkdir(home);

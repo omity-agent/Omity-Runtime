@@ -35,8 +35,7 @@ export async function runGraphUntilBoundary(
       cancelRun(ctx, run);
       return;
     }
-    const checkpoint = await ctx.checkpointer.getTuple(config),
-      state = checkpoint ? readGraphState(await ctx.graph.getState(config)) : undefined;
+    const state = await readGraphState(ctx.graph, config);
     if (synchronizeHistory && state && state.values.messages.length > 0) {
       await ctx.db.syncHistory(ctx.sessionId, state.values.messages);
       completeActiveStream(streamState);
@@ -76,13 +75,13 @@ export async function runGraphUntilBoundary(
       return;
     }
     if (operation && state) {
-      await announceOperation(ctx, item.id, operation, state.values.messages);
+      announceOperation(ctx, item.id, operation, state.values.messages);
     }
     try {
       const stream = await streamGraph(ctx.graph, input, {
         ...config,
         signal: ctx.controller.signal,
-        streamMode: ["custom", "updates", "debug"],
+        streamMode: "custom",
       });
       for await (const event of stream) {
         await handleGraphEvent(ctx, item.id, event, streamState);
@@ -126,7 +125,7 @@ function nextOperation(next: string[]): AgentOperation | undefined {
 function stepIsComplete(completed: AgentOperation | undefined, next: AgentOperation) {
   return completed === "model" || (completed === "tools" && next === "model");
 }
-async function announceOperation(
+function announceOperation(
   ctx: HostContext,
   inputId: number,
   operation: AgentOperation,
@@ -134,22 +133,15 @@ async function announceOperation(
 ) {
   ctx.observer?.activity?.(ctx.sessionId, operation === "tools" ? "tool" : "waiting");
   if (operation === "tools") {
-    await recordToolStarted(ctx, messages, inputId);
+    recordToolStarted(ctx, messages, inputId);
   }
 }
 async function handleGraphEvent(
   ctx: HostContext,
   inputId: number,
-  event: unknown,
+  part: unknown,
   state: ReturnType<typeof createStreamLogState>,
 ) {
-  if (!Array.isArray(event)) {
-    return;
-  }
-  if (event[0] !== "custom") {
-    return;
-  }
-  const part: unknown = event[1];
   if (
     typeof part === "object" &&
     part !== null &&
@@ -157,7 +149,7 @@ async function handleGraphEvent(
     part.kind === "hook_tool_started"
   ) {
     ctx.observer?.activity?.(ctx.sessionId, "tool");
-    await recordHookToolStarted(ctx, inputId, hookInvocationSchema.parse(part));
+    recordHookToolStarted(ctx, inputId, hookInvocationSchema.parse(part));
     return;
   }
   if (!isAiStreamEvent(part)) {

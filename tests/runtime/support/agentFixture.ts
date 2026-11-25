@@ -43,7 +43,6 @@ export function agentFixture({
       tools,
     }),
     context: HostContext = {
-      checkpointer,
       controller: new AbortController(),
       db,
       graph,

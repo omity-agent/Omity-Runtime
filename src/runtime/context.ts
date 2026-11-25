@@ -5,14 +5,13 @@ import { z } from "zod";
 
 import type { buildGraph } from "../agent";
 import type { ToolExecutions } from "../agent/toolExecutions";
-import type { BunSqliteSaver } from "../checkpointer/saver";
 import type { ErrorDetails } from "../failures/details";
 import { localize } from "../i18n/server";
 import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import type { Logger } from "../infrastructure/logging/logger";
 import type { BrowserWarning, HostActivity, Settings, StreamEvent } from "../types";
 
-type AgentGraph = ReturnType<typeof buildGraph>["graph"];
+type AgentGraph = ReturnType<typeof buildGraph>;
 type AgentGraphStream = AgentGraph["stream"];
 type GraphStreamOptions = Omit<
   NonNullable<Parameters<AgentGraphStream>[1]>,
@@ -31,7 +30,6 @@ export interface HostObserver {
 }
 export interface HostContext {
   assertLease?: () => void;
-  checkpointer: BunSqliteSaver;
   controller: AbortController;
   db: AgentDatabase;
   graph: AgentGraph;
@@ -84,8 +82,15 @@ const messageSchema = z.custom<BaseMessage>((value) => BaseMessage.isInstance(va
       messages: z.array(messageSchema),
     }),
   });
-export function readGraphState(value: unknown) {
-  const parsed = graphStateSchema.safeParse(value);
+export async function readGraphState(
+  graph: Pick<AgentGraph, "getState">,
+  config: Parameters<AgentGraph["getState"]>[0],
+) {
+  const snapshot = await graph.getState(config);
+  if (snapshot.createdAt === undefined) {
+    return undefined;
+  }
+  const parsed = graphStateSchema.safeParse(snapshot);
   if (!parsed.success) {
     throw new Error(localize("runtime:graph.invalidState"), { cause: parsed.error });
   }

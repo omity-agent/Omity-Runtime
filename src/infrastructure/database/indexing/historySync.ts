@@ -3,7 +3,6 @@ import type { Database } from "bun:sqlite";
 import type { BaseMessage } from "@langchain/core/messages";
 
 import { messageFileLinkSources } from "../../../fileLinks/messageSources";
-import type { StreamEvent, StreamEventDraft } from "../../../types";
 import { clearCompletedCancellations } from "../records/execution/toolCancellations";
 import { touchSessionRecord } from "../records/session/metadata";
 import {
@@ -12,7 +11,6 @@ import {
   writeFileLinkSets,
 } from "../records/transcript/matchedFiles";
 import { prepareMessageSync } from "../records/transcript/messages/sync";
-import { insertStreamEvent } from "../records/transcript/streamEvents";
 import { finishToolStreams } from "../records/transcript/toolCompletion";
 import { runTransaction } from "../sqlite/connection";
 import type { FileLinkIndexer } from "./surfaceIndexer";
@@ -45,57 +43,4 @@ export async function syncIndexedHistory(options: {
     });
   prepared.commit();
   return finished;
-}
-export async function appendIndexedStream(options: {
-  db: Database;
-  event: StreamEventDraft;
-  fileLinks: FileLinkIndexer;
-  sessionId: string;
-  workspace: string;
-}): Promise<StreamEvent> {
-  const { event } = options,
-    prepared =
-      event.kind === "assistant_text_delta" || event.kind === "assistant_reasoning_delta"
-        ? await options.fileLinks.prepareDelta({
-            delta: event.value,
-            inputId: event.inputId,
-            ownerId: event.messageId,
-            sessionId: options.sessionId,
-            surface: event.kind === "assistant_text_delta" ? "content" : "reasoning",
-            workspace: options.workspace,
-          })
-        : undefined,
-    enriched = {
-      ...event,
-      ...(prepared && prepared.links.length > 0
-        ? {
-            fileLinks: prepared.links.map(({ matches, ownerId, surface }) => ({
-              matches,
-              ownerId,
-              surface,
-            })),
-          }
-        : {}),
-    },
-    inserted = runTransaction(options.db, () => {
-      if (prepared) {
-        writeFileLinkSets(options.db, options.sessionId, prepared.links);
-      }
-      const result = insertStreamEvent(options.db, options.sessionId, enriched);
-      touchSessionRecord(options.db, options.sessionId);
-      return result;
-    });
-  prepared?.commit();
-  return inserted;
-}
-export function insertPlainStream(
-  db: Database,
-  sessionId: string,
-  event: Exclude<StreamEventDraft, { kind: "assistant_text_delta" | "assistant_reasoning_delta" }>,
-) {
-  return runTransaction(db, () => {
-    const inserted = insertStreamEvent(db, sessionId, event);
-    touchSessionRecord(db, sessionId);
-    return inserted;
-  });
 }

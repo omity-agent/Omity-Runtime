@@ -7,7 +7,7 @@ import { findToolStreamIdentity } from "../infrastructure/database/records/trans
 import { appendReasoningDelta, flushReasoning } from "./content";
 import type { HostContext } from "./context";
 import type { StreamLogState } from "./stream";
-import { emitToolStarted, recordInvocation } from "./stream/invocations";
+import { recordInvocation, toolStartedEvent } from "./stream/invocations";
 import { sequentialPart } from "./stream/parts";
 
 type AiStreamContext = Pick<
@@ -64,21 +64,19 @@ export async function recordAiStreamPart(
     await recordInvocation(ctx, inputId, event, state);
   }
 }
-export async function recordToolStarted(
-  ctx: AiStreamContext,
-  messages: BaseMessage[],
-  inputId: number,
-) {
-  const calls = pendingToolBatch(messages, ctx.settings.toolExecution.parallel);
-  for (const call of calls.filter(
-    (pending) => ctx.db.toolCancellation(ctx.sessionId, pending.id) === undefined,
-  )) {
-    const callId = call.id,
-      identity = findToolStreamIdentity(ctx.db.db, ctx.sessionId, callId) ?? {
+export function recordToolStarted(ctx: AiStreamContext, messages: BaseMessage[], inputId: number) {
+  const events = pendingToolBatch(messages, ctx.settings.toolExecution.parallel).flatMap(
+    ({ id: callId }) => {
+      if (ctx.db.toolCancellation(ctx.sessionId, callId) !== undefined) {
+        return [];
+      }
+      const identity = findToolStreamIdentity(ctx.db.db, ctx.sessionId, callId) ?? {
         messageId: callId,
         partId: callId,
       };
-    ctx.toolExecutions?.announce(callId);
-    await emitToolStarted(ctx, inputId, callId, identity);
-  }
+      ctx.toolExecutions?.announce(callId);
+      return [toolStartedEvent(inputId, callId, identity)];
+    },
+  );
+  ctx.db.appendPlainStreams(ctx.sessionId, events);
 }

@@ -61,3 +61,6 @@ export type StreamEventValues = {
 export type StreamEventDraft = {
   [Kind in StreamEventKind]: Omit<Extract<StreamEvent, { kind: Kind }>, "id">;
 }[StreamEventKind];
+type TextKind = "assistant_text_delta" | "assistant_reasoning_delta";
+export type TextStreamEventDraft = Extract<StreamEventDraft, { kind: TextKind }>;
+export type PlainStreamEventDraft = Exclude<StreamEventDraft, { kind: TextKind }>;

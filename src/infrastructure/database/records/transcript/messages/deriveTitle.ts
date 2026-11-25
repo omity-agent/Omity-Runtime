@@ -21,7 +21,7 @@ export function deriveSessionTitle(db: Database, sessionId: string) {
      )
      SELECT request.message_json, CAST(call.key AS INTEGER) AS call_index
      FROM messages request, json_each(request.message_json, '$.toolCalls') call
-     WHERE request.session_id = ? AND request.position IS NOT NULL
+     WHERE request.session_id = ? AND request.position < (SELECT max(position) FROM completed)
        AND json_extract(request.message_json, '$.type') = 'ai'
        AND EXISTS (
          SELECT 1 FROM completed result

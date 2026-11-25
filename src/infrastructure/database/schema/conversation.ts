@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   check,
   foreignKey,
+  index,
   integer,
   sqliteTable,
   text,
@@ -39,6 +40,11 @@ export const messages = sqliteTable(
     uniqueIndex("messages_source").on(table.sessionId, table.sourceId),
     uniqueIndex("messages_position").on(table.sessionId, table.position),
     uniqueIndex("messages_input").on(table.inputId),
+    index("messages_title_results")
+      .on(table.sessionId, table.position)
+      .where(
+        sql`${table.position} IS NOT NULL AND json_extract(${table.message}, '$.builtInTool') = 'update_title'`,
+      ),
     foreignKey({
       columns: [table.sessionId, table.inputId],
       foreignColumns: [inputs.sessionId, inputs.id],
@@ -81,6 +87,11 @@ export const events = sqliteTable(
       .references(() => sessions.id, { onDelete: "cascade" }),
   },
   (table) => [
+    index("events_tool_identity")
+      .on(table.sessionId, sql`json_extract(${table.payload}, '$.idDelta')`)
+      .where(
+        sql`${table.kind} = 'tool_call_delta' AND json_type(${table.payload}, '$.idDelta') = 'text'`,
+      ),
     foreignKey({
       columns: [table.sessionId, table.inputId],
       foreignColumns: [inputs.sessionId, inputs.id],

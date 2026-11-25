@@ -105,18 +105,11 @@ export async function runHostSession(
       paths.dir,
       mcp.freeformToolParameters,
     ),
-    { checkpointer, graph } = buildGraph(
-      settings,
-      tools,
-      frozenDefinition.prefix.tools.tools,
-      db.db,
-      hooks,
-      {
-        codexVersion,
-        freeformToolParameters: mcp.freeformToolParameters,
-        toolExecutions,
-      },
-    );
+    graph = buildGraph(settings, tools, frozenDefinition.prefix.tools.tools, db.db, hooks, {
+      codexVersion,
+      freeformToolParameters: mcp.freeformToolParameters,
+      toolExecutions,
+    });
   options.onReady?.({
     cancelTool: (callId) => toolExecutions.cancel(callId),
   });
@@ -124,7 +117,6 @@ export async function runHostSession(
     assertLease: () => {
       requireLease().assertOwned();
     },
-    checkpointer,
     controller,
     db,
     graph,

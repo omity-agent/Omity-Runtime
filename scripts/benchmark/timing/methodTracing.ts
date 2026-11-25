@@ -40,6 +40,7 @@ export class MethodTracing {
         );
       }
       this.install(AgentDatabase.prototype, "appendStream", "流事件落库");
+      this.install(AgentDatabase.prototype, "appendPlainStreams", "流事件落库");
       this.install(AgentDatabase.prototype, "syncHistory", "历史同步");
       this.install(FileLinkIndexer.prototype, "prepareHistory", "文件链接索引准备");
       this.install(FileLinkIndexer.prototype, "prepareDelta", "增量文件链接索引");
