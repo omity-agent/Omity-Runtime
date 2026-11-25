@@ -4,7 +4,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { createRoot } from "react-dom/client";
 
 import { App } from "./App";
-import { MarkdownModeProvider } from "./components/Markdown/DisplayMode";
 import { i18nReady, localize } from "./i18n";
 import { reportError } from "./services/errors";
 import { createQueryClient } from "./services/remoteStore";
@@ -27,8 +26,6 @@ createRoot(root, {
   },
 }).render(
   <QueryClientProvider client={queryClient}>
-    <MarkdownModeProvider>
-      <App />
-    </MarkdownModeProvider>
+    <App />
   </QueryClientProvider>,
 );

@@ -1,16 +1,5 @@
 import { css } from "styled-system/css";
 
-export const toolbar = css({
-  "&:empty": { display: "none" },
-  alignItems: "center",
-  background: "bg.panel",
-  borderBlockEndWidth: "hairline",
-  borderBottomColor: "border.default",
-  display: "flex",
-  flexShrink: 0,
-  gap: "1",
-  padding: "2",
-});
 export const total = css({ color: "fg.subtle", textStyle: "sidebarCount" });
 export const collections = css({
   alignContent: "start",

@@ -1,7 +1,7 @@
 // eslint-disable-next-line import/no-unassigned-import -- KaTeX emits global classes that require its stylesheet.
 import "katex/dist/katex.min.css";
 import type { Root } from "hast";
-import { useMemo } from "react";
+import { useContext, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkBreaks from "remark-breaks";
@@ -14,10 +14,9 @@ import { SKIP, visit } from "unist-util-visit";
 import type { FilePathMatch } from "../../../../fileLinks/types";
 import { normalizeCodeMatches, normalizeLineBreaks } from "../FileLink/lineBreaks";
 import { fileLinkRemark } from "../FileLink/markdown";
-import { useMarkdownSource } from "./DisplayMode";
 import { region, rendered } from "./proseLayout";
 import { blockComponents, inlineComponents, MarkdownContext, noFileLinks } from "./Renderers";
-import { MarkdownSource } from "./Source";
+import { MarkdownSource, MarkdownSourceContext } from "./Source";
 
 const markdownPlugins = [
     remarkGfm,
@@ -48,11 +47,11 @@ export function MarkdownView({
         ],
       };
     }, [content, fileLinks, preserveLineBreaks]),
-    showSource = useMarkdownSource();
+    showSource = useContext(MarkdownSourceContext);
   return (
     <MarkdownContext.Provider value={normalized.context}>
       <div className={region}>
-        <div aria-hidden={showSource} className={rendered} data-source-visible={showSource}>
+        <div className={rendered} inert={showSource}>
           <ReactMarkdown
             components={blockComponents}
             rehypePlugins={markdownRehypePlugins}
@@ -72,7 +71,7 @@ export function MarkdownInline({ content }: { content: string }) {
       const source = normalizeLineBreaks(content);
       return { context: { fileLinks: noFileLinks, source }, source };
     }, [content]),
-    showSource = useMarkdownSource();
+    showSource = useContext(MarkdownSourceContext);
   if (showSource) {
     return normalized.source;
   }

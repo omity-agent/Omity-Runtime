@@ -14,6 +14,7 @@ import { localizeMatches, matchInsideNode, pathFromFileLinkHref } from "../FileL
 import { FileLinkMenu } from "../FileLink/Menu";
 import { HighlightedCode } from "../HighlightedCode";
 import { Code } from "../ui";
+import { Diagram } from "./Diagram";
 import { markupComponents } from "./Markup";
 import { tableScroll } from "./proseLayout";
 
@@ -88,8 +89,27 @@ function MarkdownCode({ children, className, node }: ComponentProps<"code"> & Ex
   );
 }
 
-function MarkdownPre({ children }: ComponentProps<"pre"> & ExtraProps) {
-  return <>{children}</>;
+function MarkdownPre({ children, node }: ComponentProps<"pre"> & ExtraProps) {
+  const [code] = node?.children ?? [];
+  if (code?.type !== "element" || code.tagName !== "code") {
+    return children;
+  }
+  const classes = code.properties.className,
+    language = Array.isArray(classes)
+      ? classes
+          .map((name) => (typeof name === "string" ? name.toLowerCase() : undefined))
+          .find((name) => name === "language-svg" || name === "language-mermaid")
+      : undefined,
+    [text] = code.children;
+  if (language && text?.type === "text") {
+    return (
+      <Diagram
+        code={text.value.replace(/\n$/u, "")}
+        language={language === "language-svg" ? "svg" : "mermaid"}
+      />
+    );
+  }
+  return children;
 }
 function MarkdownTable(props: ComponentProps<"table"> & ExtraProps) {
   return <div className={tableScroll}>{createElement(markupComponents.table, props)}</div>;

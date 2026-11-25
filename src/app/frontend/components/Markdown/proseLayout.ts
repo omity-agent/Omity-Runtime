@@ -1,8 +1,9 @@
 import { css } from "styled-system/css";
 import { stack } from "styled-system/patterns";
 
+export const region = css({ minWidth: "0", position: "relative", width: "full" });
 export const rendered = stack({
-  '&[data-source-visible="true"]': { visibility: "hidden" },
+  "&[inert]": { visibility: "hidden" },
   gap: "3",
   lineHeight: "markdown",
   maxWidth: "full",
@@ -15,20 +16,18 @@ export const tableScroll = css({
   overscrollBehaviorX: "contain",
   width: "full",
 });
-export const region = css({
-  lineHeight: "markdown",
-  maxWidth: "full",
-  minWidth: "0",
-  position: "relative",
-  width: "full",
-});
 export const source = css({
   background: "transparent",
   borderWidth: "0",
+  insetBlock: "0",
+  insetInline: "0",
+  lineHeight: "markdown",
   maxWidth: "full",
   minWidth: "0",
-  overflow: "visible",
+  overflow: "auto",
+  overscrollBehavior: "contain",
   padding: "0",
+  position: "absolute",
   textStyle: "sourceCode",
   whiteSpace: "pre-wrap",
   wordBreak: "break-word",

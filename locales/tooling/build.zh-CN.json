@@ -11,5 +11,14 @@
   "databaseGenerationFailed": "{{name}} 数据库生成失败，退出码：{{code}}",
   "databaseDirectoryInvalid": "{{name}} 数据库结构目录无效",
   "databaseFilesInvalid": "{{name}} 数据库结构文件无效",
-  "testsFailed": "测试失败，退出码：{{code}}"
+  "testsFailed": "测试失败，退出码：{{code}}",
+  "screenshots": {
+    "emptyScreens": "至少配置一种屏幕尺寸",
+    "noServerAddress": "截图用的前端服务未监听本地端口",
+    "fontUnavailable": "无法加载截图字体 {{font}}，请确认该字体已安装",
+    "externalRequest": "样板页面发起了非本地请求：{{url}}",
+    "unexpectedApi": "未提供样板 API 响应：{{method}} {{path}}",
+    "renderFailed": "无法生成 {{page}} / {{screen}} 的截图",
+    "saved": "已生成 {{count}} 张图片：{{directory}}"
+  }
 }

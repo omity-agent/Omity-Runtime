@@ -5,3 +5,5 @@ transcript:
 code:
   bufferSize: 192
   estimatedLineHeight: 24
+mermaid:
+  theme: dark

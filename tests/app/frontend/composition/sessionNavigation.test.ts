@@ -5,6 +5,7 @@ import { expect as browserExpect } from "playwright/test";
 import { browserFixture } from "../scrolling/browserSession";
 import {
   emitState,
+  emptyTranscript,
   fixtureSessions,
   openPreparation,
   projectPaths,
@@ -86,30 +87,84 @@ test.each(["wide", "compact"] as const)(
   },
   30_000,
 );
-test("setup adapts from side-by-side columns to a narrow screen with accessible project navigation", async () => {
+test("compact layout keeps setup, navigation and message preview controls usable", async () => {
   const fixture = await openPreparation(browser);
   await using page = fixture.page;
   const workspace = page.getByRole("textbox", { name: "工作目录" }),
     profile = page.getByRole("combobox", { name: "Profile" }),
+    toolbar = page.getByRole("banner"),
+    credentials = toolbar.getByRole("link", { name: "管理通行密钥" }),
+    create = toolbar.getByRole("link", { name: "新建会话" }),
+    source = toolbar.getByRole("button", { name: "显示 Markdown 源码" }),
     recent = page.getByRole("button", { exact: true, name: projectPaths[0] }),
     next = page.getByRole("button", { exact: true, name: projectPaths[1] }),
     directory = await workspace.boundingBox(),
     configuration = await profile.boundingBox();
   expect(directory!.x + directory!.width).toBeLessThan(configuration!.x);
   expect((await recent.boundingBox())!.y).toBeLessThan((await next.boundingBox())!.y);
-  await browserExpect(
-    page.locator("aside header").getByRole("link", { name: "管理通行密钥" }),
-  ).toBeVisible();
+  await browserExpect(credentials).toBeVisible();
   await setPreparationLayout(page, "compact");
+  await browserExpect(page.locator("aside")).toBeHidden();
+  expect((await page.locator("main").boundingBox())!.y).toBe((await toolbar.boundingBox())!.height);
+  await browserExpect(credentials).toBeVisible();
+  await browserExpect(create).toBeVisible();
+  await browserExpect(create).toBeDisabled();
+  await browserExpect(source).toBeVisible();
   expect((await workspace.boundingBox())!.y).toBeLessThan((await profile.boundingBox())!.y);
   await page.getByRole("button", { exact: true, name: "会话列表" }).click();
+  await browserExpect(credentials).toBeVisible();
+  await browserExpect(create).toBeVisible();
+  await browserExpect(source).toBeVisible();
   await page
     .getByRole("region", { exact: true, name: "项目" })
     .getByRole("button", { name: /atlas/u })
     .click();
-  await browserExpect(page.getByRole("region", { name: "项目会话" }).getByRole("link")).toHaveCount(
-    2,
-  );
+  const history = page.getByRole("region", { name: "项目会话" });
+  await browserExpect(history.getByRole("link")).toHaveCount(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  const content = [
+      '~~~svg\n<svg viewBox="0 0 20 20"><rect width="20" height="20" fill="#7ac"/></svg>\n~~~',
+      "```mermaid\nflowchart TD\n  A --> B\n```",
+    ].join("\n\n"),
+    diagrams = page.getByRole("img", { name: /^(?:SVG|Mermaid) 图表$/u });
+  await page.route("**/api/sessions/working/transcript", (route) =>
+    route.fulfill({
+      json: {
+        ...emptyTranscript,
+        messages: [
+          {
+            content,
+            createdAt: 1,
+            id: 1,
+            images: [],
+            inputId: null,
+            reasoning: "",
+            role: "assistant",
+            toolCalls: [],
+          },
+        ],
+      },
+    }),
+  );
+  await history.getByRole("link", { name: "Working" }).click();
+  await browserExpect(diagrams).toHaveCount(2, { timeout: 15_000 });
+  await Promise.all(
+    (await diagrams.all()).map(async (image) => {
+      await image.evaluate((img: HTMLImageElement) => img.decode());
+      await browserExpect(image).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    }),
+  );
+  await page.keyboard.down("Control");
+  await browserExpect(diagrams).toHaveCount(2);
+  await page.keyboard.up("Control");
+  await source.click();
+  await browserExpect(source).toHaveAttribute("aria-pressed", "true");
+  await browserExpect(page.locator("article pre")).toHaveText(content);
+  await browserExpect(diagrams).toHaveCount(0);
+  await source.click();
+  await browserExpect(diagrams).toHaveCount(2);
+  await create.click();
+  await browserExpect(create).toBeDisabled();
   expect(fixture.errors).toEqual([]);
 }, 30_000);

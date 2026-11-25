@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import { expect as browserExpect } from "playwright/test";
 
 import { browserFixture, settleLayout } from "../scrolling/browserSession";
-import { emitState, fixtureSessions, openPreparation } from "./preparationBrowser";
+import { emitState, emptyTranscript, fixtureSessions, openPreparation } from "./preparationBrowser";
 
 const browser = browserFixture();
 test("session controls follow sidebar updates even when the transcript is still running", async () => {
@@ -152,13 +152,8 @@ test("a pending Fork does not disable another session or override its route", as
 }, 30_000);
 function queuedTranscript(content: string, transcriptRevision: number) {
   return {
-    control: "running",
-    eventCursor: 0,
-    events: [],
-    fileLinks: [],
-    messages: [],
+    ...emptyTranscript,
     queue: [{ content, error: null, id: 1, status: "running", userMessageId: null }],
-    reasoningTranslations: [],
     transcriptRevision,
   };
 }

@@ -5,6 +5,7 @@ prompts:
   - base.md
   - directory.md
   - commands.md
+  - output.md
   - clarify.md
   - skills.md
   - agents_md.md

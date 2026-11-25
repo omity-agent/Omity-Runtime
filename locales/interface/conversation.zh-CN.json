@@ -1,4 +1,9 @@
 {
+  "diagram": {
+    "label": "{{language}} 图表",
+    "rendering": "正在渲染 {{language}} 图表…",
+    "invalid": "无法渲染 {{language}} 图表。"
+  },
   "openFileLink": "打开",
   "revealFileLink": "在文件夹中显示",
   "confirmProfile": "确认 Profile",

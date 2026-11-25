@@ -34,8 +34,7 @@
   },
   "markdown": {
     "contextMissing": "Markdown 渲染组件缺少上下文",
-    "measureElementMissing": "Markdown 源码测量元素未挂载",
-    "sourceMeasureElementMissing": "Markdown 源码测量元素未挂载"
+    "svgInvalid": "图表不是有效的 SVG 文档"
   },
   "sidebar": {
     "titleElementMissing": "会话标题元素未挂载"

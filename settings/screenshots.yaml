@@ -1,0 +1,23 @@
+browserChannel: chrome
+chineseFont: Source Han Sans SC VF
+screens:
+  phone:
+    width: 390
+    height: 844
+    touch: true
+  tablet:
+    width: 1024
+    height: 1366
+    touch: true
+  laptop:
+    width: 1366
+    height: 768
+    touch: false
+  desktop:
+    width: 1920
+    height: 1080
+    touch: false
+  large-screen:
+    width: 3840
+    height: 2160
+    touch: false

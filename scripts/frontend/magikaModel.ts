@@ -4,7 +4,7 @@ import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { Magika } from "magika";
 import { z } from "zod";
 
-import { localize } from "../src/i18n/server";
+import { localize } from "../../src/i18n/server";
 
 const modelManifestSchema = z.object({
     weightsManifest: z.array(

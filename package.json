@@ -13,6 +13,7 @@
     "check": "bun lint --format=agent && bun run --bun knip",
     "test": "bun run --bun scripts/build.ts --test",
     "benchmark:mcp": "bun run --bun scripts/build.ts --benchmark-mcp",
+    "screenshots": "bun run --bun scripts/frontend/screenshots/capture.ts",
     "omity": "bun run --bun src/cli.ts",
     "build": "bun run --bun scripts/build.ts"
   },
@@ -71,6 +72,7 @@
     "katex": "latest",
     "lucide-react": "latest",
     "magika": "latest",
+    "mermaid": "latest",
     "mitt": "latest",
     "nanoid": "latest",
     "p-map": "latest",

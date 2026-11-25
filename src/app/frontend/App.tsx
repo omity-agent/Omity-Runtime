@@ -139,8 +139,8 @@ function AuthenticatedApp() {
   return (
     <ApplicationFrame
       activeSession={activeSession}
+      createDisabled={currentPage.kind === "new"}
       pageKey={pageKey}
-      showCreate={currentPage.kind !== "new"}
       sessions={sessions}
       title={sourceSession?.title}
       onCreate={openNewSession}

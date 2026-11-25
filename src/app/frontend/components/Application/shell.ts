@@ -3,6 +3,7 @@ import { sva } from "styled-system/css";
 export const applicationShell = sva({
   base: {
     caption: {
+      display: { _compact: "block", base: "none" },
       fontSize: "interface",
       minWidth: "0",
       overflow: "hidden",
@@ -11,25 +12,36 @@ export const applicationShell = sva({
     },
     main: {
       background: "bg.subtle",
+      gridArea: "main",
       height: "full",
       minHeight: "0",
       minWidth: "0",
       overflow: "hidden",
     },
+    panelToggle: { display: { _compact: "inline-flex", base: "none" } },
     root: {
+      "&[data-panel]": {
+        _compact: {
+          gridTemplateAreas: '"toolbar" "main"',
+          gridTemplateRows: "auto minmax(0, 1fr)",
+        },
+      },
       background: "bg.canvas",
       color: "fg.default",
       display: "grid",
       fontFamily: "body",
+      gridTemplateAreas: {
+        _topNav: '"toolbar" "sidebar" "main"',
+        base: '"toolbar main" "sidebar main"',
+      },
       gridTemplateColumns: {
         _compact: "minmax(0, 1fr)",
         _topNav: "minmax(0, 1fr)",
         base: "auto minmax(0, 1fr)",
       },
       gridTemplateRows: {
-        _compact: { _topNav: "auto minmax(0, 1fr)", base: "auto minmax(0, 1fr)" },
-        _topNav: "clamp(12rem, 28dvh, 24rem) minmax(0, 1fr)",
-        base: "minmax(0, 1fr)",
+        _topNav: "auto clamp(12rem, 28dvh, 24rem) minmax(0, 1fr)",
+        base: "auto minmax(0, 1fr)",
       },
       height: "viewport",
       overflow: "hidden",
@@ -46,6 +58,7 @@ export const applicationShell = sva({
       borderInlineEndWidth: { _compact: "0", _topNav: "0", base: "hairline" },
       display: "flex",
       flexDirection: "column",
+      gridArea: { _compact: "main", base: "sidebar" },
       minHeight: "0",
       minWidth: "0",
       overflow: "hidden",
@@ -56,15 +69,18 @@ export const applicationShell = sva({
       background: "bg.panel",
       borderBlockEndColor: "border.default",
       borderBlockEndWidth: "hairline",
-      display: { _compact: "flex", base: "none" },
-      gap: "3",
+      borderInlineEndColor: "border.default",
+      borderInlineEndWidth: { _compact: "0", _topNav: "0", base: "hairline" },
+      display: "flex",
+      gap: "1",
+      gridArea: "toolbar",
       minWidth: "0",
-      paddingBlock: "1",
-      paddingInline: "3",
+      paddingBlock: { _compact: "1", base: "2" },
+      paddingInline: "2",
     },
   },
   defaultVariants: { panel: "main" },
-  slots: ["root", "toolbar", "caption", "sidebar", "main"],
+  slots: ["root", "toolbar", "panelToggle", "caption", "sidebar", "main"],
   variants: {
     panel: {
       main: { sidebar: { _compact: { display: "none" } } },

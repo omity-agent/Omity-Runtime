@@ -5,7 +5,7 @@ import { build } from "vite";
 
 import { localize } from "../src/i18n/server";
 import { executableBuild, frontendOutput } from "./distribution";
-import { prepareMagikaAssets } from "./magikaModel";
+import { prepareMagikaAssets } from "./frontend/magikaModel";
 import { generateDatabaseSchema } from "./schemaAsset";
 
 const root = resolve(import.meta.dir, ".."),

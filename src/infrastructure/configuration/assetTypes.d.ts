@@ -11,11 +11,12 @@ declare module "#settings/interface/interaction.yaml" {
   export default preferences;
 }
 declare module "#settings/interface/rendering.yaml" {
-  const windows: {
+  const rendering: {
     code: { bufferSize: number; estimatedLineHeight: number };
+    mermaid: { theme: NonNullable<import("mermaid").MermaidConfig["theme"]> };
     transcript: { bufferSize: number; followThreshold: number; minimumScrollbarWidthPx: number };
   };
-  export default windows;
+  export default rendering;
 }
 declare module "#settings/interface/viewport.yaml" {
   const queries: Record<"coarse" | "compact" | "largeCanvas" | "short" | "topNav", string>;
