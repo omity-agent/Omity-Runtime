@@ -69,6 +69,14 @@ const workspace = "/projects/observatory",
     hooks: [{ enable: false, id: "export-report" }],
     mcpServers: [{ enable: true, id: "observatory" }],
     model: "example-model",
+    prompts: [
+      { enable: true, id: "base.md" },
+      { enable: true, id: "skills.md" },
+    ],
+    skills: [
+      { description: "整理测站的观测记录。", enable: false, id: "observation-log" },
+      { description: "检查图像的曝光与饱和度。", enable: false, id: "exposure-review" },
+    ],
   };
 
 export function serveSamples(

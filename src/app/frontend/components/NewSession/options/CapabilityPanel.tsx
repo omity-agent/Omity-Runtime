@@ -3,6 +3,7 @@ import { useCallback, useId } from "react";
 import { css, cx } from "styled-system/css";
 import { switchRecipe } from "styled-system/recipes";
 
+import { stableScrollbar } from "../../Chat/layout";
 import { Badge, Field } from "../../ui";
 import type { CapabilityOption } from "./preferences";
 
@@ -21,7 +22,15 @@ const classes = switchRecipe({ size: "sm" }),
     gap: "2",
     paddingInline: "1",
   }),
+  body = css({ display: "grid", gap: "3" }),
   stack = css({ display: "grid", gap: "4" }),
+  listViewport = css(stableScrollbar, {
+    alignItems: "start",
+    maxHeight: "xs",
+    overflowY: "auto",
+    paddingInlineEnd: "1",
+  }),
+  columns = css({ gridTemplateColumns: { md: "repeat(2, minmax(0, 1fr))" } }),
   list = css({ display: "grid", gap: "3" }),
   caption = css({ color: "fg.muted", fontSize: "metadata" }),
   row = css({
@@ -40,50 +49,65 @@ interface CapabilitySection {
   options: CapabilityOption[];
 }
 export function CapabilityPanel({
+  className,
   disabled,
   emptyLabel,
+  guidance,
   label,
   sections,
+  sideBySide,
 }: {
+  className?: string;
   disabled: boolean;
   emptyLabel: string;
+  guidance?: string;
   label: string;
   sections: CapabilitySection[];
+  sideBySide?: boolean;
 }) {
   const available = sections.filter(({ options }) => options.length > 0),
     options = available.flatMap((section) => section.options);
   return (
-    <Field.Group className={group}>
+    <Field.Group className={cx(group, className)}>
       <Field.Legend className={legend}>
         {label}
         <Badge>
           {options.filter(({ enable }) => enable).length} / {options.length}
         </Badge>
       </Field.Legend>
-      {options.length === 0 ? (
-        <span className={description}>{emptyLabel}</span>
-      ) : (
-        <div className={stack}>
-          {available.map(({ label: captionText, onChange, options: entries }) => (
-            <div
-              aria-label={captionText}
-              className={list}
-              key={captionText ?? label}
-              role={captionText ? "group" : undefined}
-            >
-              {captionText ? <p className={caption}>{captionText}</p> : null}
-              {entries.map((option) => (
-                <CapabilityToggle
-                  disabled={disabled}
-                  key={option.id}
-                  onChange={onChange}
-                  option={option}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
+      <div className={body}>
+        {guidance ? <p className={description}>{guidance}</p> : null}
+        {options.length === 0 ? (
+          <span className={description}>{emptyLabel}</span>
+        ) : (
+          <div
+            className={cx(
+              stack,
+              sideBySide && listViewport,
+              sideBySide && available.length > 1 && columns,
+            )}
+          >
+            {available.map(({ label: captionText, onChange, options: entries }) => (
+              <div
+                aria-label={captionText}
+                className={list}
+                key={captionText ?? label}
+                role={captionText ? "group" : undefined}
+              >
+                {captionText ? <p className={caption}>{captionText}</p> : null}
+                {entries.map((option) => (
+                  <CapabilityToggle
+                    disabled={disabled}
+                    key={option.id}
+                    onChange={onChange}
+                    option={option}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </Field.Group>
   );
 }

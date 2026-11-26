@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { reportPromiseErrors } from "../../../services/errors";
 import { Button } from "../../ui";
-import { configuration, setupFirst } from "../preparationGrid";
+import { configuration, configurationRow } from "../preparationGrid";
 import { ProfilePicker } from "../ProfilePicker";
 import { CapabilityPanel } from "./CapabilityPanel";
 import { ModelInput } from "./ModelInput";
@@ -46,6 +46,21 @@ export function ConfigurationPanel({
           },
         ],
       },
+      {
+        className: configurationRow,
+        emptyLabel: t("noPrompts"),
+        guidance: t("promptGuidance"),
+        label: t("prompts"),
+        sections: [
+          {
+            label: t("promptFiles"),
+            onChange: selection.handlePromptChange,
+            options: selection.prompts,
+          },
+          { label: t("skills"), onChange: selection.handleSkillChange, options: selection.skills },
+        ],
+        sideBySide: true,
+      },
     ];
   return (
     <div className={configuration}>
@@ -61,24 +76,18 @@ export function ConfigurationPanel({
         onChange={selection.handleModelChange}
       />
       {selection.error ? (
-        <div className={setupFirst} role="alert">
+        <div className={configurationRow} role="alert">
           <p>{t("optionsLoadFailed", { message: selection.error.message })}</p>
           <Button disabled={disabled} onClick={handleRetry} type="button">
             {t("retry")}
           </Button>
         </div>
       ) : selection.ready ? (
-        panels.map(({ emptyLabel, label, sections }) => (
-          <CapabilityPanel
-            disabled={disabled}
-            emptyLabel={emptyLabel}
-            key={label}
-            label={label}
-            sections={sections}
-          />
+        panels.map(({ label, ...panel }) => (
+          <CapabilityPanel disabled={disabled} key={label} label={label} {...panel} />
         ))
       ) : (
-        <output className={setupFirst}>{t("loadingOptions")}</output>
+        <output className={configurationRow}>{t("loadingOptions")}</output>
       )}
     </div>
   );

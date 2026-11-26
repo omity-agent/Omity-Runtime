@@ -1,6 +1,7 @@
 import type { TFunction } from "i18next";
 import { z } from "zod";
 
+import { promptSelectionSchema } from "../../infrastructure/configuration/prompts/selection";
 import { settingsProfileNameSchema } from "../../infrastructure/configuration/settings/profileNames";
 
 const sessionPreparationSchema = z.strictObject({
@@ -17,12 +18,13 @@ const sessionPreparationSchema = z.strictObject({
     }),
   ),
   profile: settingsProfileNameSchema.optional(),
+  promptSelection: promptSelectionSchema.optional(),
   workspace: z.string().optional(),
 });
 export type SessionPreparation = z.infer<typeof sessionPreparationSchema>;
 export type EditablePair = SessionPreparation["pairs"][number];
 export function emptyPreparation(preferences?: SessionPreparation): SessionPreparation {
-  return { ...preferences, message: "", pairs: [] };
+  return { ...preferences, message: "", pairs: [], promptSelection: undefined };
 }
 export function createPreparationParser(t: TFunction<"drafts">) {
   const schema = sessionPreparationSchema.extend({

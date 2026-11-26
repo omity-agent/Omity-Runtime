@@ -22,6 +22,7 @@ export interface PlaceholderOptions {
   deferSession?: boolean;
   deferred?: (name: string) => boolean;
   dynamic?: (name: string) => PlaceholderResolution;
+  formatPath?: (path: string) => string;
   session?: SessionPlaceholders;
   source: string;
 }
@@ -88,12 +89,12 @@ function appDataRoot() {
     if (!path) {
       throw new Error(localize("configuration:placeholders.appDataEnvironmentMissing"));
     }
-    return forwardSlashPath(path);
+    return path;
   }
   if (process.platform === "darwin") {
-    return forwardSlashPath(join(homedir(), "Library", "Application Support"));
+    return join(homedir(), "Library", "Application Support");
   }
-  return forwardSlashPath(process.env["XDG_DATA_HOME"] ?? join(homedir(), ".local", "share"));
+  return process.env["XDG_DATA_HOME"] ?? join(homedir(), ".local", "share");
 }
 function resolveString(value: string, options: PlaceholderOptions) {
   const exact = exactPlaceholder.exec(value);
@@ -120,12 +121,12 @@ function resolveString(value: string, options: PlaceholderOptions) {
 }
 function resolveVariable(name: string, options: PlaceholderOptions): PlaceholderResolution {
   if (name === "appData") {
-    return { matched: true, value: appDataRoot() };
+    return { matched: true, value: formatResolvedPath(appDataRoot(), options) };
   }
   if (name === "cwd" || name === "session") {
     const value = options.session?.[name];
     if (value !== undefined) {
-      return { matched: true, value: forwardSlashPath(value) };
+      return { matched: true, value: formatResolvedPath(value, options) };
     }
     if (options.deferSession) {
       return { matched: false };
@@ -154,7 +155,7 @@ function resolveVariable(name: string, options: PlaceholderOptions): Placeholder
         }),
       );
     }
-    return { matched: true, value };
+    return { matched: true, value: options.formatPath?.(value) ?? value };
   }
   throw new Error(
     localize("configuration:placeholders.unknown", {
@@ -182,8 +183,8 @@ function isScalar(value: unknown): value is string | number | boolean | null {
     typeof value === "boolean"
   );
 }
-function forwardSlashPath(path: string) {
-  return path.replaceAll("\\", "/");
+function formatResolvedPath(path: string, options: PlaceholderOptions) {
+  return (options.formatPath?.(path) ?? path).replaceAll("\\", "/");
 }
 function formatPlaceholder(name: string) {
   return `\${${name}}`;

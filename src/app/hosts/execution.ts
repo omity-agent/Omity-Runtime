@@ -10,7 +10,7 @@ import {
 import { loadSettings } from "../../infrastructure/configuration/settings/load";
 import { normalizeWorkspacePath } from "../../infrastructure/configuration/workspacePath";
 import { readDefinitionRecord } from "../../infrastructure/database/records/session/metadata";
-import { applySessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
+import { restoreSessionOverrides } from "../../infrastructure/database/session/sessionDefinition";
 import { Logger } from "../../infrastructure/logging/logger";
 import { fetchLatestCodexVersion } from "../../infrastructure/openai/codexVersion";
 import type { HostContext } from "../../runtime/context";
@@ -77,8 +77,13 @@ export function loadSessionRuntime(
     profiles = db.profiles(sessionId),
     definition = readDefinitionRecord(db.db, sessionId),
     settingsContext = selectSettingsProfiles(baseContext, profiles),
-    settings = applySessionDefinition(
-      loadSettings(root, { cwd, sessionId, settingsContext }),
+    settings = restoreSessionOverrides(
+      loadSettings(root, {
+        cwd,
+        prompt: { content: definition.prefix.systemPrompt, kind: "snapshot" },
+        sessionId,
+        settingsContext,
+      }),
       definition,
     );
   return { cwd, definition, profiles, settings };

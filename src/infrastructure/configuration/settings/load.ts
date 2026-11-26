@@ -1,13 +1,13 @@
 import { mkdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 
 import { isPlainObject, omit } from "es-toolkit";
 
-import { buildSkillsList } from "../../../skills";
 import type { Settings } from "../../../types";
 import { resolveConfiguredPath } from "../configuredPath";
 import { loadConfiguredHookRules } from "../hookRules";
 import { readSettingsText } from "../placeholders";
+import { composeSystemPrompt, type PromptComposition } from "../prompts/compose";
 import { safeId } from "../sessionPaths";
 import { normalizeWorkspacePath } from "../workspacePath";
 import { createSettingsContext, type SettingsContext } from "./context";
@@ -23,6 +23,7 @@ import {
 
 interface LoadSettingsOptions {
   cwd?: string;
+  prompt?: PromptComposition | { content: string; kind: "snapshot" };
   sessionId?: string;
   settingsContext?: SettingsContext;
   userSettingsDir?: string;
@@ -33,7 +34,7 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
     context = options.settingsContext ?? createSettingsContext(configRoot, options.userSettingsDir),
     model = loadModelSettings(context),
     main = loadMainSettings(context, model),
-    agent = parseAgentSettings(requireLayeredSettingsYaml(context, "profile", "agent.yaml").value),
+    agent = loadAgentSettings(context),
     storageDirectory = userDataDirectory(),
     session = options.sessionId
       ? resolve(storageDirectory, "sessions", safeId(options.sessionId))
@@ -41,43 +42,33 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
     placeholders = {
       deferSession: true,
       session: { cwd, session },
-    },
-    skills = {
-      ...agent.skills,
-      directory: resolveConfiguredPath(configRoot, agent.skills.directory),
     };
-  let skillsList: string | undefined;
-  const promptPlaceholders = {
-    ...placeholders,
-    dynamic: (name: string) =>
-      name === "skills"
-        ? {
-            matched: true,
-            value: (skillsList ??= buildSkillsList({ skills })),
-          }
-        : name === "toolOutputMaxTokens"
-          ? { matched: true, value: agent.toolOutput.maxTokens }
-          : { matched: false },
-  };
   mkdirSync(storageDirectory, { recursive: true });
   return {
     ...main,
     agent: {
       recursionLimit: agent.recursionLimit,
-      systemPrompt: agent.prompts
-        .map((file) =>
-          readSettingsText(
-            resolveLayeredSettingsText(context, "profile", join("prompts", file)),
-            promptPlaceholders,
-          ).trimEnd(),
-        )
-        .join("\n\n"),
+      systemPrompt:
+        options.prompt?.kind === "snapshot"
+          ? options.prompt.content
+          : composeSystemPrompt(context, agent, placeholders, options.prompt),
     },
     hooks: loadConfiguredHookRules(context, placeholders),
     model,
-    skills,
     toolExecution: agent.toolExecution,
     toolOutput: agent.toolOutput,
+  };
+}
+export function loadAgentSettings(context: SettingsContext) {
+  const agent = parseAgentSettings(
+    requireLayeredSettingsYaml(context, "profile", "agent.yaml").value,
+  );
+  return {
+    ...agent,
+    skills: {
+      ...agent.skills,
+      directory: resolveConfiguredPath(context.root, agent.skills.directory),
+    },
   };
 }
 export function loadModelSettings(context: SettingsContext) {

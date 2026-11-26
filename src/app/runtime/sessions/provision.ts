@@ -38,8 +38,13 @@ export function provisionAppSession({
     profiles = settingsProfileNames(settingsContext),
     workspace = normalizeWorkspacePath(submission.workspace, root);
   return withReservedSession(async (sessionId, rollback) => {
-    const { builtInOverrides, hookOverrides, mcpOverrides, model } = submission,
-      configured = loadSettings(root, { cwd: workspace, sessionId, settingsContext }),
+    const { builtInOverrides, hookOverrides, mcpOverrides, model, promptSelection } = submission,
+      configured = loadSettings(root, {
+        cwd: workspace,
+        prompt: { kind: "submission", selection: promptSelection },
+        sessionId,
+        settingsContext,
+      }),
       settings = {
         ...configured,
         model: { ...configured.model, model: model ?? configured.model.model },
@@ -53,7 +58,7 @@ export function provisionAppSession({
       settings,
       tools,
       { cwd: workspace, session: resolveSessionPaths(sessionId).dir },
-      { hooks: hookOverrides, servers: mcpOverrides },
+      { hooks: hookOverrides, promptSelection, servers: mcpOverrides },
     );
     await createSessionWithAttachments({
       attachments: submission.attachments,

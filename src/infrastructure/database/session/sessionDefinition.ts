@@ -1,6 +1,7 @@
 import { DomainError } from "../../../failures/domain";
 import { localize } from "../../../i18n/server";
 import type { ModelPrefixSettings, ModelSettings, Settings } from "../../../types";
+import type { PromptSelection } from "../../configuration/prompts/selection";
 import type { LoadedMcp } from "../../mcp/tools/catalog";
 import {
   emptyMcpToolSnapshot,
@@ -15,6 +16,7 @@ export interface SessionDefinition {
     systemPrompt: string;
     tools: McpToolSnapshot;
   };
+  promptSelection?: PromptSelection;
 }
 export function createSessionDefinition(
   settings: Settings,
@@ -22,6 +24,7 @@ export function createSessionDefinition(
   session: { cwd: string; session: string },
   overrides: {
     hooks?: Record<string, boolean>;
+    promptSelection?: PromptSelection;
     servers?: Record<string, boolean>;
   } = {},
 ): SessionDefinition {
@@ -43,6 +46,7 @@ export function createSessionDefinition(
       systemPrompt: settings.agent.systemPrompt,
       tools: snapshotMcpTools(mcp, session, overrides.servers),
     },
+    promptSelection: overrides.promptSelection,
   };
 }
 export function emptySessionDefinition(): SessionDefinition {
@@ -54,17 +58,13 @@ export function emptySessionDefinition(): SessionDefinition {
     },
   };
 }
-export function applySessionDefinition(
+export function restoreSessionOverrides(
   settings: Settings,
   definition: SessionDefinition,
 ): Settings {
   const overrides = new Map(Object.entries(definition.hookOverrides ?? {}));
   return {
     ...settings,
-    agent: {
-      ...settings.agent,
-      systemPrompt: definition.prefix.systemPrompt,
-    },
     hooks: settings.hooks.map((rule) => ({
       ...rule,
       enable: overrides.get(rule.id) ?? rule.enable,
@@ -82,6 +82,7 @@ export function refreshSessionDefinition(
       systemPrompt: settings.agent.systemPrompt,
       tools: definition.prefix.tools,
     },
+    promptSelection: definition.promptSelection,
   };
 }
 function snapshotModel(settings: ModelSettings): ModelPrefixSettings {

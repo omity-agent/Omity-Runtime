@@ -23,12 +23,14 @@ export function storeSessionProfile(
       profile === undefined
         ? baseContext
         : prioritizeSettingsProfile(selectSettingsProfiles(baseContext, session.profiles), profile),
+    previous = readDefinitionRecord(db, session.id),
     settings = loadSettings(root, {
       cwd: session.workspace,
+      prompt: { kind: "profile", selection: previous.promptSelection },
       sessionId: session.id,
       settingsContext,
     }),
-    definition = refreshSessionDefinition(settings, readDefinitionRecord(db, session.id));
+    definition = refreshSessionDefinition(settings, previous);
   writeSessionConfigurationRecord(
     db,
     session.id,

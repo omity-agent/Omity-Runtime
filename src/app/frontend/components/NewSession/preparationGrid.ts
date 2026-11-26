@@ -33,4 +33,4 @@ export const configuration = css({
   gridTemplateColumns: { base: "minmax(0, 1fr)", sm: "repeat(2, minmax(0, 1fr))" },
   minWidth: "0",
 });
-export const setupFirst = css({ gridColumn: { sm: "1 / -1" } });
+export const configurationRow = css({ gridColumn: { sm: "1 / -1" } });

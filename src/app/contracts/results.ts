@@ -32,6 +32,8 @@ export const sessionOptionsSchema = z.object({
   hooks: z.array(capabilitySchema.omit({ name: true })),
   mcpServers: z.array(capabilitySchema.pick({ enable: true, id: true })),
   model: z.string().min(1),
+  prompts: z.array(capabilitySchema.pick({ enable: true, id: true })),
+  skills: z.array(capabilitySchema.omit({ name: true }).required({ description: true })),
 });
 export const userMessagesResponseSchema = z.object({
   messages: z.array(z.object({ content: z.string(), createdAt: integer.nonnegative() })),

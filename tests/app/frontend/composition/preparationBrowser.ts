@@ -122,6 +122,8 @@ export async function openPreparation(
                 ],
                 mcpServers: [{ enable: !alternate, id: "shared-server" }],
                 model: alternate ? "alternate-model" : "default-model",
+                prompts: [{ enable: true, id: "policy.md" }],
+                skills: [{ description: "Review a draft", enable: false, id: "review-draft" }],
               },
               "/api/session-preparation": draft,
               "/api/sessions/:id/composer-draft": composer,

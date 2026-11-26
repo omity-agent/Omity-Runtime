@@ -1,37 +1,26 @@
 import { type RefObject, type SubmitEvent, useRef, useState } from "react";
 
 import { initialAttachmentTexts, type PendingAttachment } from "../../../../attachments/contract";
-import type { InitialMessagePair, InitialSessionState } from "../../../../initialState";
+import type { InitialSessionState } from "../../../../initialState";
 import { reportPromiseErrors } from "../../../services/errors";
 import type { PendingAttachments } from "../../Chat/Composer/attachments";
 
 export function useSessionCreation({
   attachmentsRef,
-  builtInOverrides,
-  draftRevision,
-  history,
-  hookOverrides,
-  mcpOverrides,
-  message,
-  model,
   onCreate,
   optionsReady,
+  state,
   workspace,
 }: {
   attachmentsRef: RefObject<PendingAttachments>;
-  builtInOverrides: Record<string, boolean>;
-  draftRevision: number;
-  history: InitialMessagePair[];
-  hookOverrides: Record<string, boolean>;
-  mcpOverrides: Record<string, boolean>;
-  message: string;
-  model: string;
   onCreate: (state: InitialSessionState, attachments: PendingAttachment[]) => Promise<void>;
   optionsReady: boolean;
+  state: InitialSessionState;
   workspace: string;
 }) {
   "use no memo";
   const [submitting, setSubmitting] = useState(false),
+    { history, message, model } = state,
     submittingRef = useRef(false),
     complete =
       optionsReady &&
@@ -46,15 +35,7 @@ export function useSessionCreation({
       setSubmitting(true);
       try {
         await onCreate(
-          {
-            builtInOverrides,
-            draftRevision,
-            history,
-            hookOverrides,
-            mcpOverrides,
-            message,
-            model: model.trim(),
-          },
+          { ...state, model: model?.trim() },
           attachmentsRef.current.values(initialAttachmentTexts(history, message)),
         );
       } finally {

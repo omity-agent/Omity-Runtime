@@ -73,11 +73,6 @@ export interface HookRule {
   tool: string;
   input: Record<string, unknown> | string;
 }
-export interface SkillInfo {
-  name: string;
-  description: string;
-  source: string;
-}
 export interface QueuedInput {
   id: number;
   runId: number;

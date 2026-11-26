@@ -10,12 +10,14 @@
   "control": {
     "notReady": "会话尚未准备好执行控制命令：{{control}}"
   },
+  "prompts": {
+    "unknownPrompt": "当前 Profile 未配置此提示词文件：{{promptName}}",
+    "unknownSkill": "当前 Profile 找不到此 Skill：{{skillName}}"
+  },
   "skills": {
-    "directoryMissing": "Skills 目录不存在：{{directory}}",
     "duplicateName": "Skill 名称重复：{{skillName}}",
     "unknownToggle": "未知 Skill 开关：{{skillName}}",
     "noneEnabled": "└── 当前没有启用的 Skill。",
-    "fileMissing": "缺少 Skill 文件：{{path}}",
     "frontMatterMissing": "Skill 缺少 YAML front matter：{{path}}"
   },
   "failure": {

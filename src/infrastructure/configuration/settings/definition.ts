@@ -7,6 +7,7 @@ import type {
 } from "./schema";
 
 export type AppSettings = ReturnType<typeof parseAppSettings>;
+export type AgentSettings = ReturnType<typeof parseAgentSettings>;
 type ParsedModel = ReturnType<typeof parseModelSettings>;
 type ParsedMain = ReturnType<typeof parseMainSettings>;
 export type ModelSettings =
@@ -20,7 +21,7 @@ type FrozenModel<T> = T extends ModelSettings
   : never;
 export type ModelPrefixSettings = FrozenModel<ModelSettings>;
 export type Settings = ParsedMain &
-  Pick<ReturnType<typeof parseAgentSettings>, "skills" | "toolExecution" | "toolOutput"> & {
+  Pick<AgentSettings, "toolExecution" | "toolOutput"> & {
     model: ModelSettings;
     hooks: HookRule[];
     agent: {

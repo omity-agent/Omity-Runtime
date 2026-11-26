@@ -15,6 +15,7 @@ const preparation = {
     { assistant: "", id: "e5f6g7h8", user: "unfinished question" },
   ],
   profile: "alternate",
+  promptSelection: { disabledPrompts: [], enabledSkills: ["review-draft"] },
   workspace: "/projects/unsent",
 };
 test("new session drafts restore without a model profile and reject stale saves", async () => {
@@ -65,7 +66,7 @@ test("session creation clears only its submitted preparation and keeps drafts on
   await checkDraft(endpoint, ready, 1);
   await app.createSession({ draftRevision: 1, message: ready.message });
   await saveDraft(endpoint, ready, 1);
-  await checkDraft(endpoint, { ...ready, message: "", pairs: [] }, 1);
+  await checkDraft(endpoint, { ...ready, message: "", pairs: [], promptSelection: undefined }, 1);
   const newer = { message: "another tab's draft", pairs: [] };
   await saveDraft(endpoint, newer, 2);
   await app.createSession({ draftRevision: 1, message: ready.message });

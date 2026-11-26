@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { promptSelectionSchema } from "../../infrastructure/configuration/prompts/selection";
 import { settingsProfileNameSchema } from "../../infrastructure/configuration/settings/profileNames";
 import type { PendingAttachment } from "./contract";
 
@@ -19,6 +20,7 @@ export const sessionSubmissionSchema = z.strictObject({
   message: nonEmptyMessage,
   model: z.string().trim().min(1).optional(),
   profile: settingsProfileNameSchema.optional(),
+  promptSelection: promptSelectionSchema.optional(),
   workspace: z.string().trim().min(1).max(32_767),
 });
 export type MessageSubmission = z.infer<typeof messageSubmissionSchema> & {

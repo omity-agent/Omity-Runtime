@@ -19,11 +19,17 @@ test("new session restores all edits and pasted file bytes after navigation and 
     optional = page.getByRole("switch", { exact: true, name: "optional-hook" }),
     server = page.getByRole("switch", { exact: true, name: "shared-server" }),
     builtIn = page.getByRole("switch", { exact: true, name: "ask_choices" }),
+    prompt = page.getByRole("switch", { exact: true, name: "policy.md" }),
+    skill = page.getByRole("switch", { exact: true, name: "review-draft" }),
     users = page.locator(".cm-content"),
     assistant = users.nth(1),
     customWorkspace = `${projectPaths[1]}/unsent`;
   await workspace.fill(customWorkspace);
   await model.fill("custom-default");
+  await browserExpect(prompt).toBeChecked();
+  await browserExpect(skill).not.toBeChecked();
+  await prompt.locator("..").click();
+  await skill.locator("..").click();
   await optional.locator("..").click();
   await profile.selectOption("alternate");
   await browserExpect(model).toHaveValue("alternate-model");
@@ -57,6 +63,8 @@ test("new session restores all edits and pasted file bytes after navigation and 
   await browserExpect(hook).toBeChecked();
   await browserExpect(server).toBeChecked();
   await browserExpect(builtIn).not.toBeChecked();
+  await browserExpect(prompt).not.toBeChecked();
+  await browserExpect(skill).toBeChecked();
   await profile.selectOption("limited");
   await browserExpect(optional).toHaveCount(0);
   await profile.selectOption("alternate");
@@ -93,6 +101,7 @@ test("new session restores all edits and pasted file bytes after navigation and 
     mcpOverrides: { "shared-server": true },
     model: "custom-alternate",
     profile: "alternate",
+    promptSelection: { disabledPrompts: ["policy.md"], enabledSkills: ["review-draft"] },
     workspace: customWorkspace,
   });
   expect(submission.history[0]?.assistant).toBe("prepared answer");
