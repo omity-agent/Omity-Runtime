@@ -23,8 +23,8 @@ export class McpStdioUnavailableError extends Error {
   ) {
     super(
       localize("mcp:client.unavailableAfterRestarts", {
-        value0: serverName,
-        value1: maxAttempts.toString(),
+        serverName,
+        count: maxAttempts,
       }),
       cause === undefined ? undefined : { cause },
     );

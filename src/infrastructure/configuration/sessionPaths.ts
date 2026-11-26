@@ -28,7 +28,7 @@ export function safeId(value: string) {
     value === ".." ||
     !/^[a-zA-Z0-9._-]+$/.test(value)
   ) {
-    throw new Error(localize("configuration:paths.idInvalid", { value0: value }));
+    throw new Error(localize("configuration:paths.idInvalid", { pathId: value }));
   }
   return value;
 }

@@ -1,7 +1,7 @@
 import { isPlainObject as isRecord } from "es-toolkit";
 import { raceSignal } from "race-signal";
 
-import { askUserAnswerInvalid, toolNotRunning } from "../../errors";
+import { askUserAnswerInvalid, toolNotRunning } from "../../failures/rejections";
 import { localize } from "../../i18n/server";
 import type { AskUserRequest } from "./askUser";
 
@@ -18,7 +18,7 @@ export class AskUserRuntime {
     const key = this.key(sessionId, request.callId);
     if (this.pending.has(key)) {
       throw new Error(
-        localize("toolbox:askUser.questionAlreadyPending", { value0: request.callId }),
+        localize("toolbox:askUser.questionAlreadyPending", { callId: request.callId }),
       );
     }
     const deferred = Promise.withResolvers<AskUserAnswer>(),

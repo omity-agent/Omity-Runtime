@@ -73,7 +73,7 @@ export class AppMcp {
   createSession(sessionId: string, profiles: string[], cwd: string, overrides?: ToolboxOverrides) {
     const key = `session:${sessionId}`;
     if (this.resources.has(key)) {
-      throw new Error(localize("application:resources.sessionAlreadyBound", { value0: sessionId }));
+      throw new Error(localize("application:resources.sessionAlreadyBound", { sessionId }));
     }
     return this.resources.load(key, () => this.initialize(profiles, cwd, overrides));
   }

@@ -1,15 +1,15 @@
 {
   "stream": {
-    "toolResultCallMissing": "服务端工具结果缺少调用记录：{{value0}}",
-    "toolErrorEventInvalid": "服务端工具错误事件格式无效：{{value0}}"
+    "toolResultCallMissing": "服务端工具结果缺少调用记录：{{callId}}",
+    "toolErrorEventInvalid": "服务端工具错误事件格式无效：{{callId}}"
   },
   "append": {
     "inputAddedAtBoundary": "已在节点边界追加输入",
-    "userMessageMissing": "已消费的用户消息不存在：{{value0}}",
+    "userMessageMissing": "已消费的用户消息不存在：{{messageIds}}",
     "uncommittedAfterCheckpointResume": "恢复 checkpoint 后尚未提交的追加输入"
   },
   "queue": {
-    "label": "队列 #{{value0}}",
+    "label": "队列 #{{inputId}}",
     "pausedAfterFailure": "队列异常，已暂停"
   },
   "graph": {
@@ -19,12 +19,12 @@
   },
   "tool": {
     "freeformInputMissing": "Freeform 工具调用缺少原始字符串输入",
-    "imagesUnsupportedByCompletions": "工具返回了 {{value0}} 张图片，但 Completions API 不支持工具返回图片给模型。",
-    "contentTypeUnsupported": "工具消息包含不支持的内容类型：{{value0}}",
-    "cancelled": "工具运行 {{value0}}后被用户手动终止。"
+    "imagesUnsupportedByCompletions_other": "工具返回了 {{count}} 张图片，但 Completions API 不支持工具返回图片给模型。",
+    "contentTypeUnsupported": "工具消息包含不支持的内容类型：{{contentType}}",
+    "cancelled": "工具运行 {{duration}}后被用户手动终止。"
   },
   "output": {
-    "tooLarge": "工具输出过长（{{value0}} tokens），已保存于：\n{{value1}}",
+    "tooLarge_other": "工具输出过长（{{count}} tokens），已保存于：\n{{path}}",
     "metadataInvalid": "工具大输出 metadata 无效",
     "tokenCountInvalid": "工具大输出 token 数无效"
   },
@@ -46,17 +46,17 @@
     "queueCancelled": "队列已取消，Host 已关闭"
   },
   "duration": {
-    "milliseconds": "{{value0}} 毫秒",
-    "seconds": "{{value0}} 秒",
-    "minutesSeconds": "{{value0}} 分 {{value1}} 秒"
+    "milliseconds": "{{milliseconds}} 毫秒",
+    "seconds": "{{seconds}} 秒",
+    "minutesSeconds": "{{minutes}} 分 {{seconds}} 秒"
   },
   "model": {
     "outputMissing": "模型 API 没有返回文本或工具调用"
   },
   "lease": {
-    "conflict": "会话已有 Host 正在运行：{{value0}}",
-    "assertionLost": "Host Lease 已丢失：{{value0}}",
-    "renewalLost": "Host Lease 已丢失：{{value0}}",
+    "conflict": "会话已有 Host 正在运行：{{sessionId}}",
+    "assertionLost": "Host Lease 已丢失：{{sessionId}}",
+    "renewalLost": "Host Lease 已丢失：{{sessionId}}",
     "renewalFailed": "Host Lease 续租失败"
   },
   "boundary": {
@@ -73,8 +73,8 @@
     "waitingForResume": "暂停中，等待 resume 或 cancel"
   },
   "signal": {
-    "received": "收到 {{value0}}",
-    "stopAtRecoveryBoundary": "收到 {{value0}}，Host 将在可恢复边界停止",
+    "received": "收到 {{signal}}",
+    "stopAtRecoveryBoundary": "收到 {{signal}}，Host 将在可恢复边界停止",
     "recoveryBoundaryTimeout": "Host 未在关闭期限内到达恢复边界"
   },
   "step": {

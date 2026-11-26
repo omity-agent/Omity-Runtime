@@ -4,3 +4,4 @@
 *.bun-build
 .DS_Store
 .env
+src/i18n/messages.d.ts

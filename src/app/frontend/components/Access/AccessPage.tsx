@@ -1,7 +1,8 @@
 import { KeyRound, ShieldCheck } from "lucide-react";
+import { useMemo } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
-import { useTranslation } from "../../i18n";
 import type { AccessStatus } from "../../services/access";
 import { Button, Code, LinkButton } from "../ui";
 
@@ -35,7 +36,8 @@ const page = css({
     display: "flex",
     flexWrap: "wrap",
     gap: "3",
-  });
+  }),
+  setupLinkComponents = { code: <Code /> };
 interface AccessPageProps {
   busy: boolean;
   error?: string;
@@ -48,8 +50,9 @@ interface AccessPageProps {
   setup: boolean;
 }
 export function AccessPage(props: AccessPageProps) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation("credentials"),
     { busy, error, status, ticketUrl, onContinue, onLogin, onRegister, onTicket, setup } = props,
+    ticketValues = useMemo(() => (ticketUrl ? { url: ticketUrl } : undefined), [ticketUrl]),
     localSetup =
       setup &&
       status?.local === true &&
@@ -68,18 +71,17 @@ export function AccessPage(props: AccessPageProps) {
         ) : (
           <KeyRound className={icon} size={28} />
         )}
-        <h1 className={heading}>
-          {t(setup ? "credentials:setupTitle" : "credentials:loginTitle")}
-        </h1>
-        <p className={description}>
-          {t(setup ? "credentials:setupDescription" : "credentials:loginDescription")}
-        </p>
-        {status && !status.configured && (
-          <p className={errorText}>{t("credentials:notConfigured")}</p>
-        )}
-        {ticketUrl && (
+        <h1 className={heading}>{t(setup ? "setupTitle" : "loginTitle")}</h1>
+        <p className={description}>{t(setup ? "setupDescription" : "loginDescription")}</p>
+        {status && !status.configured && <p className={errorText}>{t("notConfigured")}</p>}
+        {ticketValues && (
           <p className={description}>
-            {t("credentials:setupLink")} <Code>{ticketUrl}</Code>
+            <Trans
+              components={setupLinkComponents}
+              i18nKey="setupLink"
+              t={t}
+              values={ticketValues}
+            />
           </p>
         )}
         {error && <p className={errorText}>{error}</p>}
@@ -93,17 +95,17 @@ export function AccessPage(props: AccessPageProps) {
                   onClick={onTicket}
                   type="button"
                 >
-                  {t("credentials:createSetupLink")}
+                  {t("createSetupLink")}
                 </Button>
               )}
               {localSetup && setupLink && (
                 <LinkButton className={action} href={setupLink}>
-                  {t(ticketUrl ? "credentials:openSetupLink" : "credentials:openPublicOrigin")}
+                  {t(ticketUrl ? "openSetupLink" : "openPublicOrigin")}
                 </LinkButton>
               )}
               {!localSetup && (
                 <Button className={action} disabled={busy} onClick={onRegister} type="button">
-                  {t("credentials:register")}
+                  {t("register")}
                 </Button>
               )}
               {localSetup && (
@@ -114,7 +116,7 @@ export function AccessPage(props: AccessPageProps) {
                   type="button"
                   visual="ghost"
                 >
-                  {t("credentials:continueLocal")}
+                  {t("continueLocal")}
                 </Button>
               )}
             </>
@@ -125,7 +127,7 @@ export function AccessPage(props: AccessPageProps) {
               onClick={onLogin}
               type="button"
             >
-              {t("credentials:verify")}
+              {t("verify")}
             </Button>
           )}
         </div>

@@ -18,7 +18,7 @@ function optionalString(value: unknown, name: string) {
     return undefined;
   }
   if (typeof value !== "string") {
-    throw new TypeError(localize("checkpoint:identity.fieldMustBeString", { value0: name }));
+    throw new TypeError(localize("checkpoint:identity.fieldMustBeString", { fieldName: name }));
   }
   return value;
 }

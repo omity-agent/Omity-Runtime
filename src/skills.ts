@@ -19,7 +19,7 @@ function loadSkills(settings: Pick<Settings, "skills">): SkillInfo[] {
   }
   const skillsDir = resolveUserPath(settings.skills.directory);
   if (!existsSync(skillsDir)) {
-    throw new Error(localize("errors:skills.directoryMissing", { value0: skillsDir }));
+    throw new Error(localize("errors:skills.directoryMissing", { directory: skillsDir }));
   }
   const skills = readdirSync(skillsDir)
       .map((entry) => join(skillsDir, entry))
@@ -28,13 +28,13 @@ function loadSkills(settings: Pick<Settings, "skills">): SkillInfo[] {
     names = new Set<string>();
   for (const skill of skills) {
     if (names.has(skill.name)) {
-      throw new Error(localize("errors:skills.duplicateName", { value0: skill.name }));
+      throw new Error(localize("errors:skills.duplicateName", { skillName: skill.name }));
     }
     names.add(skill.name);
   }
   for (const skillName of Object.keys(settings.skills.skillEnabled)) {
     if (!names.has(skillName)) {
-      throw new Error(localize("errors:skills.unknownToggle", { value0: skillName }));
+      throw new Error(localize("errors:skills.unknownToggle", { skillName }));
     }
   }
   return skills.filter((skill) => settings.skills.skillEnabled[skill.name] ?? true);
@@ -60,14 +60,14 @@ export function buildSkillsList(settings: Pick<Settings, "skills">) {
 function readSkill(skillDir: string): SkillInfo {
   const source = join(skillDir, "SKILL.md");
   if (!existsSync(source)) {
-    throw new Error(localize("errors:skills.fileMissing", { value0: source }));
+    throw new Error(localize("errors:skills.fileMissing", { path: source }));
   }
   const meta = parseSkillMeta(readFileSync(source, "utf8"), source);
   return { ...meta, source };
 }
 function parseSkillMeta(content: string, source: string): SkillMeta {
   if (!hasFrontMatter(content)) {
-    throw new Error(localize("errors:skills.frontMatterMissing", { value0: source }));
+    throw new Error(localize("errors:skills.frontMatterMissing", { path: source }));
   }
   return skillMetaSchema.parse(matter(content).data);
 }

@@ -15,7 +15,7 @@ export function modelToolOutput(content: unknown, api: ModelApi) {
   }
   if (api === "completions") {
     const notice = localize("runtime:tool.imagesUnsupportedByCompletions", {
-      value0: images.length.toString(),
+      count: images.length,
     });
     return { type: "text" as const, value: [text, notice].filter(Boolean).join("\n\n") };
   }
@@ -70,7 +70,9 @@ function toolContentText(content: unknown): string {
     ) {
       return content.toString();
     }
-    throw new Error(localize("runtime:tool.contentTypeUnsupported", { value0: typeof content }));
+    throw new Error(
+      localize("runtime:tool.contentTypeUnsupported", { contentType: typeof content }),
+    );
   }
   if (Array.isArray(content["content"])) {
     return toolContentText(content["content"]);

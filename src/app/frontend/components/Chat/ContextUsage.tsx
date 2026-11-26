@@ -1,9 +1,9 @@
 import { DatabaseZap } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 import { hstack } from "styled-system/patterns";
 
 import type { TokenUsage } from "../../../timeline";
-import { useTranslation } from "../../i18n";
 import { formatTokens } from "../../presentation/tokenUnits";
 
 const panel = hstack({
@@ -25,11 +25,11 @@ export function ContextUsage({
   cacheHitWarningRatio?: number;
   usage: TokenUsage | null;
 }) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation("conversation"),
     totalTokens =
       usage?.inputTokens !== undefined && usage.outputTokens !== undefined
-        ? formatTokens(usage.inputTokens + usage.outputTokens)
-        : t("conversation:unavailableTokens"),
+        ? formatTokens(t, usage.inputTokens + usage.outputTokens)
+        : t("tokens.unavailable"),
     actualCacheHitRate =
       usage?.inputTokens !== undefined &&
       usage.inputTokens > 0 &&
@@ -37,23 +37,23 @@ export function ContextUsage({
         ? usage.cacheReadTokens / usage.inputTokens
         : undefined,
     cacheRate =
-      actualCacheHitRate === undefined ? "—" : `${(actualCacheHitRate * 100).toFixed(2)}%`,
+      actualCacheHitRate === undefined ? "—" : t("cacheHitRate", { ratio: actualCacheHitRate }),
     belowExpectation =
       actualCacheHitRate !== undefined &&
       cacheHitWarningRatio !== undefined &&
       usage?.estimatedCacheHitRate !== undefined &&
       actualCacheHitRate + Number.EPSILON < usage.estimatedCacheHitRate * cacheHitWarningRatio,
-    description = `${t("conversation:contextUsage")}: ${totalTokens}; ${t("conversation:kvCache")}: ${cacheRate}`;
+    description = t("contextSummary", { cacheRate, tokens: totalTokens });
   return (
     <div aria-label={description} className={panel} title={description}>
       <span className={row}>
-        <span>{t("conversation:contextUsage")}</span>
+        <span>{t("contextUsage")}</span>
         <span className={value}>{totalTokens}</span>
       </span>
       <span className={row}>
         <span className={row}>
           <DatabaseZap aria-hidden="true" size={12} />
-          <span>{t("conversation:kvCache")}</span>
+          <span>{t("kvCache")}</span>
         </span>
         <span
           className={

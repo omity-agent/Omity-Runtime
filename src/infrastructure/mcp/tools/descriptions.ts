@@ -19,7 +19,7 @@ export function renameMcpTools(tools: StructuredToolInterface[], overrides: McpT
       throw new Error(localize("mcp:descriptions.agentNameForbidden"));
     }
     if (finalNames.has(name)) {
-      throw new Error(localize("mcp:descriptions.renameCollision", { value0: name }));
+      throw new Error(localize("mcp:descriptions.renameCollision", { toolName: name }));
     }
     finalNames.add(name);
   }
@@ -38,7 +38,7 @@ export function overrideMcpToolDescriptions(
     descriptions = new Map<string, { allowSession: boolean; value: string }>();
   for (const [name, configuredPath] of Object.entries(overrides)) {
     if (!toolsByName.has(name)) {
-      throw new Error(localize("mcp:descriptions.overrideTargetMissing", { value0: name }));
+      throw new Error(localize("mcp:descriptions.overrideTargetMissing", { toolName: name }));
     }
     const path = resolveConfiguredPath(root, configuredPath),
       allowSession = sessionPromptRoots.some((directory) => isWithin(directory, path));
@@ -48,8 +48,8 @@ export function overrideMcpToolDescriptions(
     } catch (error) {
       throw new Error(
         localize("mcp:descriptions.overrideReadFailed", {
-          value0: name,
-          value1: path,
+          toolName: name,
+          path,
         }),
         { cause: error },
       );
@@ -57,8 +57,8 @@ export function overrideMcpToolDescriptions(
     if (description.length === 0) {
       throw new Error(
         localize("mcp:descriptions.overrideEmpty", {
-          value0: name,
-          value1: path,
+          toolName: name,
+          path,
         }),
       );
     }
@@ -67,7 +67,7 @@ export function overrideMcpToolDescriptions(
   for (const [name, description] of descriptions) {
     const tool = toolsByName.get(name);
     if (!tool) {
-      throw new Error(localize("mcp:descriptions.overrideReferenceMissing", { value0: name }));
+      throw new Error(localize("mcp:descriptions.overrideReferenceMissing", { toolName: name }));
     }
     tool.description = description.value;
     if (description.allowSession) {
@@ -82,7 +82,9 @@ export function hasSessionDescription(tool: StructuredToolInterface) {
 export function sessionDescription(tool: StructuredToolInterface) {
   const description = sessionDescriptions.get(tool);
   if (description === undefined) {
-    throw new Error(localize("mcp:descriptions.sessionDescriptionMissing", { value0: tool.name }));
+    throw new Error(
+      localize("mcp:descriptions.sessionDescriptionMissing", { toolName: tool.name }),
+    );
   }
   return description;
 }
@@ -96,7 +98,7 @@ function indexMcpTools(tools: StructuredToolInterface[]) {
     if (toolsByName.has(tool.name)) {
       throw new Error(
         localize("mcp:descriptions.duplicateToolName", {
-          value0: tool.name,
+          toolName: tool.name,
         }),
       );
     }

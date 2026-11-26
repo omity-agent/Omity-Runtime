@@ -115,7 +115,7 @@ async function transferDraft(page: ForkPage, sessionId: string) {
     loadComposerDraft(sessionId),
   ]);
   if (current.revision >= Number.MAX_SAFE_INTEGER) {
-    throw new Error(localize("diagnostics:fork.revisionOverflow", { value0: sessionId }));
+    throw new Error(localize("diagnostics:fork.revisionOverflow", { sessionId }));
   }
   await saveComposerDraft(sessionId, draft.content, Math.max(current.revision + 1, draft.revision));
 }

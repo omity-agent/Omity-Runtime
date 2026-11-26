@@ -1,7 +1,7 @@
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { omit } from "es-toolkit";
 
-import { DomainError } from "../../../errors";
+import { DomainError } from "../../../failures/domain";
 import { localize } from "../../../i18n/server";
 import type { SessionPlaceholders } from "../../configuration/placeholders";
 import { createSettingsContext, type SettingsContext } from "../../configuration/settings/context";

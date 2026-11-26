@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 
-import { sessionConflict, sessionNotFound } from "../../errors";
+import { sessionConflict, sessionNotFound } from "../../failures/rejections";
 import { resolveSessionPaths, sessionPaths } from "../../infrastructure/configuration/sessionPaths";
 import {
   createSettingsContext,

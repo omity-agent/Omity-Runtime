@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 
-import { captureError, parseError, stringifyError } from "../../src/failures/details";
+import { captureError } from "../../src/failures/details";
+import { parseError, stringifyError } from "../../src/failures/persistence";
 import { cleanupDatabaseDirs, makeDb, required, runOf, workspace } from "../support/database";
 
 afterEach(cleanupDatabaseDirs);

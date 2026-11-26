@@ -1,4 +1,4 @@
-import { localize } from "../../../i18n/server";
+import { localize } from "../../frontend/i18n";
 import type { DisplayEvent, DisplayToolCall } from "../contracts/projection";
 
 interface StreamIdentityPart {
@@ -21,16 +21,16 @@ export function reconcileToolStreams(
       const part = byMessage.get(event.messageId)?.parts.get(event.partId);
       if (part?.kind !== "tool_call_delta") {
         throw new Error(
-          localize("application:timeline.toolStartStreamIdentityMissing", {
-            value0: streamCallKey(event.messageId, event.partId),
+          localize("diagnostics:transcript.toolStartStreamIdentityMissing", {
+            streamId: streamCallKey(event.messageId, event.partId),
           }),
         );
       }
       if (part.id && !event.value.startsWith(part.id)) {
         throw new Error(
-          localize("application:timeline.toolStreamCallIdMismatch", {
-            value0: part.id,
-            value1: event.value,
+          localize("diagnostics:transcript.toolStreamCallIdMismatch", {
+            previousCallId: part.id,
+            receivedCallId: event.value,
           }),
         );
       }
@@ -47,9 +47,9 @@ export function sameToolCall(a: DisplayToolCall, b: DisplayToolCall) {
   if (bothFormal) {
     if (samePosition && a.id !== b.id) {
       throw new Error(
-        localize("application:timeline.toolStreamCallIdConflict", {
-          value0: a.id,
-          value1: b.id,
+        localize("diagnostics:transcript.toolStreamCallIdConflict", {
+          firstCallId: a.id,
+          secondCallId: b.id,
         }),
       );
     }
@@ -60,7 +60,9 @@ export function sameToolCall(a: DisplayToolCall, b: DisplayToolCall) {
       b.messageId &&
       (a.inputText === undefined) === (b.inputText === undefined)
     ) {
-      throw new Error(localize("application:timeline.formalCallMultipleStreams", { value0: a.id }));
+      throw new Error(
+        localize("diagnostics:transcript.formalCallMultipleStreams", { callId: a.id }),
+      );
     }
   }
   if (a.id === b.id && (!a.temporary || !b.temporary)) {
@@ -77,7 +79,7 @@ function validateFormalCallIds(messages: Iterable<StreamIdentityMessage>) {
           existing = owners.get(part.id);
         if (existing && existing !== owner) {
           throw new Error(
-            localize("application:timeline.formalCallMultipleStreamParts", { value0: part.id }),
+            localize("diagnostics:transcript.formalCallMultipleStreamParts", { callId: part.id }),
           );
         }
         owners.set(part.id, owner);

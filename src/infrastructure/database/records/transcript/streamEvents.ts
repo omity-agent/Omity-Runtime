@@ -17,7 +17,7 @@ export function streamEventCursor(db: Database) {
   if (!Number.isSafeInteger(cursor)) {
     throw new TypeError(
       localize("database:transcript.streamCursorUnsafe", {
-        value0: String(cursor),
+        cursor: String(cursor),
       }),
     );
   }
@@ -37,7 +37,7 @@ export function nextStreamEvent(db: Database, event: StreamEventDraft): StreamEv
   if (!next) {
     throw new Error(
       localize("database:transcript.streamCursorUnsafe", {
-        value0: Number.MAX_SAFE_INTEGER.toString(),
+        cursor: Number.MAX_SAFE_INTEGER.toString(),
       }),
     );
   }

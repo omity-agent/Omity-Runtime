@@ -10,7 +10,8 @@
     "#settings/*": "./settings/*"
   },
   "scripts": {
-    "check": "bun lint --format=agent && bun run --bun knip",
+    "check": "bun run i18n:types --ci && bun lint --format=agent && bun run --bun knip",
+    "i18n:types": "bun run --bun scripts/generateTranslationTypes.ts",
     "test": "bun run --bun scripts/build.ts --test",
     "benchmark:mcp": "bun run --bun scripts/build.ts --benchmark-mcp",
     "screenshots": "bun run --bun scripts/frontend/screenshots/capture.ts",
@@ -63,7 +64,6 @@
     "gray-matter": "latest",
     "hono": "latest",
     "i18next": "latest",
-    "i18next-browser-languagedetector": "latest",
     "iconv-lite": "latest",
     "idb-keyval": "latest",
     "ipaddr.js": "latest",
@@ -118,6 +118,7 @@
     "detect-libc": "latest",
     "drizzle-kit": "rc",
     "eventsource-parser": "latest",
+    "i18next-cli": "latest",
     "knip": "latest",
     "playwright": "latest",
     "postcss": "latest",
@@ -126,6 +127,7 @@
     "vite": "latest"
   },
   "overrides": {
+    "@swc/core": "npm:@swc/wasm@latest",
     "katex": "latest"
   },
   "trustedDependencies": [

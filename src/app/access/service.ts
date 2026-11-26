@@ -77,11 +77,7 @@ export class AccessService {
     ) {
       return;
     }
-    throw new HttpError(
-      403,
-      localize("access:service.originRejected", { value0: origin }),
-      "LOCAL_ONLY",
-    );
+    throw new HttpError(403, localize("access:service.originRejected", { origin }), "LOCAL_ONLY");
   }
   registrationTicket(identity: ClientIdentity) {
     this.requireLocal(identity);

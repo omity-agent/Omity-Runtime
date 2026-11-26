@@ -14,13 +14,13 @@ export function wireHostSignals(options: HostSignalOptions) {
   }
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const stop = (signal: NodeJS.Signals) => {
-    const reason = new Error(localize("runtime:signal.received", { value0: signal }));
+    const reason = new Error(localize("runtime:signal.received", { signal }));
     if (options.stopping.signal.aborted) {
       options.force.abort(reason);
       return;
     }
     options.stopping.abort(reason);
-    options.logger.warn(localize("runtime:signal.stopAtRecoveryBoundary", { value0: signal }));
+    options.logger.warn(localize("runtime:signal.stopAtRecoveryBoundary", { signal }));
     timeout = setTimeout(() => {
       options.force.abort(new Error(localize("runtime:signal.recoveryBoundaryTimeout")));
     }, options.timeoutMs);

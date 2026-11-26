@@ -29,7 +29,7 @@ export class ProcessOutputCapture {
       return "";
     }
     return this.discardedBytes > 0
-      ? localize("mcp:client.outputTruncated", { value0: value })
+      ? localize("mcp:client.outputTruncated", { output: value })
       : value;
   }
   snapshot() {
@@ -44,13 +44,13 @@ function decodeDetected(bytes: Buffer) {
   const encoding = detect(bytes);
   if (encoding === null) {
     return localize("mcp:client.stderrEncodingUnknown", {
-      value0: bytes.toString("hex"),
+      hexBytes: bytes.toString("hex"),
     });
   }
   if (!encodingExists(encoding)) {
     return localize("mcp:client.stderrEncodingUnsupported", {
-      value0: String(encoding),
-      value1: bytes.toString("hex"),
+      encoding: String(encoding),
+      hexBytes: bytes.toString("hex"),
     });
   }
   return decode(bytes, encoding);

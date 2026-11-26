@@ -21,9 +21,7 @@ export function findToolStreamIdentity(
      LIMIT 2`,
   ).all(sessionId, callId);
   if (identities.length > 1) {
-    throw new Error(
-      localize("database:transcript.formalCallStreamIdentityDuplicate", { value0: callId }),
-    );
+    throw new Error(localize("database:transcript.formalCallStreamIdentityDuplicate", { callId }));
   }
   return identities[0] ?? null;
 }

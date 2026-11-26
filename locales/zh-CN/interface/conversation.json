@@ -20,7 +20,7 @@
   "user": "用户",
   "assistant": "助手",
   "tool": "工具",
-  "toolCall": "工具调用",
+  "toolCall": "工具调用: {{toolName}}",
   "stopTool": "终止工具",
   "reasoning": "思考",
   "streaming": "生成中",
@@ -42,10 +42,16 @@
   "pauseBeforeDelete": "会话进行中无法删除",
   "clearTemporaryFiles": "清空 Agent 临时文件",
   "confirmCleanup": "再次点击清空 Agent 临时文件",
-  "cleanupSkipped": "清理时跳过了 {{count}} 个无法删除的项目，详情见服务端控制台。",
+  "cleanupSkipped_other": "清理时跳过了 {{count}} 个无法删除的项目，详情见服务端控制台。",
   "working": "正在处理",
   "composerActions": "会话操作",
   "contextUsage": "上下文",
   "kvCache": "KV Cache",
-  "unavailableTokens": "— Tokens"
+  "contextSummary": "上下文: {{tokens}}; KV Cache: {{cacheRate}}",
+  "cacheHitRate": "{{ratio, number(style: percent; minimumFractionDigits: 2; maximumFractionDigits: 2)}}",
+  "tokens": {
+    "exact_other": "{{count}} Tokens",
+    "thousands_other": "{{thousands, number(useGrouping: false)}}K Tokens",
+    "unavailable": "— Tokens"
+  }
 }

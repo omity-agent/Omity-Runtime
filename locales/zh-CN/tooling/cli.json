@@ -1,15 +1,15 @@
 {
   "output": {
-    "webStarted": "WebUI 已启动：{{value0}}",
-    "sessionDeleted": "已删除会话 {{value0}}",
-    "messageSent": "已发送到会话 {{value0}}（queue={{value1}}）",
-    "controlSent": "已发送控制指令 {{value0}} 到会话 {{value1}}"
+    "webStarted": "WebUI 已启动：{{url}}",
+    "sessionDeleted": "已删除会话 {{sessionId}}",
+    "messageSent": "已发送到会话 {{sessionId}}（queue={{inputId}}）",
+    "controlSent": "已发送控制指令 {{instruction}} 到会话 {{sessionId}}"
   },
   "help": {
-    "sessionIdExample": "会话 ID，例如 {{value0}}。",
+    "sessionIdExample": "会话 ID，例如 {{exampleId}}。",
     "profilePriority": "选择一个优先级高于 profile.yaml 默认配置的 Profile。",
     "hostAddressOverride": "覆盖配置文件中的监听地址。",
-    "portOverride": "覆盖配置文件中的监听端口，{{value0}} 表示自动选择。",
+    "portOverride": "覆盖配置文件中的监听端口，{{automaticPort}} 表示自动选择。",
     "startApp": "启动 WebUI。",
     "createHost": "新建并启动 Host 会话。",
     "loadHost": "加载并启动 Host 会话。",

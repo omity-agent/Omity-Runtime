@@ -139,18 +139,12 @@ export async function runHostSession(
   }
   function requireLease() {
     if (!lease) {
-      throw new Error(localize("errors:host.leaseNotEstablished", { value0: mode.sessionId }));
+      throw new Error(localize("errors:host.leaseNotEstablished", { sessionId: mode.sessionId }));
     }
     return lease;
   }
   function logSessionOpened() {
-    const action =
-      mode.kind === "new"
-        ? localize("errors:host.action.createLabel")
-        : mode.kind === "load"
-          ? localize("errors:host.action.loadLabel")
-          : localize("errors:host.action.overwriteLabel");
-    logger.info(localize("errors:host.sessionActionCompleted", { value0: action }), {
+    logger.info(localize(`errors:host.sessionOpened.${mode.kind}`), {
       db: paths.dbPath,
       sessionId: mode.sessionId,
     });

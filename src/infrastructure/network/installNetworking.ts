@@ -28,7 +28,7 @@ export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
       if (protocol !== "http:" && protocol !== "https:") {
         throw new TypeError(
           localize("network:outbound.protocolUnsupported", {
-            value0: protocol,
+            protocol,
           }),
         );
       }

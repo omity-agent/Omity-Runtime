@@ -1,9 +1,9 @@
 import { type ComponentProps, useDeferredValue, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 import { Virtualizer, type VirtualizerHandle } from "virtua";
 
 import type { TimelineMessage } from "../../../timeline";
-import { useTranslation } from "../../i18n";
 import { transcriptWindow } from "../../presentation/preferences";
 import { stableScrollbar } from "../Chat/layout";
 import { findLatestDetails } from "../Chat/messages/detailFocus";
@@ -40,7 +40,7 @@ export function Transcript({
   allowFork: boolean;
   messages: TimelineMessage[];
 }) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation("conversation"),
     messages = useDeferredValue(incomingMessages),
     segments = useMemo(() => segmentTranscript(messages), [messages]),
     copies = useMessageCopies(segments),
@@ -58,7 +58,7 @@ export function Transcript({
   return (
     <DisclosureProvider registerDetail={registerDetail}>
       <section
-        aria-label={t("conversation:conversation")}
+        aria-label={t("conversation")}
         className={viewport}
         ref={scrollRef}
         // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- The virtual viewport must accept focus for keyboard scrolling.

@@ -1,7 +1,7 @@
+import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 import { grid, stack } from "styled-system/patterns";
 
-import { useTranslation } from "../../../../i18n";
 import { MarkdownEditor } from "../../MarkdownEditor";
 import type { AskUserQuestion } from "../../toolActions";
 import { ChoiceOptions } from "./Options";
@@ -25,7 +25,7 @@ export function AskUserPrompt({
   onOptionsChange: (options: string[]) => void;
   onSubmit: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation("conversation");
   if (question.kind === "open_ended") {
     return (
       <div className={choicePane}>
@@ -35,7 +35,7 @@ export function AskUserPrompt({
           label={question.question}
           onChange={onNoteChange}
           onSubmit={onSubmit}
-          placeholder={t("conversation:answerPlaceholder")}
+          placeholder={t("answerPlaceholder")}
           value={note}
         />
       </div>
@@ -52,13 +52,13 @@ export function AskUserPrompt({
         />
       </section>
       <section className={choicePane}>
-        <p className={noteLabel}>{t("conversation:answerNote")}</p>
+        <p className={noteLabel}>{t("answerNote")}</p>
         <MarkdownEditor
           disabled={false}
-          label={t("conversation:answerNote")}
+          label={t("answerNote")}
           onChange={onNoteChange}
           onSubmit={onSubmit}
-          placeholder={t("conversation:answerNotePlaceholder")}
+          placeholder={t("answerNotePlaceholder")}
           value={note}
         />
       </section>

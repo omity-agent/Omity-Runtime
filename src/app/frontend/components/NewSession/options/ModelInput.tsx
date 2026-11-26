@@ -1,7 +1,7 @@
 import { type ChangeEvent, useCallback, useId } from "react";
+import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
-import { useTranslation } from "../../../i18n";
 import { Field, Input } from "../../ui";
 
 const error = css({ color: "status.error", fontSize: "metadata" });
@@ -14,7 +14,7 @@ export function ModelInput({
   model: string;
   onChange: (model: string) => void;
 }) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation("preparation"),
     errorId = useId(),
     invalid = !disabled && model.trim().length === 0,
     change = useCallback(
@@ -23,7 +23,7 @@ export function ModelInput({
     );
   return (
     <Field.Root disabled={disabled} invalid={invalid}>
-      <Field.Label>{t("preparation:model")}</Field.Label>
+      <Field.Label>{t("model")}</Field.Label>
       <Input
         aria-describedby={invalid ? errorId : undefined}
         autoCapitalize="none"
@@ -36,7 +36,7 @@ export function ModelInput({
       />
       {invalid && (
         <span className={error} id={errorId}>
-          {t("preparation:modelRequired")}
+          {t("modelRequired")}
         </span>
       )}
     </Field.Root>

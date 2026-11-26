@@ -100,7 +100,7 @@ export function nextToolStage(
 }
 export function requireCallId(call: ToolCall) {
   if (!call.id) {
-    throw new Error(localize("hooks:plan.callIdMissingForTool", { value0: call.name }));
+    throw new Error(localize("hooks:plan.callIdMissingForTool", { toolName: call.name }));
   }
   return call.id;
 }

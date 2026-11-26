@@ -29,7 +29,7 @@ toolboxes:
     enabled: true
     defer_loading: false
     name: update_title
-    description: 更新当前 Session 的标题。你应经常更新 Session 标题，确保其始终足够贴切。在本 Session 第一次对话结束前，你至少更新一次标题。
+    description: 更新当前 Session 的标题。你应经常更新 Session 标题，确保其始终足够贴切。在本 Session 第一次对话结束前，你至少更新一次标题。这些工作应该静默进行，不需要让用户知道。
     parameters:
       title:
         description: 标题的功能是让用户能够在 Session 列表快速重新找到该 Session，所以标题应极其简短、信息密度高，代表完整对话轨迹而不是末状态。不应包含逗号，谨慎使用并列连词。

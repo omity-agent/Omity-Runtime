@@ -26,7 +26,7 @@ export function toolOutputText(value: unknown): string {
 export function cancelledToolMessage(callId: string, durationMs: number, name?: string) {
   return new ToolMessage({
     content: localize("runtime:tool.cancelled", {
-      value0: formatDuration(durationMs),
+      duration: formatDuration(durationMs),
     }),
     name,
     status: "error",
@@ -36,17 +36,17 @@ export function cancelledToolMessage(callId: string, durationMs: number, name?: 
 function formatDuration(durationMs: number) {
   if (durationMs < 1000) {
     return localize("runtime:duration.milliseconds", {
-      value0: Math.round(durationMs).toString(),
+      milliseconds: Math.round(durationMs).toString(),
     });
   }
   const seconds = durationMs / 1000;
   return seconds < 60
     ? localize("runtime:duration.seconds", {
-        value0: Number(seconds.toFixed(1)).toString(),
+        seconds: Number(seconds.toFixed(1)).toString(),
       })
     : localize("runtime:duration.minutesSeconds", {
-        value0: Math.floor(seconds / 60).toString(),
-        value1: Math.round(seconds % 60).toString(),
+        minutes: Math.floor(seconds / 60).toString(),
+        seconds: Math.round(seconds % 60).toString(),
       });
 }
 export function toolOutputSnapshot(message: ToolMessage): ToolOutputSnapshot {

@@ -27,7 +27,7 @@ export function runStatusRecord(db: Database, runId: number) {
   if (!run) {
     throw new Error(
       localize("database:execution.runMissingForRead", {
-        value0: runId.toString(),
+        runId: runId.toString(),
       }),
     );
   }
@@ -52,7 +52,7 @@ export function setRunStatusRecord(
   if (!run) {
     throw new Error(
       localize("database:execution.runMissingForUpdate", {
-        value0: runId.toString(),
+        runId: runId.toString(),
       }),
     );
   }

@@ -37,7 +37,7 @@ export function deriveSessionTitle(db: Database, sessionId: string) {
   const message = storedConversationSchema.parse(JSON.parse(row.message_json) as unknown),
     call = message.type === "ai" ? message.toolCalls?.[row.call_index] : undefined;
   if (!call) {
-    throw new Error(localize("database:messages.titleCallInvalid", { value0: sessionId }));
+    throw new Error(localize("database:messages.titleCallInvalid", { sessionId }));
   }
   return z
     .string()

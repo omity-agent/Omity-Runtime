@@ -1,0 +1,11 @@
+{
+  "fileNameMissing": "附件缺少有效文件名",
+  "sizeInvalid": "附件 {{fileName}} 的大小无效",
+  "suffixUnsupported": "不允许粘贴后缀为 {{suffix}} 的文件",
+  "noSuffix": "（无后缀）",
+  "fileTooLarge": "文件 {{fileName}} 超过大小上限 {{maxBytes}} 字节",
+  "totalSizeUnsafe": "附件总大小超出安全整数范围",
+  "totalSizeTooLarge": "附件总大小超过上限 {{maxBytes}} 字节",
+  "duplicateId": "附件 ID 重复：{{attachmentId}}",
+  "referencedFileMissing": "消息引用的附件不存在：{{attachmentId}}"
+}

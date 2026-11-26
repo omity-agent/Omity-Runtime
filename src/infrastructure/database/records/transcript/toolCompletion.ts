@@ -78,7 +78,7 @@ function loadTrackedTools(db: Database, sessionId: string) {
     if (typeof callId !== "string") {
       throw new TypeError(
         localize("database:transcript.toolEventCallIdMissing", {
-          value0: row.kind,
+          eventKind: row.kind,
         }),
       );
     }

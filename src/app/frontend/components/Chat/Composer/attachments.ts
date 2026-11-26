@@ -6,7 +6,10 @@ import {
   type PendingAttachment,
   validateAttachmentBatch,
 } from "../../../../attachments/contract";
+import { browserI18n } from "../../../i18n";
 import { reportError } from "../../../services/errors";
+
+const t = browserI18n.getFixedT(null, "attachments");
 
 export class PendingAttachments {
   private readonly entries = new Map<string, PendingAttachment>();
@@ -27,7 +30,7 @@ export class PendingAttachments {
       return undefined;
     }
     const retained = this.values(contents).map(({ file }) => file);
-    validateAttachmentBatch([...retained, ...files], this.settings);
+    validateAttachmentBatch([...retained, ...files], this.settings, t);
     return files
       .map((file) => {
         const id = claimShortId((candidate) => {

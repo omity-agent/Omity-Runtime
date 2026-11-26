@@ -1,5 +1,5 @@
 import { setSessionControl } from "../client";
-import { sessionProfileBusy } from "../errors";
+import { sessionProfileBusy } from "../failures/rejections";
 import type { FileLinkAction } from "../fileLinks/types";
 import type { SettingsContext } from "../infrastructure/configuration/settings/context";
 import { readComposerDraftRecord } from "../infrastructure/database/records/session/composerDrafts";

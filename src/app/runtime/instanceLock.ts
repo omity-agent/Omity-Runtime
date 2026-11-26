@@ -53,8 +53,8 @@ export class AppInstanceLock {
         if (isProcessRunning(existingOwner.pid)) {
           throw new Error(
             localize("application:runtime.instanceAlreadyRunning", {
-              value0: existingOwner.pid.toString(),
-              value1: directory,
+              pid: existingOwner.pid.toString(),
+              directory,
             }),
             {
               cause: error,
@@ -65,7 +65,7 @@ export class AppInstanceLock {
         unlinkSync(path);
       }
     }
-    throw new Error(localize("application:runtime.lockAcquireFailed", { value0: path }));
+    throw new Error(localize("application:runtime.lockAcquireFailed", { path }));
   }
   release() {
     if (this.released) {
@@ -73,7 +73,7 @@ export class AppInstanceLock {
     }
     const owner = readOwner(this.path);
     if (owner.token !== this.owner.token) {
-      throw new Error(localize("application:runtime.lockOwnerChanged", { value0: this.path }));
+      throw new Error(localize("application:runtime.lockOwnerChanged", { path: this.path }));
     }
     unlinkSync(this.path);
     this.released = true;
@@ -81,12 +81,12 @@ export class AppInstanceLock {
 }
 function readOwner(path: string) {
   if (!existsSync(path)) {
-    throw new Error(localize("application:runtime.lockMissing", { value0: path }));
+    throw new Error(localize("application:runtime.lockMissing", { path }));
   }
   const value: unknown = JSON.parse(readFileSync(path, "utf8")),
     parsed = ownerSchema.safeParse(value);
   if (!parsed.success) {
-    throw new Error(localize("application:runtime.lockInvalid", { value0: path }));
+    throw new Error(localize("application:runtime.lockInvalid", { path }));
   }
   return parsed.data;
 }

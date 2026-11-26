@@ -1,7 +1,7 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
-import { useTranslation } from "../../i18n";
 import { SubmitButton } from "../Chat/Composer/controls/SubmitButton";
 import { IconButton } from "../ui";
 import type { PreparationInput } from "./editor/historyCandidates";
@@ -33,7 +33,7 @@ export function MessageStack({
   submitDisabled: boolean;
   submitting: boolean;
 }) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation("preparation"),
     editors = pairs.flatMap(({ assistant, id, user }) => [
       <MessageEditor
         disabled={disabled}
@@ -63,17 +63,17 @@ export function MessageStack({
       speaker="user"
     >
       <IconButton
-        aria-label={t("preparation:addMessagePair")}
+        aria-label={t("addMessagePair")}
         disabled={disabled}
         onClick={onAppend}
-        title={t("preparation:addMessagePair")}
+        title={t("addMessagePair")}
         type="button"
       >
         <Plus aria-hidden size={16} />
       </IconButton>
       <SubmitButton
         disabled={submitDisabled}
-        label={submitting ? t("preparation:creating") : t("preparation:createAndSend")}
+        label={submitting ? t("creating") : t("createAndSend")}
       />
     </MessageEditor>,
   );
@@ -88,14 +88,14 @@ function RemovePair({
   id: string;
   onRemove: (id: string) => void;
 }) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation("preparation"),
     remove = useCallback(() => onRemove(id), [id, onRemove]);
   return (
     <IconButton
-      aria-label={t("preparation:removeMessagePair")}
+      aria-label={t("removeMessagePair")}
       disabled={disabled}
       onClick={remove}
-      title={t("preparation:removeMessagePair")}
+      title={t("removeMessagePair")}
       type="button"
     >
       <Trash2 aria-hidden size={16} />

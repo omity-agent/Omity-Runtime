@@ -37,8 +37,8 @@ export async function redirectLargeToolOutput(
   }
   const outputPath = await writeLargeToolOutput(original, options.sessionId),
     content = localize("runtime:output.tooLarge", {
-      value0: tokens.toString(),
-      value1: outputPath,
+      count: tokens,
+      path: outputPath,
     });
   return copyToolMessage(message, normalized.replaceText(content), {
     path: outputPath,

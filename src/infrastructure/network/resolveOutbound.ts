@@ -71,7 +71,7 @@ function normalizeProxy(value: string) {
   if (!["http:", "https:", "socks:", "socks5:"].includes(url.protocol)) {
     throw new Error(
       localize("network:proxy.protocolUnsupported", {
-        value0: url.protocol,
+        protocol: url.protocol,
       }),
     );
   }
@@ -85,7 +85,7 @@ async function inspectConfiguration(resolver: NativeResolver) {
   for (const source of ["wpadDhcp", "wpadDns", "configuredPac"] as const) {
     const status = config[source];
     if (status.state === "error-discovery" || status.state === "error-download") {
-      throw new Error(localize("network:proxy.configurationInvalid", { value0: source }), {
+      throw new Error(localize("network:proxy.configurationInvalid", { source }), {
         cause: new Error(status.error ?? status.state),
       });
     }
@@ -94,7 +94,7 @@ async function inspectConfiguration(resolver: NativeResolver) {
     if (value.error) {
       throw new Error(
         localize("network:proxy.environmentInvalid", {
-          value0: value.variable,
+          variableName: value.variable,
         }),
       );
     }

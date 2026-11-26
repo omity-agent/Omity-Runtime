@@ -29,7 +29,7 @@ export function createToolInvoker(
     const callId = requireCallId(call),
       tool = byName.get(call.name);
     if (!tool) {
-      throw new Error(localize("agent:tool.notFound", { value0: call.name }));
+      throw new Error(localize("agent:tool.notFound", { toolName: call.name }));
     }
     const execution = options.toolExecutions?.begin(callId, config.signal),
       signal = execution?.signal ?? config.signal;

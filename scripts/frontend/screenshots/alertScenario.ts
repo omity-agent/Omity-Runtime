@@ -1,6 +1,6 @@
 import type { Page } from "playwright";
 
-import conversation from "../../../locales/interface/conversation.zh-CN.json" with { type: "json" };
+import { localize } from "../../../src/app/frontend/i18n";
 import type {
   DisplayMessage,
   TranscriptSnapshot,
@@ -113,13 +113,13 @@ export async function waitForAlertContent(page: Page, withFlowchart: boolean) {
   await Promise.all([
     page.locator(".katex-display .katex-html").waitFor(),
     page
-      .getByRole("button", { exact: true, name: `${conversation.toolCall}: ${toolName}` })
+      .getByRole("button", { exact: true, name: localize("conversation:toolCall", { toolName }) })
       .waitFor(),
     ...diagrams.map((language) =>
       page
         .getByRole("img", {
           exact: true,
-          name: conversation.diagram.label.replace("{{language}}", language),
+          name: localize("conversation:diagram.label", { language }),
         })
         .evaluate((image: HTMLImageElement) => image.decode()),
     ),

@@ -2,8 +2,8 @@ import { AIMessage, type BaseMessage, type ToolCall, ToolMessage } from "@langch
 import type { LanguageModelUsage, ModelMessage } from "ai";
 import { isPlainObject as isRecord } from "es-toolkit";
 
+import { trimFreeformInput } from "../../fileLinks/toolInput";
 import { localize } from "../../i18n/server";
-import { trimFreeformInput } from "../../runtime/freeform";
 import type { ModelApi } from "../../types";
 import { reportedModelUsage } from "../model/usage/providerCounts";
 import { isStoredAssistantPart, type ModelAssistantContent } from "./assistantContent";
@@ -45,7 +45,7 @@ export function fromModelMessages(
         }
       }
     } else {
-      throw new Error(localize("agent:stream.roleUnsupported", { value0: message.role }));
+      throw new Error(localize("agent:stream.roleUnsupported", { role: message.role }));
     }
   }
   return result;
@@ -79,7 +79,7 @@ function toolCalls(content: ModelAssistantContent): ToolCall[] {
       }
       if (!isRecord(part.input)) {
         throw new Error(
-          localize("agent:stream.structuredInputNotObject", { value0: part.toolName }),
+          localize("agent:stream.structuredInputNotObject", { toolName: part.toolName }),
         );
       }
       return {

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { fileLinkActionSchema } from "../../fileLinks/types";
 import { settingsProfileNameSchema } from "../../infrastructure/configuration/settings/profileNames";
 import { controlCommandSchema } from "../../types";
-import { preparationContentSchema } from "../composition/preparation";
+import { preparationContentSchema } from "../composition/draftInput";
 
 export const composerDraftBody = z.strictObject({
   content: z.string(),

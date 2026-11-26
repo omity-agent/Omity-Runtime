@@ -1,8 +1,8 @@
 import { Folder, FolderOpen } from "lucide-react";
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { css, cx } from "styled-system/css";
 
-import { useTranslation } from "../../i18n";
 import { Button } from "../ui";
 import { type WorkspaceGroup, workspaceLabel } from "./sessions";
 
@@ -77,7 +77,7 @@ function ProjectItem({
   sessionsId: string;
   unread: number;
 }) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation("shell"),
     select = useCallback(() => onSelect(group.workspace), [group.workspace, onSelect]),
     Icon = active ? FolderOpen : Folder;
   return (
@@ -96,17 +96,14 @@ function ProjectItem({
         <span className={counts}>
           {group.runningCount > 0 && (
             <span
-              aria-label={t("shell:runningSessionCount", { count: group.runningCount })}
+              aria-label={t("runningSessionCount", { count: group.runningCount })}
               className={attention}
             >
               ● {group.runningCount}
             </span>
           )}
           {unread > 0 && (
-            <span
-              aria-label={t("shell:unreadSessionCount", { count: unread })}
-              className={attention}
-            >
+            <span aria-label={t("unreadSessionCount", { count: unread })} className={attention}>
               ● {unread}
             </span>
           )}

@@ -7,16 +7,18 @@ import { safeId } from "../../infrastructure/configuration/sessionPaths";
 import { HttpError } from "./errors";
 
 const jsonContentType = /^application\/(?:[a-z.-]+\+)?json(?:;\s*[a-z0-9-]+=[^;]+)*$/iu;
-export function limitRequestBody(maxSize: number, label = localize("http:request.bodyLabel")) {
+export function limitRequestBody(maxSize: number, body: "request" | "attachment" = "request") {
   return bodyLimit({
     maxSize,
     onError() {
       throw new HttpError(
         413,
-        localize("http:request.bodyTooLarge", {
-          value0: label,
-          value1: maxSize.toString(),
-        }),
+        localize(
+          body === "attachment"
+            ? "http:request.attachmentBodyTooLarge"
+            : "http:request.bodyTooLarge",
+          { maxBytes: maxSize },
+        ),
       );
     },
   });
@@ -32,7 +34,7 @@ export function validate<Target extends "json" | "form" | "query", Schema extend
     if (!result.success) {
       throw new HttpError(
         400,
-        localize("http:request.invalidParameters", { value0: z.prettifyError(result.error) }),
+        localize("http:request.invalidParameters", { issues: z.prettifyError(result.error) }),
       );
     }
   });

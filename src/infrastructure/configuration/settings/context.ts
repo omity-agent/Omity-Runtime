@@ -1,13 +1,19 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { z } from "zod";
+
 import { localize } from "../../../i18n/server";
 import { applicationAssetPath } from "../../applicationAssets";
 import { readSettingsYamlValue } from "../placeholders";
 import { userSettingsDirectory } from "./files";
-import { settingsProfileNameSchema, settingsProfileNamesSchema } from "./profileNames";
+import { settingsProfileNameSchema } from "./profileNames";
 
-export { settingsProfileNamesSchema } from "./profileNames";
+export const settingsProfileNamesSchema = z
+  .array(settingsProfileNameSchema)
+  .refine((names) => new Set(names).size === names.length, {
+    error: () => localize("configuration:settings.duplicateProfile"),
+  });
 const bundledSettingsDirectory = applicationAssetPath(
   resolve(import.meta.dir, "../../../.."),
   "settings",
@@ -84,7 +90,7 @@ function resolveProfiles(
     if (!existsSync(directory) || !statSync(directory).isDirectory()) {
       throw new Error(
         localize("configuration:settings.profileDirectoryMissing", {
-          value0: directory,
+          directory,
         }),
       );
     }

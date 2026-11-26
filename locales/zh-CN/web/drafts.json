@@ -1,0 +1,4 @@
+{
+  "duplicateMessagePairId": "消息对 ID 不能重复",
+  "invalidDraft": "新建会话草稿无效：{{message}}"
+}

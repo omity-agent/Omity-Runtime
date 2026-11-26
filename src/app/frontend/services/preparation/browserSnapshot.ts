@@ -2,14 +2,16 @@ import { del, get, set } from "idb-keyval";
 
 import type { PendingAttachment } from "../../../attachments/contract";
 import {
+  createPreparationParser,
   emptyPreparation,
-  parsePreparation,
   type SessionPreparation,
 } from "../../../composition/preparation";
+import { browserI18n } from "../../i18n";
 import { loadPreparationDraft } from "../client";
 import { z } from "../validation";
 
 const key = "omity:session-preparation",
+  parsePreparation = createPreparationParser(browserI18n.getFixedT(null, "drafts")),
   snapshotSchema = z.object({ content: z.string(), revision: z.number().int().nonnegative() });
 export async function restorePreparation() {
   const [remote, attachments] = await Promise.all([

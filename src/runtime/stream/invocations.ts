@@ -122,14 +122,14 @@ export async function recordInvocation(
       : findToolStreamIdentity(ctx.db.db, ctx.sessionId, chunk.toolCallId);
     if (!identity) {
       throw new Error(
-        localize("runtime:stream.toolResultCallMissing", { value0: chunk.toolCallId }),
+        localize("runtime:stream.toolResultCallMissing", { callId: chunk.toolCallId }),
       );
     }
     let content: string;
     if (chunk.type === "tool-output-error") {
       if (event.part.type !== "tool-error") {
         throw new Error(
-          localize("runtime:stream.toolErrorEventInvalid", { value0: chunk.toolCallId }),
+          localize("runtime:stream.toolErrorEventInvalid", { callId: chunk.toolCallId }),
         );
       }
       content = toolOutputText(captureError(event.part.error));

@@ -1,8 +1,9 @@
+import { useTranslation } from "react-i18next";
+
 import { isRunningStatus, type PlaybackControl, type SessionStatus } from "../../../../types";
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
 import type { InitialSessionState } from "../../../initialState";
 import type { TimelineMessage } from "../../../timeline";
-import { useTranslation } from "../../i18n";
 import type { FrontendSettings } from "../../services/client";
 import { composerDraftKey, type ComposerDraftTarget } from "../../services/composerDrafts";
 import type { useNewSessionDraft } from "../../services/preparation/editorState";
@@ -83,7 +84,7 @@ export function ChatPage({
   onPickWorkspace: () => Promise<string | null>;
   onProfileChange: (profile?: string) => void;
 }) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation(["conversation", "shell"]),
     predictionsQuery = usePredictions(activeId, sessionStatus === "idle"),
     running = isRunningStatus(sessionStatus),
     latestUsage = view.findLast((item) => item.usage !== undefined)?.usage ?? null,
@@ -112,7 +113,7 @@ export function ChatPage({
     <div className={chatPage}>
       <FileLinkProvider sessionId={activeId}>
         {view.length === 0 ? (
-          <div className={emptyChat}>{t("conversation:noMessages")}</div>
+          <div className={emptyChat}>{t("noMessages")}</div>
         ) : (
           <Transcript
             allowFork={allowFork}

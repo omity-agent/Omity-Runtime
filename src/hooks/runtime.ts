@@ -35,12 +35,12 @@ export class HookRuntime {
     }
     for (const rule of rules) {
       if (!Number.isInteger(rule.runLimit) || rule.runLimit < -1) {
-        throw new Error(localize("hooks:runtime.runLimitInvalid", { value0: rule.id }));
+        throw new Error(localize("hooks:runtime.runLimitInvalid", { hookId: rule.id }));
       }
       if (rule.enable !== false) {
         this.requireTool(rule.tool, `Hook ${rule.id}`);
         if (rule.target !== "agent") {
-          this.requireTool(rule.target, localize("hooks:runtime.targetLabel", { value0: rule.id }));
+          this.requireTool(rule.target, localize("hooks:runtime.targetLabel", { hookId: rule.id }));
         }
       }
     }
@@ -87,14 +87,16 @@ export class HookRuntime {
     }
     throw new TypeError(
       localize(freeform ? "hooks:runtime.textInputRequired" : "hooks:runtime.objectInputRequired", {
-        value0: rule.id,
-        value1: rule.tool,
+        hookId: rule.id,
+        toolName: rule.tool,
       }),
     );
   }
   private requireTool(name: string, description: string) {
     if (!this.toolNames.has(name)) {
-      throw new Error(localize("hooks:runtime.toolMissing", { value0: description, value1: name }));
+      throw new Error(
+        localize("hooks:runtime.toolMissing", { source: description, toolName: name }),
+      );
     }
   }
 }

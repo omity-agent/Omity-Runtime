@@ -1,6 +1,6 @@
 import type { FileLinkSet } from "../../../fileLinks/types";
-import { localize } from "../../../i18n/server";
 import { countTokens } from "../../../runtime/tokenizer";
+import { localize } from "../../frontend/i18n";
 import { allContent, lastContentGroup } from "../contentSelection";
 import type {
   DisplayEvent,
@@ -49,7 +49,7 @@ export function mergeStreamPart(
 ) {
   if (part.kind !== event.kind) {
     throw new Error(
-      localize("application:timeline.streamPartTypeChanged", { value0: event.partId }),
+      localize("diagnostics:transcript.streamPartTypeChanged", { partId: event.partId }),
     );
   }
   if (part.kind === "tool_call_delta" && event.kind === "tool_call_delta") {
@@ -69,7 +69,7 @@ export function projectStreamMessage(
   const parts = message.order.flatMap((partId): TimelinePart[] => {
       const part = message.parts.get(partId);
       if (!part) {
-        throw new Error(localize("application:timeline.streamPartMissing", { value0: partId }));
+        throw new Error(localize("diagnostics:transcript.streamPartMissing", { partId }));
       }
       if (part.kind === "assistant_reasoning_delta") {
         return textTimelinePart(

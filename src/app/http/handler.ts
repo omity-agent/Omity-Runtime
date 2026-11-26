@@ -35,15 +35,12 @@ export function createApi(
     { requestBodyLimitBytes: bodyBytes } = settings.server,
     validation = requestValidation(bodyBytes),
     { json: jsonBody } = validation,
-    attachmentRequestLimit = limitRequestBody(
-      bodyBytes + attachmentBytes,
-      localize("http:request.attachmentBody"),
-    ),
+    attachmentRequestLimit = limitRequestBody(bodyBytes + attachmentBytes, "attachment"),
     routes = mountAccess(app, access, validation);
   app.use("/api/sessions/:sessionId/messages", attachmentRequestLimit);
   app.use("/api/sessions/:sessionId/transcript", compress());
   app.notFound((c) => {
-    throw new HttpError(404, localize("http:request.apiUnknown", { value0: c.req.path }));
+    throw new HttpError(404, localize("http:request.apiUnknown", { path: c.req.path }));
   });
   app.onError(handleApiError);
   return routes

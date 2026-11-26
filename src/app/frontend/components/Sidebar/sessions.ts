@@ -1,6 +1,6 @@
 import { maxBy } from "es-toolkit";
 
-import { isRunningStatus, type SessionStatus } from "../../../../types";
+import { isRunningStatus } from "../../../../types";
 import { uiBehavior } from "../../presentation/preferences";
 import type { SessionInfo } from "../../services/client";
 
@@ -17,19 +17,6 @@ export interface WorkspaceGroup {
 }
 function isRunning(session: SessionInfo) {
   return isRunningStatus(session.status);
-}
-export function statusLabelKey(status: SessionStatus) {
-  const labels = {
-    error: "shell:status.error",
-    idle: "shell:status.idle",
-    paused: "shell:status.paused",
-    pausing: "shell:status.pausing",
-    stepping: "conversation:stepping",
-    streaming: "shell:status.streaming",
-    tool: "shell:status.tool",
-    waiting: "shell:status.waiting",
-  } as const;
-  return labels[status];
 }
 export function groupSessions(sessions: SessionInfo[]): WorkspaceGroup[] {
   return [...Map.groupBy(sessions, (session) => session.workspace)]

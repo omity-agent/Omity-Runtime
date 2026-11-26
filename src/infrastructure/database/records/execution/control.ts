@@ -2,7 +2,7 @@ import type { Database } from "bun:sqlite";
 
 import { and, eq, exists, inArray, not } from "drizzle-orm";
 
-import { controlNotReady } from "../../../../errors";
+import { controlNotReady } from "../../../../failures/rejections";
 import { localize } from "../../../../i18n/server";
 import type { ControlCommand } from "../../../../types";
 import { forcePauseRequests, runs, sessions } from "../../schema";
@@ -93,7 +93,7 @@ function requestStepControlRecord(db: Database, sessionId: string) {
   if ((control === "running" || control === "pause") && ready) {
     throw new Error(
       localize("database:execution.controlRevisionExhausted", {
-        value0: sessionId,
+        sessionId,
       }),
     );
   }

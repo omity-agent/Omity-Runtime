@@ -44,7 +44,7 @@ export function originalToolsCommand(
 ) {
   const callIds = calls.map((call) => {
     if (!call.id) {
-      throw new Error(localize("hooks:graph.callIdMissing", { value0: call.name }));
+      throw new Error(localize("hooks:graph.callIdMissing", { toolName: call.name }));
     }
     return call.id;
   });

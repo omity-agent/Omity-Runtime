@@ -10,11 +10,11 @@ import type { HostMode } from "../types";
 
 type HostAction = HostMode["kind"] | "delete";
 const sessionId = argument(string({ metavar: "SESSION_ID", pattern: /\S/u }), {
-    description: localized("cli:help.sessionIdExample", { value0: "123" }),
+    description: description(localize("cli:help.sessionIdExample", { exampleId: "123" })),
   }),
   profile = optional(
     option("--profile", string({ metavar: "PROFILE", pattern: /\S/u }), {
-      description: localized("cli:help.profilePriority"),
+      description: description(localize("cli:help.profilePriority")),
     }),
   ),
   appCommand = command(
@@ -23,16 +23,16 @@ const sessionId = argument(string({ metavar: "SESSION_ID", pattern: /\S/u }), {
       action: constant("app"),
       host: optional(
         option("--host", string({ metavar: "HOST" }), {
-          description: localized("cli:help.hostAddressOverride"),
+          description: description(localize("cli:help.hostAddressOverride")),
         }),
       ),
       port: optional(
         option("--port", integer({ metavar: "PORT", min: 0 }), {
-          description: localized("cli:help.portOverride", { value0: "0" }),
+          description: description(localize("cli:help.portOverride", { automaticPort: "0" })),
         }),
       ),
     }),
-    { brief: localized("cli:help.startApp") },
+    { brief: description(localize("cli:help.startApp")) },
   ),
   hostCommand = command(
     "host",
@@ -42,7 +42,7 @@ const sessionId = argument(string({ metavar: "SESSION_ID", pattern: /\S/u }), {
       hostAction("delete", localize("cli:help.deleteHost")),
       hostCreateAction("overwrite", localize("cli:help.overwriteHost")),
     ),
-    { brief: localized("cli:help.manageHost") },
+    { brief: description(localize("cli:help.manageHost")) },
   ),
   clientCommand = command(
     "client",
@@ -53,7 +53,7 @@ const sessionId = argument(string({ metavar: "SESSION_ID", pattern: /\S/u }), {
           sessionId,
           multiple(
             argument(string({ metavar: "TEXT", pattern: /\S/u }), {
-              description: localized("cli:help.messageContent"),
+              description: description(localize("cli:help.messageContent")),
             }),
             { min: 1 },
           ),
@@ -62,7 +62,7 @@ const sessionId = argument(string({ metavar: "SESSION_ID", pattern: /\S/u }), {
           message: parsedMessage,
           sessionId: parsedSessionId,
         })),
-        { brief: localized("cli:help.appendMessage") },
+        { brief: description(localize("cli:help.appendMessage")) },
       ),
       clientControl("pause", localize("cli:help.pauseSession")),
       command(
@@ -72,15 +72,15 @@ const sessionId = argument(string({ metavar: "SESSION_ID", pattern: /\S/u }), {
           sessionId,
           step: optional(
             flag("--step", {
-              description: localized("cli:help.singleStep"),
+              description: description(localize("cli:help.singleStep")),
             }),
           ),
         }),
-        { brief: localized("cli:help.resumeSession") },
+        { brief: description(localize("cli:help.resumeSession")) },
       ),
       clientControl("cancel", localize("cli:help.cancelHost")),
     ),
-    { brief: localized("cli:help.manageClient") },
+    { brief: description(localize("cli:help.manageClient")) },
   );
 export const cliParser = or(appCommand, hostCommand, clientCommand);
 export type CliCommand = InferValue<typeof cliParser>;
@@ -118,6 +118,6 @@ function clientControl<const T extends "pause" | "cancel">(action: T, brief: str
     { brief: message`${text(brief)}` },
   );
 }
-function localized(...[key, options]: Parameters<typeof localize>) {
-  return message`${text(localize(key, options))}`;
+function description(value: string) {
+  return message`${text(value)}`;
 }

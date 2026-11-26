@@ -48,7 +48,7 @@ export function applyMcpToolSnapshot(tools: StructuredToolInterface[], snapshot:
       if (frozenNames.has(definition.name)) {
         throw new Error(
           localize("mcp:definitions.duplicateFrozenTool", {
-            value0: definition.name,
+            toolName: definition.name,
           }),
         );
       }
@@ -57,7 +57,7 @@ export function applyMcpToolSnapshot(tools: StructuredToolInterface[], snapshot:
       if (!tool) {
         throw new Error(
           localize("mcp:definitions.frozenToolMissing", {
-            value0: definition.name,
+            toolName: definition.name,
           }),
         );
       }

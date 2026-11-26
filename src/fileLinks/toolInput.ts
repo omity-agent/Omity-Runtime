@@ -1,7 +1,5 @@
 import { parseDocument, stringify } from "yaml";
 
-import { trimFreeformInput } from "../runtime/freeform";
-
 interface ToolInputSource {
   input: unknown;
   rawInput?: string;
@@ -14,6 +12,14 @@ export function formatToolInput(call: ToolInputSource) {
   return call.input === undefined
     ? ""
     : stringify(call.input, { lineWidth: 0 }).replace(/\n$/u, "");
+}
+export function trimFreeformInput(input: string) {
+  const contentEnd = input.trimEnd().length;
+  if (contentEnd === 0) {
+    return "";
+  }
+  const lineBreak = input.slice(contentEnd).search(/[\r\n\u2028\u2029]/u);
+  return lineBreak === -1 ? input : input.slice(0, contentEnd + lineBreak);
 }
 export function parseToolInput(text: string) {
   if (!text) {

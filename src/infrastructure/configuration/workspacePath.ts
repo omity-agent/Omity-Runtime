@@ -48,7 +48,7 @@ function expandDollarVariables(value: string, env: Env) {
 function envValue(name: string, env: Env) {
   const value = env[name] ?? env[caseInsensitiveEnvName(name, env)];
   if (value === undefined) {
-    throw new Error(localize("configuration:workspace.environmentMissing", { value0: name }));
+    throw new Error(localize("configuration:workspace.environmentMissing", { variableName: name }));
   }
   return value;
 }

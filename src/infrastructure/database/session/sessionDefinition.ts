@@ -1,4 +1,4 @@
-import { DomainError } from "../../../errors";
+import { DomainError } from "../../../failures/domain";
 import { localize } from "../../../i18n/server";
 import type { ModelPrefixSettings, ModelSettings, Settings } from "../../../types";
 import type { LoadedMcp } from "../../mcp/tools/catalog";
@@ -31,7 +31,7 @@ export function createSessionDefinition(
       throw new DomainError(
         "HOOK_SELECTION_INVALID",
         localize("database:session.hookMissing", {
-          value0: id,
+          hookId: id,
         }),
       );
     }

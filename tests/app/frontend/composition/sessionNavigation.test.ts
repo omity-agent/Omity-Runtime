@@ -35,6 +35,7 @@ test.each(["wide", "compact"] as const)(
       history = page.getByRole("region", { name: "项目会话" }),
       selectedProject = projects.locator('button[aria-pressed="true"]');
     await browserExpect(running.getByRole("link")).toHaveCount(3);
+    await browserExpect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
     expect(
       await page
         .locator("aside")
@@ -52,8 +53,11 @@ test.each(["wide", "compact"] as const)(
     await browserExpect(selectedProject).toHaveAttribute("title", projectPaths[0]!);
     await projects.getByRole("button", { name: /beacon/u }).click();
     await browserExpect(history.getByRole("link")).toHaveCount(1);
-    await emitState(page, "session", { ...fixtureSessions[0]!, status: "idle" });
-    await browserExpect(running.getByRole("link", { name: /Working/u })).toBeVisible();
+    const updatedAt = Math.floor(Date.now() / 1000) - 120;
+    await emitState(page, "session", { ...fixtureSessions[0]!, status: "idle", updatedAt });
+    await browserExpect(running.getByRole("link", { name: /Working/u }).locator("time")).toHaveText(
+      "2分钟前",
+    );
     await browserExpect(history.getByRole("link", { name: "Other" })).toBeVisible();
     await running.getByRole("link", { name: /Working/u }).click();
     await browserExpect(page).toHaveURL(/#\/sessions\/working$/u);

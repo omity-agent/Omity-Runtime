@@ -1,10 +1,10 @@
 import { Checkbox, RadioGroup } from "@ark-ui/react";
 import { Check } from "lucide-react";
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 import { stack } from "styled-system/patterns";
 
-import { useTranslation } from "../../../../i18n";
 import type { AskUserQuestion } from "../../toolActions";
 import { choiceOption } from "./choiceOption";
 
@@ -23,7 +23,7 @@ export function ChoiceOptions({
   selectedOptions: string[];
   onOptionsChange: (options: string[]) => void;
 }) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation("conversation"),
     handleRadioChange = useCallback(
       ({ value }: { value: string | null }) => onOptionsChange(value ? [value] : []),
       [onOptionsChange],
@@ -48,7 +48,7 @@ export function ChoiceOptions({
       onValueChange={handleRadioChange}
       value={selectedOptions[0] ?? ""}
     >
-      <RadioGroup.Label className={optionLabel}>{t("conversation:selectOne")}</RadioGroup.Label>
+      <RadioGroup.Label className={optionLabel}>{t("selectOne")}</RadioGroup.Label>
       <div className={optionList}>
         {question.options.map((option) => (
           <RadioGroup.Item className={radioClasses.root} key={option} value={option}>

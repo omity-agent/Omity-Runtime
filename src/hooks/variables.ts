@@ -28,7 +28,7 @@ export function resolveHookInput(
   return resolvePlaceholders(input, {
     dynamic: (name) => hookVariableValue(name, variables),
     session: { cwd: variables.cwd, session: variables.session },
-    source: localize("hooks:variables.inputLabel", { value0: id }),
+    source: localize("hooks:variables.inputLabel", { hookId: id }),
   });
 }
 export function isHookOutputVariable(name: string) {
@@ -42,7 +42,7 @@ function hookVariableValue(name: string, variables: HookVariables) {
   const output = selectOutput(name, reference, variables.toolOutputs);
   if (reference.field === "structuredOutput" && !(reference.field in output)) {
     throw new Error(
-      localize("hooks:variables.structuredOutputMissing", { value0: formatVariable(name) }),
+      localize("hooks:variables.structuredOutputMissing", { variable: formatVariable(name) }),
     );
   }
   const value = output[reference.field];
@@ -57,7 +57,7 @@ function parseOutputReference(name: string): ToolOutputReference | undefined {
   }
   const match = outputVariablePattern.exec(name);
   if (!match) {
-    throw new Error(localize("hooks:variables.formatInvalid", { value0: formatVariable(name) }));
+    throw new Error(localize("hooks:variables.formatInvalid", { variable: formatVariable(name) }));
   }
   const { field, order, ordinalText, path } = match.groups ?? {},
     ordinal = Number(ordinalText);
@@ -66,7 +66,7 @@ function parseOutputReference(name: string): ToolOutputReference | undefined {
     (field !== "output" && field !== "structuredOutput") ||
     !Number.isSafeInteger(ordinal)
   ) {
-    throw new Error(localize("hooks:variables.indexInvalid", { value0: formatVariable(name) }));
+    throw new Error(localize("hooks:variables.indexInvalid", { variable: formatVariable(name) }));
   }
   return { field, order, ordinal, path: path?.split(".") ?? [] };
 }
@@ -81,9 +81,9 @@ function selectOutput(
   if (!output) {
     throw new Error(
       localize("hooks:variables.indexOutOfRange", {
-        value0: formatVariable(name),
-        value1: reference.ordinal.toString(),
-        value2: outputs.length.toString(),
+        variable: formatVariable(name),
+        requestedIndex: reference.ordinal.toString(),
+        outputCount: outputs.length.toString(),
       }),
     );
   }
@@ -101,8 +101,8 @@ function readPath(value: unknown, path: string[], variable: string): unknown {
       ) {
         throw new Error(
           localize("hooks:variables.fieldMissing", {
-            value0: formatVariable(variable),
-            value1: segment,
+            variable: formatVariable(variable),
+            fieldName: segment,
           }),
         );
       }
@@ -112,8 +112,8 @@ function readPath(value: unknown, path: string[], variable: string): unknown {
     } else {
       throw new Error(
         localize("hooks:variables.pathFieldMissing", {
-          value0: formatVariable(variable),
-          value1: segment,
+          variable: formatVariable(variable),
+          fieldName: segment,
         }),
       );
     }

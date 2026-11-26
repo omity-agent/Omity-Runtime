@@ -40,7 +40,7 @@ export function restrictedModelFetch(api: ModelApi, fetch?: OutboundFetch) {
           : [tool.type ?? (api === "messages" ? "custom" : undefined)];
       for (const type of types) {
         if (!modelToolPolicy.allowedTypes[api].some((allowed) => allowed === type)) {
-          throw new Error(localize("agent:model.toolTypeDisabled", { value0: String(type) }));
+          throw new Error(localize("agent:model.toolTypeDisabled", { toolType: String(type) }));
         }
       }
       if (api === "generate-content") {
@@ -50,7 +50,7 @@ export function restrictedModelFetch(api: ModelApi, fetch?: OutboundFetch) {
     for (const name of modelToolPolicy.blockedOptions) {
       const value = body[name];
       if (value != null && !(Array.isArray(value) && value.length === 0)) {
-        throw new Error(localize("agent:model.optionDisabled", { value0: name }));
+        throw new Error(localize("agent:model.optionDisabled", { optionName: name }));
       }
     }
     if (api === "interactions" || api === "generate-content") {

@@ -25,7 +25,7 @@ export class ToolExecutions {
   }
   begin(callId: string, parentSignal?: AbortSignal): ToolExecutionHandle {
     if (this.executions.has(callId)) {
-      throw new Error(localize("agent:tool.alreadyRunning", { value0: callId }));
+      throw new Error(localize("agent:tool.alreadyRunning", { callId }));
     }
     const execution: ToolExecution = { controller: new AbortController() };
     this.executions.set(callId, execution);

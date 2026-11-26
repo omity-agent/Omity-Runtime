@@ -4,11 +4,13 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { createRoot } from "react-dom/client";
 
 import { App } from "./App";
-import { i18nReady, localize } from "./i18n";
+import { browserI18n, i18nReady, localize } from "./i18n";
 import { reportError } from "./services/errors";
 import { createQueryClient } from "./services/remoteStore";
 
 await i18nReady;
+syncDocumentLanguage();
+browserI18n.on("languageChanged", syncDocumentLanguage);
 const root = document.querySelector("#root");
 if (!root) {
   throw new Error(localize("diagnostics:runtime.rootMissing"));
@@ -29,3 +31,9 @@ createRoot(root, {
     <App />
   </QueryClientProvider>,
 );
+
+function syncDocumentLanguage() {
+  const language = browserI18n.resolvedLanguage ?? browserI18n.language;
+  document.documentElement.lang = language;
+  document.documentElement.dir = browserI18n.dir(language);
+}

@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { HumanMessage } from "@langchain/core/messages";
 import { and, eq, lt, sql } from "drizzle-orm";
 
-import { DomainError } from "../../../errors";
+import { DomainError } from "../../../failures/domain";
 import { copyHookUsage } from "../../../hooks/storage/usage";
 import { localize } from "../../../i18n/server";
 import { createRunRecord } from "../../../infrastructure/database/records/execution/runs/mutations";
@@ -58,7 +58,7 @@ export function forkConversation(
 function readForkPoint(db: Database, sessionId: string, messageId: number) {
   if (!Number.isSafeInteger(messageId) || messageId <= 0) {
     throw new Error(
-      localize("application:fork.messageIdInvalid", { value0: messageId.toString() }),
+      localize("application:fork.messageIdInvalid", { messageId: messageId.toString() }),
     );
   }
   const row = sessionDatabase(db)
@@ -69,7 +69,7 @@ function readForkPoint(db: Database, sessionId: string, messageId: number) {
   if (row?.position == null) {
     throw new DomainError(
       "FORK_MESSAGE_NOT_FOUND",
-      localize("application:fork.messageMissing", { value0: messageId.toString() }),
+      localize("application:fork.messageMissing", { messageId: messageId.toString() }),
     );
   }
   const message = decodeMessage(row.messageJson);

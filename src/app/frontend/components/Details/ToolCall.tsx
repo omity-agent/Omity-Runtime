@@ -1,4 +1,5 @@
 import { Wrench } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
 import { formatToolInput } from "../../../../fileLinks/toolInput";
@@ -8,7 +9,6 @@ import {
   type DisplayToolOutput,
   type ToolCallPhase,
 } from "../../../timeline";
-import { useTranslation } from "../../i18n";
 import { formatTokens } from "../../presentation/tokenUnits";
 import { HighlightedCode } from "../HighlightedCode";
 import { Frame } from "./Frame";
@@ -59,7 +59,7 @@ export function ToolCall({
   output?: DisplayToolOutput;
   phase: ToolCallPhase;
 }) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation("conversation"),
     cancellable = canCancelToolCall(phase, call.providerExecuted),
     running = phase === "running",
     showOutput = output !== undefined || running,
@@ -78,7 +78,7 @@ export function ToolCall({
       accessory={frameAccessory}
       expandedInitially={latest}
       icon={Wrench}
-      label={`${t("conversation:toolCall")}: ${call.name}`}
+      label={t("toolCall", { toolName: call.name })}
       stateKey={`tool:${call.id}:${latest ? "latest" : "settled"}`}
       title={call.name}
       tone="tool"
@@ -86,8 +86,8 @@ export function ToolCall({
       <div className={ioGrid}>
         <section className={ioPanel}>
           <p className={panelTitle}>
-            <span>{t("conversation:input")}</span>
-            <span className={tokenCount}>{formatTokens(call.inputTokens)}</span>
+            <span>{t("input")}</span>
+            <span className={tokenCount}>{formatTokens(t, call.inputTokens)}</span>
           </p>
           <HighlightedCode
             autoFollow={latest}
@@ -100,11 +100,9 @@ export function ToolCall({
         {showOutput ? (
           <section className={ioPanel}>
             <p className={panelTitle}>
-              <span>{t("conversation:output")}</span>
+              <span>{t("output")}</span>
               <span className={tokenCount}>
-                {output
-                  ? formatTokens(output.outputTokens ?? 0)
-                  : t("conversation:unavailableTokens")}
+                {output ? formatTokens(t, output.outputTokens ?? 0) : t("tokens.unavailable")}
               </span>
             </p>
             {showOutputCode ? (

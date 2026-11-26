@@ -1,5 +1,5 @@
 import { parseToolInput } from "../../../fileLinks/toolInput";
-import { localize } from "../../../i18n/server";
+import { localize } from "../../frontend/i18n";
 import type { DisplayEvent } from "../contracts/projection";
 
 type ToolDelta = Extract<DisplayEvent, { kind: "tool_call_delta" }>["value"];
@@ -29,7 +29,7 @@ export function beginToolPart(delta: ToolDelta): ToolPart {
 }
 export function extendToolPart(part: ToolPart, delta: ToolDelta) {
   if (part.index !== delta.index) {
-    throw new Error(localize("application:timeline.streamPartIndexChanged"));
+    throw new Error(localize("diagnostics:transcript.streamPartIndexChanged"));
   }
   if (delta.argumentsText === undefined) {
     part.args += delta.argumentsDelta ?? "";

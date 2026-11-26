@@ -92,6 +92,6 @@ function messageRole(message: BaseMessage): DisplayMessage["role"] {
     return "tool";
   }
   throw new Error(
-    localize("application:transcript.messageTypeUnsupported", { value0: message.type }),
+    localize("application:transcript.messageTypeUnsupported", { messageType: message.type }),
   );
 }

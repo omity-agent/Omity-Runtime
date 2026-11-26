@@ -1,6 +1,6 @@
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
-import { useTranslation } from "../../../i18n";
 import { reportPromiseErrors } from "../../../services/errors";
 import { Button } from "../../ui";
 import { configuration, setupFirst } from "../preparationGrid";
@@ -22,25 +22,25 @@ export function ConfigurationPanel({
   selectedProfile?: string;
   selection: ReturnType<typeof useSessionPreferences>;
 }) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation(["preparation", "conversation"]),
     handleRetry = useCallback(() => reportPromiseErrors(selection.reload()), [selection]),
     panels = [
       {
-        emptyLabel: t("preparation:noHooks"),
-        label: t("preparation:hooks"),
+        emptyLabel: t("noHooks"),
+        label: t("hooks"),
         sections: [{ onChange: selection.handleHookChange, options: selection.hooks }],
       },
       {
-        emptyLabel: t("preparation:noTools"),
+        emptyLabel: t("noTools"),
         label: t("conversation:tool"),
         sections: [
           {
-            label: t("preparation:builtIn"),
+            label: t("builtIn"),
             onChange: selection.handleBuiltInChange,
             options: selection.builtInTools,
           },
           {
-            label: t("preparation:mcpServers"),
+            label: t("mcpServers"),
             onChange: selection.handleServerChange,
             options: selection.mcpServers,
           },
@@ -62,9 +62,9 @@ export function ConfigurationPanel({
       />
       {selection.error ? (
         <div className={setupFirst} role="alert">
-          <p>{t("preparation:optionsLoadFailed", { message: selection.error.message })}</p>
+          <p>{t("optionsLoadFailed", { message: selection.error.message })}</p>
           <Button disabled={disabled} onClick={handleRetry} type="button">
-            {t("preparation:retry")}
+            {t("retry")}
           </Button>
         </div>
       ) : selection.ready ? (
@@ -78,7 +78,7 @@ export function ConfigurationPanel({
           />
         ))
       ) : (
-        <output className={setupFirst}>{t("preparation:loadingOptions")}</output>
+        <output className={setupFirst}>{t("loadingOptions")}</output>
       )}
     </div>
   );

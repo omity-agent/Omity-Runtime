@@ -75,7 +75,7 @@ function recoverConsumedAppends(ctx: HostContext, run: ActiveRun, state: Boundar
     absentIds = [...consumedIds].filter((id) => !recoveredIds.has(id));
   if (absentIds.length > 0) {
     throw new Error(
-      localize("runtime:append.userMessageMissing", { value0: absentIds.join(", ") }),
+      localize("runtime:append.userMessageMissing", { messageIds: absentIds.join(", ") }),
     );
   }
   ctx.logger.warn(localize("runtime:append.uncommittedAfterCheckpointResume"), {

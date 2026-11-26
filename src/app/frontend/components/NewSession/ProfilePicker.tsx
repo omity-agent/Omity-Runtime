@@ -1,6 +1,6 @@
 import { type ChangeEvent, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
-import { useTranslation } from "../../i18n";
 import { Field, Select } from "../ui";
 
 export function ProfilePicker({
@@ -14,7 +14,7 @@ export function ProfilePicker({
   selected?: string;
   onChange: (profile?: string) => void;
 }) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation("preparation"),
     change = useCallback(
       (event: ChangeEvent<HTMLSelectElement>) => {
         onChange(event.target.value || undefined);
@@ -23,9 +23,9 @@ export function ProfilePicker({
     );
   return (
     <Field.Root disabled={disabled}>
-      <Field.Label>{t("preparation:profile")}</Field.Label>
+      <Field.Label>{t("profile")}</Field.Label>
       <Select name="profile" onChange={change} value={selected ?? ""}>
-        <option value="">{t("preparation:defaultProfile")}</option>
+        <option value="">{t("defaultProfile")}</option>
         {available.map((name) => (
           <option key={name} value={name}>
             {name}

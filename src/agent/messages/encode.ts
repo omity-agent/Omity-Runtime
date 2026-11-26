@@ -41,7 +41,7 @@ export function toModelMessages(
         role: "tool",
       };
     }
-    throw new Error(localize("agent:messages.typeUnsupported", { value0: message.type }));
+    throw new Error(localize("agent:messages.typeUnsupported", { messageType: message.type }));
   });
 }
 function modelToolCall(
@@ -49,7 +49,7 @@ function modelToolCall(
   call: NonNullable<AIMessage["tool_calls"]>[number],
 ): ModelToolCallPart {
   if (!call.id) {
-    throw new Error(localize("agent:messages.toolCallIdMissing", { value0: call.name }));
+    throw new Error(localize("agent:messages.toolCallIdMissing", { toolName: call.name }));
   }
   const part: ModelToolCallPart = {
       input: freeformCallInput(call) ?? call.args,

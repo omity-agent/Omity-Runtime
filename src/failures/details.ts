@@ -2,7 +2,6 @@ import { isEqual, isPlainObject as isRecord, omit } from "es-toolkit";
 import { serializeError } from "serialize-error";
 import { z } from "zod";
 
-import { localize } from "../i18n/server";
 import { structuredErrorNames, uninformativeCauseNames } from "./classification";
 import { describeThrownValue } from "./thrownValues";
 
@@ -49,39 +48,21 @@ export function captureError(error: unknown): ErrorDetails {
   }
   return errorDetailsSchema.parse(adaptSerializedError(isRecord(serialized) ? serialized : {}));
 }
-export function stringifyError(error: ErrorDetails) {
-  return JSON.stringify(error);
-}
 export function summarizeError(error: ErrorDetails): ErrorSummary {
-  const levels: ErrorSummaryItem[] = [],
-    embedded: unknown[] = [];
-  let current: ErrorDetails | undefined = error;
+  const root = summarizeLevel(error),
+    causes: ErrorSummaryItem[] = [],
+    embedded = embeddedErrorLevels(error);
+  let current = error.cause;
   while (current) {
     const level = summarizeLevel(current),
-      uninformative =
-        current !== error &&
-        !level.message &&
-        !level.details &&
-        uninformativeCauseNames.has(level.name);
+      uninformative = !level.message && !level.details && uninformativeCauseNames.has(level.name);
     if (!uninformative && !embedded.some((value) => isEqual(value, level))) {
-      levels.push(level);
+      causes.push(level);
     }
     embedded.push(...embeddedErrorLevels(current));
     current = current.cause;
   }
-  const [root, ...causes] = levels;
-  if (!root) {
-    throw new Error(localize("errors:failure.rootErrorMissing"));
-  }
   return causes.length > 0 ? { ...root, causes } : root;
-}
-export function parseError(value: string): ErrorDetails {
-  const parsed: unknown = JSON.parse(value),
-    result = errorDetailsSchema.safeParse(parsed);
-  if (!result.success) {
-    throw new Error(localize("errors:failure.invalidQueueDetails"));
-  }
-  return result.data;
 }
 function adaptSerializedError(
   serialized: Record<string, unknown>,

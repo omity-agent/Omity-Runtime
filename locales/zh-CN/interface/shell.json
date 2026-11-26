@@ -5,12 +5,17 @@
   "recentSessions": "近期",
   "projects": "项目",
   "projectSessions": "项目会话",
-  "runningSessionCount": "{{count}} 个运行中的会话",
-  "unreadSessionCount": "{{count}} 个未读会话",
+  "runningSessionCount_other": "{{count, number}} 个运行中的会话",
+  "unreadSessionCount_other": "{{count, number}} 个未读会话",
   "newSession": "新建会话",
   "markdownSource": "显示 Markdown 源码",
   "empty": "选择或新建会话",
-  "sessionStoppedUnread": "会话已停止，尚未查看",
+  "sessionWindowTitle": "{{status}} · {{title}} · {{brand}}",
+  "sessionEntry": {
+    "tooltip": "{{title}}\n{{workspace}}",
+    "unreadLabel": "{{title}}, 会话已停止，尚未查看",
+    "unreadTooltip": "{{title}} · 会话已停止，尚未查看\n{{workspace}}"
+  },
   "status": {
     "tool": "工具",
     "waiting": "等待响应",
@@ -18,6 +23,7 @@
     "idle": "空闲",
     "pausing": "正在暂停",
     "paused": "暂停",
+    "stepping": "单步执行中",
     "error": "错误"
   }
 }

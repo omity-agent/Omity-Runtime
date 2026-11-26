@@ -52,24 +52,26 @@ export function readContentSyncEvent(event: Event) {
 }
 function readEventData<T>(event: Event, schema: z.ZodType<T>, name: string) {
   if (!("data" in event) || typeof event.data !== "string") {
-    throw new Error(localize("diagnostics:events.dataMissing", { value0: name }));
+    throw new Error(localize("diagnostics:events.dataMissing", { eventName: name }));
   }
   let value: unknown;
   try {
     value = JSON.parse(event.data) as unknown;
   } catch (error) {
-    throw new Error(localize("diagnostics:events.jsonInvalid", { value0: name }), { cause: error });
+    throw new Error(localize("diagnostics:events.jsonInvalid", { eventName: name }), {
+      cause: error,
+    });
   }
   const parsed = schema.safeParse(value);
   if (!parsed.success) {
-    throw new Error(localize("diagnostics:events.payloadInvalid", { value0: name }));
+    throw new Error(localize("diagnostics:events.payloadInvalid", { eventName: name }));
   }
   return parsed.data;
 }
 function readNumericEventId(event: Event, name: string) {
   const id = Number(readEventId(event, name));
   if (!Number.isSafeInteger(id) || id < 0) {
-    throw new Error(localize("diagnostics:events.idInvalid", { value0: name }));
+    throw new Error(localize("diagnostics:events.idInvalid", { eventName: name }));
   }
   return id;
 }
@@ -78,12 +80,12 @@ function readStateEventId(event: Event, name: string) {
   if (
     !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}:[1-9]\d*$/iu.test(id)
   ) {
-    throw new Error(localize("diagnostics:events.stateIdInvalid", { value0: name }));
+    throw new Error(localize("diagnostics:events.stateIdInvalid", { eventName: name }));
   }
 }
 function readEventId(event: Event, name: string) {
   if (!("lastEventId" in event) || typeof event.lastEventId !== "string" || !event.lastEventId) {
-    throw new Error(localize("diagnostics:events.idMissing", { value0: name }));
+    throw new Error(localize("diagnostics:events.idMissing", { eventName: name }));
   }
   return event.lastEventId;
 }

@@ -1,8 +1,8 @@
 import { Bot, UserRound } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
-import { useTranslation } from "../../../i18n";
 import { composerInput, composerLayout, draftDock } from "../../Chat/Composer/arrangement";
 import { ActionPanel } from "../../Chat/Composer/controls/ActionPanel";
 import { MarkdownEditor } from "../../Chat/MarkdownEditor";
@@ -31,8 +31,8 @@ export function MessageEditor({
   onPasteFiles?: (files: File[]) => string | undefined;
   onSubmit: () => void;
 }) {
-  const { t } = useTranslation(),
-    label = t(speaker === "user" ? "conversation:user" : "conversation:assistant"),
+  const { t } = useTranslation("conversation"),
+    label = t(speaker === "user" ? "user" : "assistant"),
     RoleIcon = speaker === "user" ? UserRound : Bot,
     footer = useMemo(
       () => (
@@ -53,7 +53,7 @@ export function MessageEditor({
             onNavigate={input.handleNavigate}
             onPasteFiles={onPasteFiles}
             onSubmit={onSubmit}
-            placeholder={pending ? t("conversation:messagePlaceholder") : ""}
+            placeholder={pending ? t("messagePlaceholder") : ""}
             value={input.content}
           />
         </div>

@@ -65,7 +65,7 @@ export class BrowserSession {
     }
     await using cleanup = new AsyncDisposableStack();
     const page = cleanup.use(
-      await this.browser.newPage({ locale: "zh-CN", viewport: regressionViewport }),
+      await this.browser.newPage({ locale: "en-US", viewport: regressionViewport }),
     );
     await setup?.(page);
     await page.goto(`${this.origin}${path}`, { waitUntil: "networkidle" });

@@ -68,7 +68,7 @@ export class AccessStore {
       .returning({ id: credentials.id })
       .all();
     if (updated.length === 0) {
-      throw new Error(localize("access:store.credentialMissing", { value0: id }));
+      throw new Error(localize("access:store.credentialMissing", { credentialId: id }));
     }
   }
   createChallenge(purpose: "registration" | "authentication", challenge: string, ttlMs: number) {

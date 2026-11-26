@@ -38,9 +38,7 @@ function replaceSessionStorage(
       .get(),
     previousRevision = previous?.revision ?? -1;
   if (!Number.isSafeInteger(previousRevision) || previousRevision >= Number.MAX_SAFE_INTEGER) {
-    throw new Error(
-      localize("database:maintenance.transcriptRevisionExhausted", { value0: sessionId }),
-    );
+    throw new Error(localize("database:maintenance.transcriptRevisionExhausted", { sessionId }));
   }
   orm.delete(sessions).where(eq(sessions.id, sessionId)).run();
   createSessionRecord(

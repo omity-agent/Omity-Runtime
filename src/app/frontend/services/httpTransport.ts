@@ -38,7 +38,7 @@ export async function request<T>(
   if (!parsed.success) {
     throw new Error(
       localize("diagnostics:api.successResponseInvalid", {
-        value0: response.status.toString(),
+        status: response.status.toString(),
       }),
       {
         cause: parsed.error,
@@ -54,7 +54,7 @@ async function fetchApi(input: RequestInfo | URL, init?: RequestInit): Promise<R
     if (!parsed.success) {
       throw new Error(
         localize("diagnostics:api.errorResponseInvalid", {
-          value0: response.status.toString(),
+          status: response.status.toString(),
         }),
       );
     }

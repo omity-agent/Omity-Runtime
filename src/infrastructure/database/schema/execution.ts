@@ -10,7 +10,8 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
-import { type ErrorDetails, parseError, stringifyError } from "../../../failures/details";
+import type { ErrorDetails } from "../../../failures/details";
+import { parseError, stringifyError } from "../../../failures/persistence";
 import type { RunStatus } from "../../../types";
 import { sessions } from "./session";
 

@@ -18,7 +18,9 @@ export class AsyncResourceCache<Resource extends Closeable> {
   load(key: string, initialize: () => Promise<Resource>) {
     if (this.closed) {
       return Promise.reject(
-        new Error(localize("mcp:lifecycle.initializationWhileClosing", { value0: this.name })),
+        new Error(
+          localize("mcp:lifecycle.initializationWhileClosing", { resourceName: this.name }),
+        ),
       );
     }
     const existing = this.loading.get(key);
@@ -56,7 +58,7 @@ export class AsyncResourceCache<Resource extends Closeable> {
     } catch (error) {
       if (error instanceof AggregateError) {
         error.message = localize("mcp:lifecycle.cleanupFailed", {
-          value0: this.name,
+          resourceName: this.name,
         });
       }
       throw error;

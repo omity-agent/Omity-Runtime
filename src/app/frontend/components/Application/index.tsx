@@ -9,15 +9,14 @@ import {
   useId,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 
-import { useTranslation } from "../../i18n";
 import { navigateLink, pagePath } from "../../route";
 import type { SessionInfo } from "../../services/client";
 import { useSessionAttention } from "../../services/events/attention";
 import { CredentialAction } from "../Access/CredentialAction";
 import { MarkdownSourceContext } from "../Markdown/Source";
 import { Sidebar } from "../Sidebar";
-import { statusLabelKey } from "../Sidebar/sessions";
 import { IconButton, LinkButton } from "../ui";
 import { usePanelNavigation } from "./navigation";
 import { applicationShell } from "./shell";
@@ -40,7 +39,7 @@ export function ApplicationFrame({
   sessions,
   title,
 }: Props) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation("shell"),
     queryClient = useQueryClient(),
     activeId = activeSession?.id,
     { buttonRef, showMain, showSessions, toggle } = usePanelNavigation(pageKey),
@@ -48,8 +47,8 @@ export function ApplicationFrame({
     sidebarId = useId(),
     [showSource, setShowSource] = useState(false),
     unreadIds = useSessionAttention(queryClient, showSessions ? undefined : activeId),
-    sourceLabel = t("shell:markdownSource"),
-    toggleLabel = t(showSessions ? "shell:returnToMain" : "shell:sessions"),
+    sourceLabel = t("markdownSource"),
+    toggleLabel = t(showSessions ? "returnToMain" : "sessions"),
     toggleSource = useCallback(() => setShowSource((enabled) => !enabled), [setShowSource]),
     create = useCallback(
       (event: MouseEvent<HTMLAnchorElement>) => {
@@ -68,9 +67,13 @@ export function ApplicationFrame({
       [onSelect, showMain],
     );
   useEffect(() => {
-    const brand = t("shell:brand");
+    const brand = t("brand");
     document.title = activeSession
-      ? `${t(statusLabelKey(activeSession.status))} · ${activeSession.title} · ${brand}`
+      ? t("sessionWindowTitle", {
+          brand,
+          status: t(`status.${activeSession.status}`),
+          title: activeSession.title,
+        })
       : brand;
     return () => {
       document.title = brand;
@@ -93,13 +96,13 @@ export function ApplicationFrame({
         </IconButton>
         <LinkButton
           aria-disabled={createDisabled || undefined}
-          aria-label={t("shell:newSession")}
+          aria-label={t("newSession")}
           data-disabled={createDisabled ? "" : undefined}
           href={createDisabled ? undefined : pagePath({ kind: "new" })}
           iconOnly
           onClick={createDisabled ? undefined : create}
           role={createDisabled ? "link" : undefined}
-          title={t("shell:newSession")}
+          title={t("newSession")}
           visual="ghost"
         >
           <Plus aria-hidden size={16} />
@@ -115,7 +118,7 @@ export function ApplicationFrame({
         </IconButton>
         <CredentialAction />
         <span className={classes.caption} title={title}>
-          {showSessions ? t("shell:sessions") : (title ?? t("shell:newSession"))}
+          {showSessions ? t("sessions") : (title ?? t("newSession"))}
         </span>
       </header>
       <aside className={classes.sidebar} id={sidebarId}>

@@ -33,7 +33,7 @@ function resolveStaticAsset(root: string, requestPath: string) {
   const path = normalize(decodeURIComponent(requestPath).replace(/^\/+/u, "")),
     resolved = resolve(root, path);
   if (relative(root, resolved).startsWith("..")) {
-    throw new Error(localize("http:static.pathTraversal", { value0: requestPath }));
+    throw new Error(localize("http:static.pathTraversal", { path: requestPath }));
   }
   return resolved;
 }

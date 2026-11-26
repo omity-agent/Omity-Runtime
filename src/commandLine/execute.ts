@@ -13,7 +13,7 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
       await startAppServer({
         host: command.host,
         onReady: (url) => {
-          console.log(localize("cli:output.webStarted", { value0: url }));
+          console.log(localize("cli:output.webStarted", { url }));
           openBrowser(url);
         },
         port: command.port,
@@ -23,7 +23,7 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
     }
     case "delete": {
       deleteStoredSession(command.sessionId);
-      console.log(localize("cli:output.sessionDeleted", { value0: command.sessionId }));
+      console.log(localize("cli:output.sessionDeleted", { sessionId: command.sessionId }));
       return;
     }
     case "new":
@@ -43,8 +43,8 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
       const result = appendSessionMessage(command.sessionId, command.message.join(" "));
       console.log(
         localize("cli:output.messageSent", {
-          value0: command.sessionId,
-          value1: result.inputId.toString(),
+          sessionId: command.sessionId,
+          inputId: result.inputId.toString(),
         }),
       );
       return;
@@ -58,8 +58,8 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
       const instruction = control === "step" ? "resume --step" : command.action;
       console.log(
         localize("cli:output.controlSent", {
-          value0: instruction,
-          value1: command.sessionId,
+          instruction,
+          sessionId: command.sessionId,
         }),
       );
       return;

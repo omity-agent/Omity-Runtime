@@ -14,7 +14,7 @@ export function aiModelTools(tools: ModelToolDefinition[], api: ModelApi): ToolS
   }
   for (const tool of tools) {
     if (tool.freeform && (tool.deferLoading || api !== "responses")) {
-      throw new Error(localize("agent:model.freeformToolPolicyInvalid", { value0: tool.name }));
+      throw new Error(localize("agent:model.freeformToolPolicyInvalid", { toolName: tool.name }));
     }
   }
   const strictTools = selectStrictTools(tools, api),
@@ -43,7 +43,7 @@ export function aiModelTools(tools: ModelToolDefinition[], api: ModelApi): ToolS
   if (deferred) {
     const name = api === "messages" ? "tool_search_tool_regex" : "tool_search";
     if (Object.hasOwn(result, name)) {
-      throw new Error(localize("agent:model.searchToolNameConflict", { value0: name }));
+      throw new Error(localize("agent:model.searchToolNameConflict", { toolName: name }));
     }
     result[name] =
       api === "messages"

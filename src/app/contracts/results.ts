@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import {
-  attachmentSettingsSchema,
+  createAttachmentSettingsSchema,
   frontendSettingsSchema,
 } from "../../infrastructure/configuration/settings/fieldSchemas";
 import { controlCommandSchema } from "../../types";
@@ -19,7 +19,7 @@ const integer = z.number().int(),
     name: z.string().min(1).optional(),
   });
 export const bootstrapResponseSchema = z.object({
-  attachments: attachmentSettingsSchema,
+  attachments: createAttachmentSettingsSchema(),
   cwd: z.string(),
   frontend: frontendSettingsSchema,
   profiles: z.object({

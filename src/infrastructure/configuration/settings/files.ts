@@ -48,10 +48,9 @@ export function loadUserEnvironment(path = userEnvironmentPath()) {
   }
   const result = loadDotenv({ override: false, path, quiet: true });
   if (result.error) {
-    throw new Error(
-      localize("configuration:settings.userEnvironmentLoadFailed", { value0: path }),
-      { cause: result.error },
-    );
+    throw new Error(localize("configuration:settings.userEnvironmentLoadFailed", { path }), {
+      cause: result.error,
+    });
   }
 }
 export function userSettingsDirectory() {
@@ -96,7 +95,7 @@ export function readLayeredSettingsYaml(
   if (!source) {
     throw new Error(
       localize("configuration:settings.layerParseFailed", {
-        value0: relativePath,
+        path: relativePath,
       }),
     );
   }
@@ -134,7 +133,7 @@ export function requireLayeredSettingsYaml(
   if (!file) {
     throw new Error(
       localize("configuration:settings.fileMissing", {
-        value0: bundledYamlPath(context, relativePath),
+        path: bundledYamlPath(context, relativePath),
       }),
     );
   }
@@ -155,7 +154,7 @@ export function resolveLayeredSettingsText(
   if (!path) {
     throw new Error(
       localize("configuration:settings.textFileMissing", {
-        value0: relativePath,
+        path: relativePath,
       }),
     );
   }

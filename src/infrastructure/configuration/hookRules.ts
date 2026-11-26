@@ -28,7 +28,7 @@ const hookSchema = z.strictObject({
           context.addIssue({
             code: "custom",
             message: localize("configuration:hooks.duplicateId", {
-              value0: hook.id,
+              hookId: hook.id,
             }),
             path: ["hooks", index, "id"],
           });

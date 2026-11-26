@@ -12,7 +12,8 @@ import {
   openSessionDatabase,
 } from "../../infrastructure/database/sqlite/connection";
 import { openStoredSession } from "../../storedSessions";
-import { emptyPreparation, parsePreparation } from "./preparation";
+import { parsePreparation } from "./draftInput";
+import { emptyPreparation } from "./preparation";
 
 export function writeSessionDraft(sessionId: string, content: string, revision: number) {
   using database = openStoredSession(sessionId);

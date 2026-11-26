@@ -31,7 +31,7 @@ export function encodeMessage(message: BaseMessage, mode: MessageStorageMode) {
   }
   throw new Error(
     localize("database:messages.typeUnsupported", {
-      value0: message.type,
+      messageType: message.type,
     }),
   );
 }

@@ -6,13 +6,13 @@
     "temporaryStorageOnly": "仅 Fork 草稿使用临时存储"
   },
   "api": {
-    "successResponseInvalid": "API 成功响应结构无效：HTTP {{value0}}",
-    "errorResponseInvalid": "API 错误响应结构无效：HTTP {{value0}}"
+    "successResponseInvalid": "API 成功响应结构无效：HTTP {{status}}",
+    "errorResponseInvalid": "API 错误响应结构无效：HTTP {{status}}"
   },
   "fork": {
     "actionInProgress": "正在处理此 Fork 的操作",
     "pendingSessionMissing": "没有等待创建的 Fork 会话",
-    "revisionOverflow": "Composer 草稿版本号溢出：{{value0}}"
+    "revisionOverflow": "Composer 草稿版本号溢出：{{sessionId}}"
   },
   "transcript": {
     "sessionIdMissing": "Transcript 查询缺少 sessionId",
@@ -20,17 +20,25 @@
     "virtualRowMissing": "详情卡片缺少虚拟行",
     "scrollContainerMissing": "对话列表缺少滚动容器",
     "copyAnchorMissing": "消息复制按钮缺少定位容器",
-    "virtualOffsetMissing": "对话虚拟行缺少垂直偏移量"
+    "virtualOffsetMissing": "对话虚拟行缺少垂直偏移量",
+    "toolStartStreamIdentityMissing": "工具开始事件缺少流身份：{{streamId}}",
+    "toolStreamCallIdMismatch": "工具流身份绑定了不同的正式调用 ID：{{previousCallId}}、{{receivedCallId}}",
+    "toolStreamCallIdConflict": "工具流身份绑定了不同的正式调用 ID：{{firstCallId}}、{{secondCallId}}",
+    "formalCallMultipleStreams": "正式工具调用 ID {{callId}} 绑定了多个流身份",
+    "formalCallMultipleStreamParts": "正式工具调用 ID {{callId}} 绑定了多个流身份",
+    "streamPartIndexChanged": "工具流片段的索引发生变化",
+    "streamPartTypeChanged": "流片段 {{partId}} 的类型发生变化",
+    "streamPartMissing": "流消息缺少片段：{{partId}}"
   },
   "events": {
     "deltaIdMismatch": "SSE delta 事件 ID 与 data.id 不一致",
     "syncCursorMismatch": "SSE sync 事件 ID 与 eventCursor 不一致",
-    "dataMissing": "SSE {{value0}} 事件缺少字符串 data",
-    "jsonInvalid": "SSE {{value0}} 事件 JSON 无效",
-    "payloadInvalid": "SSE {{value0}} 事件结构无效",
-    "idInvalid": "SSE {{value0}} 事件 ID 无效",
-    "stateIdInvalid": "SSE {{value0}} 事件 ID 无效",
-    "idMissing": "SSE {{value0}} 事件缺少 ID"
+    "dataMissing": "SSE {{eventName}} 事件缺少字符串 data",
+    "jsonInvalid": "SSE {{eventName}} 事件 JSON 无效",
+    "payloadInvalid": "SSE {{eventName}} 事件结构无效",
+    "idInvalid": "SSE {{eventName}} 事件 ID 无效",
+    "stateIdInvalid": "SSE {{eventName}} 事件 ID 无效",
+    "idMissing": "SSE {{eventName}} 事件缺少 ID"
   },
   "markdown": {
     "contextMissing": "Markdown 渲染组件缺少上下文",

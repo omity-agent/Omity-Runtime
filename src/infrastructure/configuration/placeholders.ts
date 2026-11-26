@@ -28,7 +28,7 @@ export interface PlaceholderOptions {
 export function readSettingsText(path: string, options: Omit<PlaceholderOptions, "source">) {
   const value = resolveString(readFileSync(path, "utf8"), { ...options, source: path });
   if (typeof value !== "string") {
-    throw new TypeError(localize("configuration:placeholders.textMustBeString", { value0: path }));
+    throw new TypeError(localize("configuration:placeholders.textMustBeString", { path }));
   }
   return value;
 }
@@ -45,12 +45,12 @@ export function readSettingsYamlFile(path: string) {
     if (errors.length > 0) {
       throw new AggregateError(
         errors,
-        localize("configuration:placeholders.yamlParseFailed", { value0: path }),
+        localize("configuration:placeholders.yamlParseFailed", { path }),
       );
     }
   }
   if (documents.length > 1) {
-    throw new Error(localize("configuration:placeholders.multipleDocuments", { value0: path }));
+    throw new Error(localize("configuration:placeholders.multipleDocuments", { path }));
   }
   return {
     empty: "empty" in documents,
@@ -110,8 +110,8 @@ function resolveString(value: string, options: PlaceholderOptions) {
     if (!isScalar(resolved.value)) {
       throw new Error(
         localize("configuration:placeholders.nonScalarEmbedded", {
-          value0: options.source,
-          value1: placeholder,
+          path: options.source,
+          placeholder,
         }),
       );
     }
@@ -132,8 +132,8 @@ function resolveVariable(name: string, options: PlaceholderOptions): Placeholder
     }
     throw new Error(
       localize("configuration:placeholders.sessionValueMissing", {
-        value0: options.source,
-        value1: formatPlaceholder(name),
+        path: options.source,
+        placeholder: formatPlaceholder(name),
       }),
     );
   }
@@ -149,8 +149,8 @@ function resolveVariable(name: string, options: PlaceholderOptions): Placeholder
     if (value === undefined) {
       throw new Error(
         localize("configuration:placeholders.environmentMissing", {
-          value0: options.source,
-          value1: name,
+          path: options.source,
+          variableName: name,
         }),
       );
     }
@@ -158,8 +158,8 @@ function resolveVariable(name: string, options: PlaceholderOptions): Placeholder
   }
   throw new Error(
     localize("configuration:placeholders.unknown", {
-      value0: options.source,
-      value1: formatPlaceholder(name),
+      path: options.source,
+      placeholder: formatPlaceholder(name),
     }),
   );
 }
@@ -168,7 +168,7 @@ function requireName(match: RegExpExecArray) {
   if (!name) {
     throw new Error(
       localize("configuration:placeholders.invalid", {
-        value0: match[0],
+        placeholder: match[0],
       }),
     );
   }

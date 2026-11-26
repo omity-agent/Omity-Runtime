@@ -72,9 +72,7 @@ export function structuredRequestOptions(model: ModelSettings): {
   }
   if (api === "interactions") {
     if (effort === "none" || effort === "xhigh" || effort === "max") {
-      throw new Error(
-        localize("agent:model.interactionsReasoningEffortUnsupported", { value0: effort }),
-      );
+      throw new Error(localize("agent:model.interactionsReasoningEffortUnsupported", { effort }));
     }
     return {
       providerOptions: {
@@ -139,7 +137,9 @@ function providerOptions(model: ModelSettings, codexVersion?: string) {
   }
   const apiKey = process.env[model.apiKeyEnv];
   if (!apiKey) {
-    throw new Error(localize("agent:model.apiKeyEnvironmentMissing", { value0: model.apiKeyEnv }));
+    throw new Error(
+      localize("agent:model.apiKeyEnvironmentMissing", { variableName: model.apiKeyEnv }),
+    );
   }
   const api = configuredModelApi(model),
     fetch =

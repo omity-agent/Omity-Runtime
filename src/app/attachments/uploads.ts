@@ -1,20 +1,21 @@
 import { mkdir, open, rm } from "node:fs/promises";
 import { join } from "node:path";
 
-import { DomainError } from "../../errors";
+import { DomainError } from "../../failures/domain";
 import { hasErrorCode } from "../../failures/thrownValues";
-import { localize } from "../../i18n/server";
+import { serverI18n } from "../../i18n/server";
 import { resolveSessionPaths } from "../../infrastructure/configuration/sessionPaths";
 import { claimShortIdAsync } from "../../infrastructure/randomId";
 import {
   attachmentIds,
   type AttachmentSettings,
   fileSuffix,
-  materializeAttachmentPaths,
-  missingAttachment,
   type PendingAttachment,
+  replaceAttachmentPlaceholders,
   validateAttachmentBatch,
 } from "./contract";
+
+const t = serverI18n.getFixedT(null, "attachments");
 
 export async function withSavedAttachments<Result>(
   settings: AttachmentSettings,
@@ -52,7 +53,15 @@ export async function withSavedAttachments<Result>(
       });
     paths.set(id, pathFor(fileId));
   }
-  const result = await consume((content) => materializeAttachmentPaths(content, paths));
+  const result = await consume((content) =>
+    replaceAttachmentPlaceholders(content, (id) => {
+      const path = paths.get(id);
+      if (path === undefined) {
+        throw missingAttachment(id);
+      }
+      return path.replaceAll("\\", "/");
+    }),
+  );
   rollback.move();
   return result;
 }
@@ -66,7 +75,7 @@ function validateSelected(
     if (ids.has(attachment.id)) {
       throw new DomainError(
         "ATTACHMENT_INVALID",
-        localize("application:attachments.duplicateId", { value0: attachment.id }),
+        t("duplicateId", { attachmentId: attachment.id }),
       );
     }
     ids.add(attachment.id);
@@ -74,10 +83,14 @@ function validateSelected(
   validateAttachmentBatch(
     selected.map(({ file }) => file),
     settings,
+    t,
   );
   for (const id of referenced) {
     if (!ids.has(id)) {
       throw missingAttachment(id);
     }
   }
+}
+function missingAttachment(attachmentId: string) {
+  return new DomainError("ATTACHMENT_INVALID", t("referencedFileMissing", { attachmentId }));
 }

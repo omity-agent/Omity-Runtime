@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
-import { localize, useTranslation } from "../../i18n";
+import { localize } from "../../i18n";
 import { reportError } from "../../services/errors";
 
 const image = css({
@@ -21,7 +22,7 @@ interface DiagramResult {
 }
 
 export function Diagram({ code, language }: { code: string; language: DiagramLanguage }) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation("conversation"),
     [result, setResult] = useState<DiagramResult>(),
     label = language === "svg" ? "SVG" : "Mermaid",
     showError = useCallback(() => setResult({ code, language }), [code, language, setResult]);
@@ -53,19 +54,15 @@ export function Diagram({ code, language }: { code: string; language: DiagramLan
     };
   }, [code, language, showError]);
   if (result?.code !== code || result.language !== language) {
-    return (
-      <output className={pendingText}>
-        {t("conversation:diagram.rendering", { language: label })}
-      </output>
-    );
+    return <output className={pendingText}>{t("diagram.rendering", { language: label })}</output>;
   }
   if (!result.image) {
-    return <p className={errorText}>{t("conversation:diagram.invalid", { language: label })}</p>;
+    return <p className={errorText}>{t("diagram.invalid", { language: label })}</p>;
   }
   const { alt, height, src, width } = result.image;
   return (
     <img
-      alt={alt ?? t("conversation:diagram.label", { language: label })}
+      alt={alt ?? t("diagram.label", { language: label })}
       className={image}
       height={height}
       onError={showError}

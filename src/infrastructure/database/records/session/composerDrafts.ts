@@ -44,7 +44,7 @@ export function writeComposerDraftRecord(
   if (!row) {
     throw new Error(
       localize("database:session.composerDraftSaveFailed", {
-        value0: sessionId,
+        sessionId,
       }),
     );
   }

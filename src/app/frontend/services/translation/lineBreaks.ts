@@ -63,7 +63,7 @@ function restoreLineBreaks(translated: string, markers: LineBreakMarker[]) {
       if (found.length > 1) {
         throw new Error(
           localize("translation:duplicateMarker", {
-            value0: marker.token,
+            marker: marker.token,
           }),
         );
       }
@@ -78,7 +78,7 @@ function restoreLineBreaks(translated: string, markers: LineBreakMarker[]) {
     if (matches[index]!.match.start < matches[index - 1]!.match.end) {
       throw new Error(
         localize("translation:markerOrderInvalid", {
-          value0: matches[index]!.marker.token,
+          marker: matches[index]!.marker.token,
         }),
       );
     }

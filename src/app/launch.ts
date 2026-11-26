@@ -14,7 +14,7 @@ export function openBrowser(url: string) {
       windowsHide: true,
     });
   child.once("error", (error) => {
-    console.warn(localize("application:launch.browserOpenFailed", { value0: error.message }));
+    console.warn(localize("application:launch.browserOpenFailed", { message: error.message }));
   });
   child.unref();
 }

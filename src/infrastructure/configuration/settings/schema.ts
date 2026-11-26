@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { localize } from "../../../i18n/server";
 import { logLevelSchema } from "../../../types";
-import { attachmentSettingsSchema, emptyAs, frontendSettingsSchema } from "./fieldSchemas";
+import { createAttachmentSettingsSchema, emptyAs, frontendSettingsSchema } from "./fieldSchemas";
 import {
   createPredictionSettingsSchema,
   type parseModelSettings,
@@ -76,7 +76,9 @@ const promptFileSchema = z
     ),
   mainSettingsSchema = z.strictObject({
     access: accessSchema,
-    attachments: attachmentSettingsSchema,
+    attachments: createAttachmentSettingsSchema(() =>
+      localize("configuration:settings.schema.duplicateSuffixes"),
+    ),
     frontend: frontendSettingsSchema,
     host: z.object({
       idleLogMs: z.number().int().positive(),

@@ -44,14 +44,14 @@ export class RestartingStdioClient implements McpOperations {
   readResource: McpOperations["readResource"] = (params, options) =>
     this.invoke("readResource", (client) => client.readResource(params, options), options?.signal);
   close = once(async () => {
-    const reason = localize("mcp:client.closingServer", { value0: this.serverName });
+    const reason = localize("mcp:client.closingServer", { serverName: this.serverName });
     this.controller.abort(new Error(reason));
     try {
       await this.recovering;
     } catch (error) {
       if (error !== this.controller.signal.reason) {
         this.logger.error(
-          localize("mcp:client.recoveryBeforeCloseFailed", { value0: this.serverName }),
+          localize("mcp:client.recoveryBeforeCloseFailed", { serverName: this.serverName }),
           summarizeError(captureError(error)),
         );
       }

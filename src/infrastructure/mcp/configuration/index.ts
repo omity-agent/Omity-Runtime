@@ -71,7 +71,7 @@ function parseMcpConfiguration(parsed: unknown, path: string) {
   return toolboxSchema.parse(omitDisabledToolboxConfiguration(parsed), {
     error: (issue) =>
       issue.code === "invalid_type" && issue.input === parsed
-        ? localize("mcp:configuration.entryMustBeObject", { value0: path })
+        ? localize("mcp:configuration.entryMustBeObject", { path })
         : undefined,
   });
 }

@@ -1,7 +1,7 @@
 import { isPlainObject as isRecord } from "es-toolkit";
 import { z } from "zod";
 
-import { DomainError } from "../../../errors";
+import { DomainError } from "../../../failures/domain";
 import { localize } from "../../../i18n/server";
 import { emptyAs } from "../../configuration/settings/fieldSchemas";
 import { builtInPreferencesSchema } from "../../toolbox/metadata";
@@ -69,9 +69,9 @@ function applyOverrides(
     if (!Object.hasOwn(entries, name) || (builtIn && !isRecord(entries[name]))) {
       throw new DomainError(
         builtIn ? "BUILT_IN_SELECTION_INVALID" : "MCP_SELECTION_INVALID",
-        localize(builtIn ? "mcp:configuration.builtInMissing" : "mcp:configuration.serverMissing", {
-          value0: name,
-        }),
+        builtIn
+          ? localize("mcp:configuration.builtInMissing", { toolName: name })
+          : localize("mcp:configuration.serverMissing", { serverName: name }),
       );
     }
   }

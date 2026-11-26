@@ -5,10 +5,9 @@ import { createServer } from "vite";
 import { parse } from "yaml";
 import { z } from "zod";
 
-import conversation from "../../../locales/interface/conversation.zh-CN.json" with { type: "json" };
-import credentials from "../../../locales/interface/credentials.zh-CN.json" with { type: "json" };
-import preparation from "../../../locales/interface/preparation.zh-CN.json" with { type: "json" };
+import { i18nReady, localize as translateInterface } from "../../../src/app/frontend/i18n";
 import { forkPage, pagePath, sessionPage } from "../../../src/app/frontend/route";
+import { sourceLanguage } from "../../../src/i18n/locale";
 import { localize } from "../../../src/i18n/server";
 import viteConfig from "../../../vite.config";
 import {
@@ -43,29 +42,30 @@ interface Scene {
   heading?: string;
   requiresVerification?: boolean;
 }
+await i18nReady;
 const scenes: Scene[] = [
     {
       name: "new-session",
       path: pagePath({ kind: "new" }),
-      readyButton: preparation.createAndSend,
+      readyButton: translateInterface("preparation:createAndSend"),
     },
     {
       heading: lastReplyTitle,
       name: "session",
       path: pagePath(sessionPage(sampleSessionId)),
-      readyButton: conversation.send,
+      readyButton: translateInterface("conversation:send"),
     },
     {
       heading: firstReplyTitle,
       name: "fork",
       path: pagePath(forkPage(sampleSessionId, forkMessageId)),
-      readyButton: conversation.send,
+      readyButton: translateInterface("conversation:send"),
     },
     {
-      heading: credentials.loginTitle,
+      heading: translateInterface("credentials:loginTitle"),
       name: "access",
       path: "",
-      readyButton: credentials.verify,
+      readyButton: translateInterface("credentials:verify"),
       requiresVerification: true,
     },
   ],
@@ -119,7 +119,7 @@ async function capture(
   await using page = await browser.newPage({
     hasTouch: touch,
     isMobile: touch,
-    locale: "zh-CN",
+    locale: sourceLanguage,
     serviceWorkers: "block",
     timezoneId: "UTC",
     viewport: { height, width },

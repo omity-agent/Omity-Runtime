@@ -1,0 +1,46 @@
+{
+  "maintenance": {
+    "transcriptRevisionExhausted": "Transcript 版本已耗尽：{{sessionId}}"
+  },
+  "sqlite": {
+    "rootDeletionRejected": "拒绝删除磁盘根目录：{{path}}",
+    "initializationScriptUnsupported": "SQLite 数据库不支持初始化脚本执行"
+  },
+  "session": {
+    "hookMissing": "Hook 不存在：{{hookId}}",
+    "modelPrefixSnapshotMissing": "会话缺少模型前缀快照",
+    "apiKeyEnvironmentMissing": "当前模型配置没有为会话锁定的远程模型提供 API Key 环境变量",
+    "composerDraftSaveFailed": "Composer 草稿保存失败：{{sessionId}}",
+    "newDraftSaveFailed": "新建会话草稿保存失败",
+    "touchRevisionExhausted": "Transcript 版本已耗尽：{{sessionId}}",
+    "inputTouchFailed": "队列不存在或 Transcript 版本已耗尽：{{inputId}}",
+    "revisionInvalid": "Transcript 版本无效：{{sessionId}}",
+    "controlRevisionExhausted": "Transcript 版本已耗尽：{{sessionId}}",
+    "stepControlRevisionExhausted": "Transcript 版本已耗尽：{{sessionId}}"
+  },
+  "restoration": {
+    "checkpointHeadConflict": "checkpoint head 冲突：{{checkpointId}}",
+    "pendingWriteExpired": "checkpoint pending write 已过期：{{checkpointId}}"
+  },
+  "transcript": {
+    "streamCursorUnsafe": "流式事件游标超出安全整数范围：{{cursor}}",
+    "toolEventCallIdMissing": "工具{{eventKind}}事件缺少调用 ID",
+    "formalCallStreamIdentityDuplicate": "正式工具调用 ID {{callId}} 绑定了多个流身份",
+    "streamEventInvalid": "持久化流式事件无效"
+  },
+  "messages": {
+    "titleCallInvalid": "标题调用记录无效：{{sessionId}}",
+    "foreignUserMessage": "用户消息属于其他会话：{{messageId}}",
+    "queueIdInvalid": "用户消息 Queue ID 无效：{{messageId}}",
+    "positionUnavailable": "无法分配消息位置",
+    "typeUnsupported": "不支持持久化消息类型：{{messageType}}",
+    "tokenTotalUnsafe": "消息总 token 数超出安全整数范围",
+    "persistentIdMissing": "LangChain 消息缺少持久化 ID"
+  },
+  "execution": {
+    "controlRevisionExhausted": "Transcript 版本已耗尽：{{sessionId}}",
+    "runMissingForRead": "执行轮次不存在：{{runId}}",
+    "runMissingForUpdate": "执行轮次不存在：{{runId}}",
+    "inputClaimConflict": "输入认领冲突：{{inputId}}"
+  }
+}

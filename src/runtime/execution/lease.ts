@@ -1,4 +1,4 @@
-import { DomainError } from "../../errors";
+import { DomainError } from "../../failures/domain";
 import { localize } from "../../i18n/server";
 import type { AgentDatabase } from "../../infrastructure/database/agentDatabase";
 import type { Logger } from "../../infrastructure/logging/logger";
@@ -34,7 +34,7 @@ export class HostLease {
     ) {
       throw new DomainError(
         "HOST_LEASE_CONFLICT",
-        localize("runtime:lease.conflict", { value0: sessionId }),
+        localize("runtime:lease.conflict", { sessionId }),
       );
     }
     this.timer = setInterval(
@@ -51,7 +51,7 @@ export class HostLease {
     }
     if (this.db.hostLease(this.sessionId)?.ownerId !== this.ownerId) {
       const error = new HostLeaseLostError(
-        localize("runtime:lease.assertionLost", { value0: this.sessionId }),
+        localize("runtime:lease.assertionLost", { sessionId: this.sessionId }),
       );
       this.fail(error);
       throw error;
@@ -71,7 +71,7 @@ export class HostLease {
       });
       if (!renewed) {
         throw new HostLeaseLostError(
-          localize("runtime:lease.renewalLost", { value0: this.sessionId }),
+          localize("runtime:lease.renewalLost", { sessionId: this.sessionId }),
         );
       }
     } catch (error) {

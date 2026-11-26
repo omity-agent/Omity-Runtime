@@ -1,5 +1,6 @@
-import { DomainError } from "../../errors";
-import { localize } from "../../i18n/server";
+import type { TFunction } from "i18next";
+
+import { DomainError } from "../../failures/domain";
 import type { Settings } from "../../types";
 import type { InitialMessagePair } from "../initialState";
 
@@ -27,20 +28,13 @@ export function attachmentIds(contents: readonly string[]) {
     ),
   );
 }
-export function missingAttachment(id: string) {
-  return new DomainError(
-    "ATTACHMENT_INVALID",
-    localize("application:attachments.referencedFileMissing", { value0: id }),
+export function replaceAttachmentPlaceholders(
+  content: string,
+  replacement: (id: string) => string,
+) {
+  return content.replaceAll(placeholderPattern, (_match: string, id: string) =>
+    replacement(id.toLowerCase()),
   );
-}
-export function materializeAttachmentPaths(content: string, paths: ReadonlyMap<string, string>) {
-  return content.replaceAll(placeholderPattern, (_match: string, id: string) => {
-    const path = paths.get(id.toLowerCase());
-    if (path === undefined) {
-      throw missingAttachment(id);
-    }
-    return path.replaceAll("\\", "/");
-  });
 }
 export function fileSuffix(name: string) {
   const index = name.lastIndexOf(".");
@@ -49,6 +43,7 @@ export function fileSuffix(name: string) {
 function validateAttachment(
   file: unknown,
   settings: AttachmentSettings,
+  t: TFunction<"attachments">,
 ): asserts file is AttachmentMetadata {
   if (
     typeof file !== "object" ||
@@ -57,10 +52,7 @@ function validateAttachment(
     typeof file.name !== "string" ||
     file.name.length === 0
   ) {
-    throw new DomainError(
-      "ATTACHMENT_INVALID",
-      localize("application:attachments.fileNameMissing"),
-    );
+    throw new DomainError("ATTACHMENT_INVALID", t("fileNameMissing"));
   }
   if (
     !("size" in file) ||
@@ -68,47 +60,45 @@ function validateAttachment(
     !Number.isSafeInteger(file.size) ||
     file.size < 0
   ) {
-    throw new DomainError(
-      "ATTACHMENT_INVALID",
-      localize("application:attachments.sizeInvalid", { value0: file.name }),
-    );
+    throw new DomainError("ATTACHMENT_INVALID", t("sizeInvalid", { fileName: file.name }));
   }
   const suffix = fileSuffix(file.name);
   if (!settings.allowedSuffixes.includes(suffix)) {
     throw new DomainError(
       "ATTACHMENT_INVALID",
-      localize("application:attachments.suffixUnsupported", {
-        value0: suffix || localize("errors:generic.noSuffix"),
+      t("suffixUnsupported", {
+        suffix: suffix || t("noSuffix"),
       }),
     );
   }
   if (file.size > settings.maxSizeBytes) {
     throw new DomainError(
       "ATTACHMENT_TOO_LARGE",
-      localize("application:attachments.fileTooLarge", {
-        value0: file.name,
-        value1: settings.maxSizeBytes.toString(),
+      t("fileTooLarge", {
+        fileName: file.name,
+        maxBytes: settings.maxSizeBytes,
       }),
     );
   }
 }
-export function validateAttachmentBatch(files: readonly unknown[], settings: AttachmentSettings) {
+export function validateAttachmentBatch(
+  files: readonly unknown[],
+  settings: AttachmentSettings,
+  t: TFunction<"attachments">,
+) {
   let total = 0;
   for (const file of files) {
-    validateAttachment(file, settings);
+    validateAttachment(file, settings, t);
     total += file.size;
   }
   if (!Number.isSafeInteger(total)) {
-    throw new DomainError(
-      "ATTACHMENT_TOO_LARGE",
-      localize("application:attachments.totalSizeUnsafe"),
-    );
+    throw new DomainError("ATTACHMENT_TOO_LARGE", t("totalSizeUnsafe"));
   }
   if (total > settings.maxSizeBytes) {
     throw new DomainError(
       "ATTACHMENT_TOO_LARGE",
-      localize("application:attachments.totalSizeTooLarge", {
-        value0: settings.maxSizeBytes.toString(),
+      t("totalSizeTooLarge", {
+        maxBytes: settings.maxSizeBytes,
       }),
     );
   }

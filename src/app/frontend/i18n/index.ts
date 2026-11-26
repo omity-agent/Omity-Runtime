@@ -1,30 +1,10 @@
-import { type ParseKeys, t, type TOptions, use } from "i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
-import { initReactI18next, useTranslation as useReactTranslation } from "react-i18next";
+import { createInstance } from "i18next";
+import { initReactI18next } from "react-i18next";
 
+import { bundledTranslations, defaultNamespace } from "../../../i18n/locale";
 import { browserCatalog } from "./browserCatalog";
 
-type BrowserNamespace = keyof typeof browserCatalog;
-const namespaces = Object.keys(browserCatalog).filter((key): key is BrowserNamespace =>
-  Object.hasOwn(browserCatalog, key),
-);
-export const i18nReady = use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    defaultNS: "shell",
-    fallbackLng: "zh-CN",
-    interpolation: {
-      escapeValue: false,
-    },
-    ns: namespaces,
-    resources: { "zh-CN": browserCatalog },
-  });
-export function useTranslation() {
-  return useReactTranslation(namespaces);
-}
-export function localize(
-  key: Extract<ParseKeys<BrowserNamespace[]>, `${BrowserNamespace}:${string}`>,
-  options: TOptions = {},
-): string {
-  return t(key, { ...options, ns: namespaces, returnDetails: false, returnObjects: false });
-}
+const { namespaces, options } = bundledTranslations(browserCatalog, defaultNamespace);
+export const browserI18n = createInstance(),
+  i18nReady = browserI18n.use(initReactI18next).init(options),
+  localize = browserI18n.getFixedT(null, namespaces);

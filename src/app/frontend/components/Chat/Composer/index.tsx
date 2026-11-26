@@ -1,6 +1,6 @@
 import { type SubmitEvent, useCallback, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
-import { useTranslation } from "../../../i18n";
 import { reportPromiseErrors } from "../../../services/errors";
 import { MarkdownEditor } from "../MarkdownEditor";
 import { useMessageCandidates } from "../MarkdownEditor/candidateBrowsing";
@@ -40,7 +40,7 @@ export function Composer({
   askUser,
 }: ComposerProps) {
   "use no memo";
-  const { t } = useTranslation(),
+  const { t } = useTranslation("conversation"),
     [submitting, setSubmitting] = useState(false),
     answerState = useQuestionAnswerState(askUser?.callId),
     askNote = answerState.note,
@@ -139,7 +139,7 @@ export function Composer({
               onNavigate={navigate}
               onPasteFiles={attachmentSettings ? pasteFiles : undefined}
               onSubmit={handleSubmit}
-              placeholder={t("conversation:messagePlaceholder")}
+              placeholder={t("messagePlaceholder")}
               value={input}
             />
           )}
@@ -155,7 +155,7 @@ export function Composer({
           sessionId={stableDraftTarget.kind === "session" ? stableDraftTarget.sessionId : undefined}
           sessionStatus={sessionStatus}
           stepAvailable={stepAvailable}
-          submitLabel={askUser ? t("conversation:answer") : t("conversation:send")}
+          submitLabel={askUser ? t("answer") : t("send")}
           submitDisabled={submitDisabled}
           usage={usage}
           onControl={onControl ? handleControl : undefined}

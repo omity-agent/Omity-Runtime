@@ -31,7 +31,7 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
       return undefined;
     }
     if (checkpointId !== undefined && checkpointId !== row.checkpointId) {
-      throw new Error(localize("checkpoint:saver.checkpointUnavailable", { value0: checkpointId }));
+      throw new Error(localize("checkpoint:saver.checkpointUnavailable", { checkpointId }));
     }
     return this.decoder.decode(row, this.serde);
   }

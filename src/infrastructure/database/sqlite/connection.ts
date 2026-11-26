@@ -96,7 +96,7 @@ export function reclaimDatabasePages(db: Database) {
 export function removeDatabaseDirectory(path: string) {
   const target = resolve(path);
   if (target === parse(target).root) {
-    throw new Error(localize("database:sqlite.rootDeletionRejected", { value0: target }));
+    throw new Error(localize("database:sqlite.rootDeletionRejected", { path: target }));
   }
   rmSync(target, {
     force: true,

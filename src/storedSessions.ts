@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 
-import { sessionNotFound } from "./errors";
+import { sessionNotFound } from "./failures/rejections";
 import { resolveSessionPaths } from "./infrastructure/configuration/sessionPaths";
 import { AgentDatabase } from "./infrastructure/database/agentDatabase";
 import { removeDatabaseDirectory } from "./infrastructure/database/sqlite/connection";

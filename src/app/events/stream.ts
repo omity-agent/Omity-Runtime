@@ -29,7 +29,7 @@ export function eventStream(c: Context, subscribe: (write: EventWriter) => () =>
       write: EventWriter = (event) => {
         if (!writes.addItem(event)) {
           closed.reject(
-            new Error(localize("application:events.queueRejected", { value0: event.event })),
+            new Error(localize("application:events.queueRejected", { eventName: event.event })),
           );
         }
       },

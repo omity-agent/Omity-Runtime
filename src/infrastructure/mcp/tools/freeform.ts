@@ -21,7 +21,7 @@ export function configureFreeformMcpTools(
   for (const name of names) {
     const tool = toolsByName.get(name);
     if (!tool) {
-      throw new Error(localize("mcp:freeform.configuredToolMissing", { value0: name }));
+      throw new Error(localize("mcp:freeform.configuredToolMissing", { toolName: name }));
     }
     parameters.set(name, singleStringParameter(tool));
   }
@@ -50,24 +50,24 @@ function singleStringParameter(tool: StructuredToolInterface) {
   if (entries.length !== 1) {
     throw new Error(
       localize("mcp:freeform.inputParameterCountInvalid", {
-        value0: tool.name,
-        value1: entries.length.toString(),
+        toolName: tool.name,
+        parameterCount: entries.length.toString(),
       }),
     );
   }
   const [entry] = entries;
   if (!entry) {
-    throw new Error(localize("mcp:freeform.inputParameterMissing", { value0: tool.name }));
+    throw new Error(localize("mcp:freeform.inputParameterMissing", { toolName: tool.name }));
   }
   const [parameter, definition] = entry;
   if (!parameter) {
-    throw new Error(localize("mcp:freeform.inputParameterNameMissing", { value0: tool.name }));
+    throw new Error(localize("mcp:freeform.inputParameterNameMissing", { toolName: tool.name }));
   }
   if (!stringParameterSchema.safeParse(definition).success) {
     throw new Error(
       localize("mcp:freeform.inputParameterTypeInvalid", {
-        value0: tool.name,
-        value1: parameter,
+        toolName: tool.name,
+        parameterName: parameter,
       }),
     );
   }
@@ -80,10 +80,10 @@ function resolveDescription(
 ) {
   const resolved = resolvePlaceholders(description, {
     session,
-    source: localize("mcp:freeform.descriptionLabel", { value0: name }),
+    source: localize("mcp:freeform.descriptionLabel", { toolName: name }),
   });
   if (typeof resolved !== "string") {
-    throw new TypeError(localize("mcp:freeform.descriptionNotString", { value0: name }));
+    throw new TypeError(localize("mcp:freeform.descriptionNotString", { toolName: name }));
   }
   return resolved;
 }

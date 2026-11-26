@@ -1,9 +1,9 @@
 import { LoaderCircle, Pause, Play, StepForward } from "lucide-react";
 import { type MouseEvent, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
 import type { PlaybackControl, SessionStatus } from "../../../../../../types";
-import { useTranslation } from "../../../../i18n";
 import { reportPromiseErrors } from "../../../../services/errors";
 import { IconButton } from "../../../ui";
 import { runtimeControls } from "../arrangement";
@@ -30,7 +30,7 @@ export function RuntimeControl({
   stepAvailable?: boolean;
   onControl?: (control: PlaybackControl) => Promise<void>;
 }) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation("conversation"),
     requestControl = useCallback(
       (control: PlaybackControl) => {
         if (onControl) {
@@ -54,10 +54,10 @@ export function RuntimeControl({
       requestControl("step");
     }, [requestControl]),
     disabled = controlDisabled || sessionStatus === "idle",
-    controlLabel = controlState ? t(`conversation:${controlState}`) : "",
-    resumeLabel = t("conversation:resumeContinuous"),
-    stepLabel = t("conversation:step"),
-    pauseLabel = t(pausing ? "conversation:cancelPause" : "conversation:pause"),
+    controlLabel = controlState ? t(controlState) : "",
+    resumeLabel = t("resumeContinuous"),
+    stepLabel = t("step"),
+    pauseLabel = t(pausing ? "cancelPause" : "pause"),
     canPause = controlState === "pause" || pausing || controlState === "stepping";
   return (
     <fieldset aria-label={controlLabel} className={runtimeControls}>

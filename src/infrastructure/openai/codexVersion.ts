@@ -16,7 +16,7 @@ export async function fetchLatestCodexVersion(fetcher: CodexVersionFetch = globa
   if (!response.ok) {
     throw new Error(
       localize("network:codex.latestVersionFetchFailed", {
-        value0: response.status.toString(),
+        status: response.status.toString(),
       }),
     );
   }

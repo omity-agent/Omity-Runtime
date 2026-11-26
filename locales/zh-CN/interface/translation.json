@@ -1,8 +1,8 @@
 {
   "markerGenerationFailed": "无法生成思维链翻译换行标记",
-  "duplicateMarker": "思维链翻译重复换行标记：{{value0}}",
+  "duplicateMarker": "思维链翻译重复换行标记：{{marker}}",
   "markerMissing": "思维链翻译丢失换行标记",
-  "markerOrderInvalid": "思维链翻译换行标记顺序错误：{{value0}}",
+  "markerOrderInvalid": "思维链翻译换行标记顺序错误：{{marker}}",
   "unsupported": "思维链翻译已开启，但浏览器不支持 Translator API 和 Language Detector API",
   "preferredLanguageMissing": "浏览器未提供首选语言",
   "detectionFailed": "浏览器无法检测思维链语言",

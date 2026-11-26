@@ -8,7 +8,7 @@ import { pauseForMcpUnavailable, pauseForStop, waitIfPaused } from "./execution/
 import { type ActiveRun, CanceledRunError, pauseFailedRun, setRunStatus } from "./run";
 
 export async function processInput(ctx: HostContext, item: QueuedInput) {
-  const end = ctx.logger.child(localize("runtime:queue.label", { value0: item.id.toString() })),
+  const end = ctx.logger.child(localize("runtime:queue.label", { inputId: item.id.toString() })),
     resumed = ctx.db.consumedInputs(ctx.sessionId, item.runId),
     items: [QueuedInput, ...QueuedInput[]] = [item, ...resumed.filter(({ id }) => id !== item.id)];
   items.sort((left, right) => left.id - right.id);

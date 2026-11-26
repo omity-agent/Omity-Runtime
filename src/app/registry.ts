@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { existsSync } from "node:fs";
 
-import { sessionNotFound } from "../errors";
+import { sessionNotFound } from "../failures/rejections";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import { sessionOverviewRows } from "../infrastructure/database/projections/sessionOverview";
 import { deriveSessionTitle } from "../infrastructure/database/records/transcript/messages/deriveTitle";

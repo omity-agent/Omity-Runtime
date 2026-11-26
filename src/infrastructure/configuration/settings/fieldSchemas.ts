@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import { localize } from "../../../i18n/server";
-
 const suffixSchema = z
   .string()
   .trim()
@@ -9,16 +7,17 @@ const suffixSchema = z
   .min(2)
   .max(32)
   .regex(/^\.[a-z0-9][a-z0-9_+-]*$/u);
-export const attachmentSettingsSchema = z.strictObject({
-  allowedSuffixes: z
-    .array(suffixSchema)
-    .min(1)
-    .refine(
-      (suffixes) => new Set(suffixes).size === suffixes.length,
-      localize("configuration:settings.schema.duplicateSuffixes"),
-    ),
-  maxSizeBytes: z.number().int().positive(),
-});
+export function createAttachmentSettingsSchema(duplicateSuffixes?: () => string) {
+  return z.strictObject({
+    allowedSuffixes: z
+      .array(suffixSchema)
+      .min(1)
+      .refine((suffixes) => new Set(suffixes).size === suffixes.length, {
+        error: duplicateSuffixes,
+      }),
+    maxSizeBytes: z.number().int().positive(),
+  });
+}
 export const frontendSettingsSchema = z.strictObject({
   cacheHitWarningRatio: z.number().min(0).max(1),
   draftSaveDelayMs: z.number().int().positive(),

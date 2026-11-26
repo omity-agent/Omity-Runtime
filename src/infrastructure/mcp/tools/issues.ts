@@ -25,13 +25,13 @@ function formatZodIssue(issue: z.core.$ZodIssue): string {
   const path = formatIssuePath(issue.path);
   if (issue.code === "invalid_type") {
     if (issue.path.at(-1) === "args" && issue.expected === "array") {
-      return localize("mcp:issues.stringArrayExpected", { value0: path });
+      return localize("mcp:issues.stringArrayExpected", { path });
     }
     if (issue.path.at(-1) === "command" && issue.expected === "string") {
-      return localize("mcp:issues.commandStringExpected", { value0: path });
+      return localize("mcp:issues.commandStringExpected", { path });
     }
     if (issue.path.at(-1) === "url" && issue.expected === "string") {
-      return localize("mcp:issues.serverUrlExpected", { value0: path });
+      return localize("mcp:issues.serverUrlExpected", { path });
     }
   }
   return `${path} ${issue.message}`;

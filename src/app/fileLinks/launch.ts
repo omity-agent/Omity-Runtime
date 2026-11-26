@@ -41,7 +41,7 @@ async function existingTarget(path: string) {
   const resolved = await realpath(path),
     metadata = await stat(resolved);
   if (!metadata.isDirectory() && !metadata.isFile()) {
-    throw new Error(localize("application:fileLinks.pathNotFileOrDirectory", { value0: resolved }));
+    throw new Error(localize("application:fileLinks.pathNotFileOrDirectory", { path: resolved }));
   }
   return {
     path: resolved,

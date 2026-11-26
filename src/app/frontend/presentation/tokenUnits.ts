@@ -1,8 +1,10 @@
-export function formatTokens(tokens: number) {
+import type { TFunction } from "i18next";
+
+export function formatTokens(t: TFunction<"conversation">, tokens: number) {
   if (tokens <= 1000) {
-    return `${tokens.toString()} Tokens`;
+    return t("tokens.exact", { count: tokens });
   }
   const precision = tokens < 10_000 ? 1 : 0,
-    compact = (tokens / 1000).toFixed(precision).replace(/\.0$/, "");
-  return `${compact}K Tokens`;
+    thousands = Number((tokens / 1000).toFixed(precision));
+  return t("tokens.thousands", { count: tokens, thousands });
 }

@@ -19,6 +19,6 @@
     "externalRequest": "样板页面发起了非本地请求：{{url}}",
     "unexpectedApi": "未提供样板 API 响应：{{method}} {{path}}",
     "renderFailed": "无法生成 {{page}} / {{screen}} 的截图",
-    "saved": "已生成 {{count}} 张图片：{{directory}}"
+    "saved_other": "已生成 {{count}} 张图片：{{directory}}"
   }
 }

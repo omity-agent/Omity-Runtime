@@ -1,0 +1,34 @@
+{
+  "plan": {
+    "callIdMissing": "工具调用消息缺少 ID",
+    "invalid": "Hook 工具计划无效",
+    "originalExecutionCannotBeSkipped": "不能跳过原始工具执行阶段",
+    "callIdMissingForTool": "工具调用缺少 ID：{{toolName}}",
+    "originalMessageNotSerializable": "无法序列化 Hook 原始工具调用消息"
+  },
+  "runtime": {
+    "duplicateToolName": "MCP 工具名称重复，无法编译 Hook",
+    "runLimitInvalid": "Hook {{hookId}} 的 runLimit 必须是大于等于 -1 的整数",
+    "targetLabel": "Hook {{hookId}} 目标",
+    "nodeStarted": "执行 Hook 节点",
+    "toolMissing": "{{source}} 引用了不存在的 MCP 工具：{{toolName}}",
+    "textInputRequired": "Hook {{hookId}} 调用 Freeform 工具 {{toolName}} 时，input 必须解析为文本",
+    "objectInputRequired": "Hook {{hookId}} 调用工具 {{toolName}} 时，input 必须解析为对象"
+  },
+  "variables": {
+    "inputLabel": "Hook {{hookId}} 的输入",
+    "structuredOutputMissing": "Hook 变量 {{variable}} 引用的工具没有结构化输出",
+    "formatInvalid": "Hook 工具输出变量格式无效：{{variable}}；应使用 ${toolOutputs.fromStart.N.output} 或 ${toolOutputs.fromEnd.N.structuredOutput}",
+    "indexInvalid": "Hook 工具输出变量索引无效：{{variable}}",
+    "indexOutOfRange": "Hook 变量 {{variable}} 超出工具输出范围：请求第 {{requestedIndex}} 个，当前共有 {{outputCount}} 个",
+    "fieldMissing": "Hook 变量 {{variable}} 的字段不存在：{{fieldName}}",
+    "pathFieldMissing": "Hook 变量 {{variable}} 的字段不存在：{{fieldName}}"
+  },
+  "graph": {
+    "callIdMissing": "工具调用缺少 ID：{{toolName}}",
+    "emptyBatch": "原始工具批次不能为空",
+    "duplicateCallId": "原始工具批次包含重复的调用 ID",
+    "finalMessageIdMissing": "Agent after Hook 缺少最终消息 ID",
+    "threadIdMissing": "Hook 执行缺少 thread_id"
+  }
+}

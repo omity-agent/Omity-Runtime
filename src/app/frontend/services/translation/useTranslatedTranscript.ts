@@ -1,8 +1,8 @@
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useEffectEvent, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 import type { ReasoningTranslation, TimelineMessage } from "../../../timeline";
-import { useTranslation } from "../../i18n";
 import { saveReasoningTranslation } from "../client";
 import { reportError } from "../errors";
 import { transcriptKey } from "../transcript/query";
@@ -24,7 +24,7 @@ export function useTranslatedTranscript(
   view: TimelineMessage[],
   settings?: TranslationSettings,
 ) {
-  const { t } = useTranslation(),
+  const { t } = useTranslation("translation"),
     queryClient = useQueryClient(),
     coordinator = useRef<ReasoningTranslationCoordinator | undefined>(undefined),
     { data: translations = emptyTranslations } = useQuery<ReasoningTranslation[]>({
@@ -41,7 +41,7 @@ export function useTranslatedTranscript(
       return undefined;
     }
     if (!browserTranslationSupported()) {
-      warnUnsupportedBrowser(t("translation:unsupported"));
+      warnUnsupportedBrowser(t("unsupported"));
       return undefined;
     }
     const targetLanguage = preferredTranslationLanguage(),

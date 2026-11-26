@@ -100,16 +100,16 @@ async function closeStep(
   close: () => unknown,
   failures: unknown[],
 ) {
-  logger.info(localize("application:shutdown.stepStarted", { value0: name }));
+  logger.info(localize("application:shutdown.stepStarted", { stepName: name }));
   const startedAt = Date.now();
   try {
     await close();
-    logger.info(localize("application:shutdown.stepCompleted", { value0: name }), {
+    logger.info(localize("application:shutdown.stepCompleted", { stepName: name }), {
       durationMs: Date.now() - startedAt,
     });
   } catch (error) {
     failures.push(error);
-    logger.error(localize("application:shutdown.stepFailed", { value0: name }), {
+    logger.error(localize("application:shutdown.stepFailed", { stepName: name }), {
       durationMs: Date.now() - startedAt,
       error: captureError(error),
     });

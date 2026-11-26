@@ -32,7 +32,7 @@ export async function register(ticket?: string) {
     registrationOptionsSchema,
   );
   if (origin !== globalThis.location.origin) {
-    throw new Error(localize("credentials:setupOriginRequired", { value0: origin }));
+    throw new Error(localize("credentials:setupOriginRequired", { origin }));
   }
   const response = await startRegistration({ optionsJSON: options });
   return request(api.access.register.$post({ json: response }), registeredSchema);

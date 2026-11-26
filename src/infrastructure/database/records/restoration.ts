@@ -76,7 +76,7 @@ export class RecoveryStore {
       if (current && current.checkpointId !== expectedId) {
         throw new Error(
           localize("database:restoration.checkpointHeadConflict", {
-            value0: current.checkpointId,
+            checkpointId: current.checkpointId,
           }),
         );
       }
@@ -115,7 +115,7 @@ export class RecoveryStore {
       if (this.currentId.get(identity)?.checkpointId !== identity.checkpointId) {
         throw new Error(
           localize("database:restoration.pendingWriteExpired", {
-            value0: identity.checkpointId,
+            checkpointId: identity.checkpointId,
           }),
         );
       }

@@ -2,7 +2,7 @@ import type { Database } from "bun:sqlite";
 
 import { and, eq, sql } from "drizzle-orm";
 
-import { DomainError } from "../../../../../errors";
+import { DomainError } from "../../../../../failures/domain";
 import { localize } from "../../../../../i18n/server";
 import type { QueuedInput } from "../../../../../types";
 import { messages } from "../../../schema/conversation";
@@ -30,7 +30,7 @@ export function consumeInputRecord(db: Database, sessionId: string, item: Queued
     throw new DomainError(
       "INPUT_CLAIM_CONFLICT",
       localize("database:execution.inputClaimConflict", {
-        value0: item.id.toString(),
+        inputId: item.id.toString(),
       }),
     );
   }

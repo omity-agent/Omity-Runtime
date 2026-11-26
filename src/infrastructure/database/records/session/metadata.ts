@@ -3,7 +3,7 @@ import type { Database } from "bun:sqlite";
 import { and, eq, lt, ne, type SQL, sql } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 
-import { sessionConflict, sessionNotFound } from "../../../../errors";
+import { sessionConflict, sessionNotFound } from "../../../../failures/rejections";
 import { localize } from "../../../../i18n/server";
 import type { Control } from "../../../../types";
 import { inputs, sessions } from "../../schema";
@@ -61,7 +61,7 @@ export function touchSessionRecord(db: Database, sessionId: string) {
   if (queries(db).touch.run({ sessionId }).changes !== 1) {
     throw new Error(
       localize("database:session.touchRevisionExhausted", {
-        value0: sessionId,
+        sessionId,
       }),
     );
   }
@@ -74,7 +74,7 @@ export function touchInputSessionRecord(db: Database, inputId: number) {
   if (reviseSessionRecord(db, sql`(${sessionId})`) !== 1) {
     throw new Error(
       localize("database:session.inputTouchFailed", {
-        value0: inputId.toString(),
+        inputId: inputId.toString(),
       }),
     );
   }
@@ -84,7 +84,7 @@ export function readTranscriptRevisionRecord(db: Database, sessionId: string) {
   if (!Number.isSafeInteger(revision)) {
     throw new TypeError(
       localize("database:session.revisionInvalid", {
-        value0: sessionId,
+        sessionId,
       }),
     );
   }
@@ -113,7 +113,7 @@ export function writeControlRecord(db: Database, sessionId: string, control: Con
   }
   throw new Error(
     localize("database:session.controlRevisionExhausted", {
-      value0: sessionId,
+      sessionId,
     }),
   );
 }
@@ -125,7 +125,7 @@ export function consumeStepControlRecord(db: Database, sessionId: string) {
   if (readControlRecord(db, sessionId) === "step") {
     throw new Error(
       localize("database:session.stepControlRevisionExhausted", {
-        value0: sessionId,
+        sessionId,
       }),
     );
   }

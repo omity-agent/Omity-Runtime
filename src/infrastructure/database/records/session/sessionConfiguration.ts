@@ -2,7 +2,7 @@ import type { Database } from "bun:sqlite";
 
 import { and, eq, exists, gt, not, sql } from "drizzle-orm";
 
-import { sessionProfileBusy } from "../../../../errors";
+import { sessionProfileBusy } from "../../../../failures/rejections";
 import { hostLeases, runs, sessions } from "../../schema";
 import type { SessionDefinition } from "../../session/sessionDefinition";
 import { sessionDatabase } from "../../sqlite/connection";

@@ -35,7 +35,7 @@ export function messageInputId(sessionId: string, message: BaseMessage) {
   if (!message.id.startsWith(prefix)) {
     throw new Error(
       localize("database:messages.foreignUserMessage", {
-        value0: message.id,
+        messageId: message.id,
       }),
     );
   }
@@ -43,7 +43,7 @@ export function messageInputId(sessionId: string, message: BaseMessage) {
   if (!Number.isSafeInteger(inputId) || inputId <= 0) {
     throw new Error(
       localize("database:messages.queueIdInvalid", {
-        value0: message.id,
+        messageId: message.id,
       }),
     );
   }

@@ -3,7 +3,7 @@ import type { Database } from "bun:sqlite";
 import { type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 
-import { toolNotRunning } from "../../../../errors";
+import { toolNotRunning } from "../../../../failures/rejections";
 import { cancelledToolMessage, toolOutputSnapshot } from "../../../../runtime/toolOutput";
 import { events, inputs, runs, toolCancellations } from "../../schema";
 import { runTransaction, sessionDatabase } from "../../sqlite/connection";

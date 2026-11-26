@@ -1,7 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
-import { DomainError, type DomainErrorCode } from "../../errors";
+import { DomainError, type DomainErrorCode } from "../../failures/domain";
 import { isTerminalErrorSuppressed } from "../../failures/output";
 import { localize } from "../../i18n/server";
 import { McpLoadError } from "../../infrastructure/mcp/failures/reportConstruction";
