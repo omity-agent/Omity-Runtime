@@ -14,26 +14,39 @@ import { makeDb, workspace } from "../../support/database";
 
 export function agentFixture({
   db: existingDatabase,
+  freeformToolParameters = new Map<string, string>(),
   hooks: rules = [],
   model = new MockLanguageModelV4({ doStream: textResponse() }),
   sessionId = "target",
   tools = [],
 }: {
   db?: ReturnType<typeof makeDb>;
+  freeformToolParameters?: ReadonlyMap<string, string>;
   hooks?: HookRule[];
   model?: MockLanguageModelV4;
   sessionId?: string;
   tools?: StructuredToolInterface[];
 } = {}) {
   const db = existingDatabase ?? makeDb(),
-    settings = testSettings(),
+    settings = testSettings({
+      hooks: rules,
+      model: freeformToolParameters.size > 0 ? { adapter: "responses-sse" } : undefined,
+    }),
     logger = new Logger("error", true),
     checkpointer = new BunSqliteSaver(db.db),
     executions = new ToolExecutions({
       cancellationRequested: (callId) => db.toolCancellation(sessionId, callId),
       pollMs: settings.host.pollMs,
     }),
-    hooks = new HookRuntime(rules, tools, db.db, logger, sessionId, workspace),
+    hooks = new HookRuntime(
+      settings.hooks,
+      tools,
+      db.db,
+      logger,
+      sessionId,
+      workspace,
+      freeformToolParameters,
+    ),
     graph = createAgentGraph({
       checkpointer,
       hooks,

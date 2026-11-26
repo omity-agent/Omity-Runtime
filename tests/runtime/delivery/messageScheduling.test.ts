@@ -22,8 +22,8 @@ test("queued messages enter the first model request and each runs its before hoo
   using fixture = agentFixture({
     hooks: [
       {
-        args: {},
         id: "prepare-user",
+        input: {},
         mode: "silent",
         runLimit: -1,
         target: "agent",

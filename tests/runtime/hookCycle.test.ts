@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { setTimeout as delay } from "node:timers/promises";
 
-import { AIMessage, type BaseMessage, ToolMessage } from "@langchain/core/messages";
+import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { MockLanguageModelV4 } from "ai/test";
 import { z } from "zod";
@@ -10,26 +10,46 @@ import { buildTimeline } from "../../src/app/timeline";
 import { loadTranscript } from "../../src/app/transcript";
 import { isHookCallId } from "../../src/hooks/storage/calls";
 import { processInput } from "../../src/runtime/consumeInputs";
-import type { HookRule } from "../../src/types";
 import { cleanupDatabaseDirs, required, workspace } from "../support/database";
 import { agentFixture, textResponse, toolResponse } from "./support/agentFixture";
 
 afterEach(cleanupDatabaseDirs);
-test("takeover hooks bracket an Agent tool cycle without recursive hooks", async () => {
+test("Freeform hooks bracket a structured tool call without recursive hooks", async () => {
   const calls: string[] = [],
+    text = "inspect\n  another line\n",
     release = Promise.withResolvers<void>(),
     visible = Promise.withResolvers<void>(),
-    hookTool = makeTool("hook", () => {
-      calls.push("hook");
-      return calls.length === 2 ? release.promise : undefined;
-    }),
-    originalTool = makeTool("original", () => calls.push("original"));
+    hookTool = tool(
+      async ({ message }) => {
+        calls.push(message);
+        if (calls.length === 2) {
+          await release.promise;
+        }
+        return message;
+      },
+      { description: "hook", name: "hook", schema: z.object({ message: z.string() }) },
+    ),
+    originalTool = tool(
+      () => {
+        calls.push("original");
+        return "done";
+      },
+      { description: "original", name: "original", schema: z.object({}) },
+    ),
+    rule = {
+      mode: "silent",
+      runLimit: -1,
+      target: "original",
+      tool: "hook",
+      when: "before",
+    } as const;
   using fixture = agentFixture({
+    freeformToolParameters: new Map([["hook", "message"]]),
     hooks: [
-      rule("silent-before", "original", "before"),
-      rule("before", "original", "before", "takeover"),
-      rule("after", "original", "after", "takeover"),
-      rule("must-not-run", "hook", "before"),
+      { ...rule, id: "silent-before", input: text },
+      { ...rule, id: "before", input: "${toolOutputs.fromEnd.1.output}", mode: "takeover" },
+      { ...rule, id: "after", input: "", mode: "takeover", when: "after" },
+      { ...rule, id: "must-not-run", input: "recursive", target: "hook" },
     ],
     model: new MockLanguageModelV4({
       doStream: [toolResponse([{ id: "original-call", name: "original" }]), textResponse("done")],
@@ -50,51 +70,32 @@ test("takeover hooks bracket an Agent tool cycle without recursive hooks", async
     const live = buildTimeline(loadTranscript(fixture.db.db, "session"))
       .flatMap(({ parts }) => parts)
       .filter((part) => part.type === "tool" && isHookCallId(part.call.id));
-    expect(live).toMatchObject([
-      { call: { input: { message: "inspect" }, name: "hook" }, phase: "running" },
-    ]);
+    expect(live).toMatchObject([{ call: { name: "hook", rawInput: text }, phase: "running" }]);
   } finally {
     release.resolve();
     await processing;
   }
-  expect(calls).toEqual(["hook", "hook", "original", "hook"]);
+  expect(calls).toEqual([text, text, "original", ""]);
   const history = fixture.db.history("session"),
-    hookIds = history
-      .filter((message) => AIMessage.isInstance(message))
-      .flatMap((message) => message.tool_calls ?? [])
-      .map((call) => call.id)
-      .filter(isHookCallId);
-  expect(hookIds).toHaveLength(2);
-  expect(hookIds.every((id) => /^[A-Za-z0-9_-]+$/.test(id))).toBe(true);
-  assertToolProtocol(history);
-}, 10_000);
-function makeTool(name: string, record: () => unknown) {
-  return tool(
-    async () => {
-      await record();
-      return `${name}-result`;
-    },
-    { description: name, name, schema: z.object({ message: z.string().optional() }) },
-  );
-}
-function rule(
-  id: string,
-  target: string,
-  when: HookRule["when"],
-  mode: HookRule["mode"] = "silent",
-): HookRule {
-  return { args: { message: "inspect" }, id, mode, runLimit: -1, target, tool: "hook", when };
-}
-function assertToolProtocol(messages: BaseMessage[]) {
-  for (const [index, message] of messages.entries()) {
-    if (AIMessage.isInstance(message)) {
-      for (const call of message.tool_calls ?? []) {
-        const next = messages[index + 1];
-        expect(next).toBeInstanceOf(ToolMessage);
+    storedCalls = history.flatMap((message, index) => {
+      if (!AIMessage.isInstance(message)) {
+        return [];
+      }
+      const next = history[index + 1];
+      return (message.tool_calls ?? []).filter((call) => {
         expect(ToolMessage.isInstance(next) ? next.tool_call_id : undefined).toBe(
           required(call.id),
         );
-      }
-    }
-  }
-}
+        return isHookCallId(call.id);
+      });
+    }),
+    promptCalls = fixture.model.doStreamCalls
+      .at(-1)
+      ?.prompt.flatMap((message) => (message.role === "assistant" ? message.content : []))
+      .filter((part) => part.type === "tool-call" && part.toolName === "hook");
+  expect(storedCalls).toMatchObject(
+    [text, ""].map((input) => ({ args: { input }, isCustomTool: true })),
+  );
+  expect(storedCalls.every(({ id }) => /^[A-Za-z0-9_-]+$/.test(required(id)))).toBe(true);
+  expect(promptCalls).toMatchObject([text, ""].map((input) => ({ input })));
+}, 10_000);

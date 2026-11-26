@@ -11,11 +11,12 @@
     "runLimitInvalid": "Hook {{value0}} 的 runLimit 必须是大于等于 -1 的整数",
     "targetLabel": "Hook {{value0}} 目标",
     "nodeStarted": "执行 Hook 节点",
-    "toolMissing": "{{value0}} 引用了不存在的 MCP 工具：{{value1}}"
+    "toolMissing": "{{value0}} 引用了不存在的 MCP 工具：{{value1}}",
+    "textInputRequired": "Hook {{value0}} 调用 Freeform 工具 {{value1}} 时，input 必须解析为文本",
+    "objectInputRequired": "Hook {{value0}} 调用工具 {{value1}} 时，input 必须解析为对象"
   },
   "variables": {
-    "argumentLabel": "Hook 参数",
-    "resultMustBeObject": "Hook 参数解析结果必须是对象",
+    "inputLabel": "Hook {{value0}} 的输入",
     "structuredOutputMissing": "Hook 变量 {{value0}} 引用的工具没有结构化输出",
     "formatInvalid": "Hook 工具输出变量格式无效：{{value0}}；应使用 ${toolOutputs.fromStart.N.output} 或 ${toolOutputs.fromEnd.N.structuredOutput}",
     "indexInvalid": "Hook 工具输出变量索引无效：{{value0}}",

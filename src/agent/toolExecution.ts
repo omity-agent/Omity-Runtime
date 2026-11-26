@@ -1,12 +1,11 @@
 import { type BaseMessage, type ToolCall, ToolMessage } from "@langchain/core/messages";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import type { LangGraphRunnableConfig } from "@langchain/langgraph";
-import { isPlainObject as isRecord } from "es-toolkit";
 
 import { requireCallId } from "../hooks/plan";
 import { localize } from "../i18n/server";
 import { findMcpStdioUnavailable } from "../infrastructure/mcp/client/availability";
-import { trimFreeformInput } from "../runtime/freeform";
+import { rawFreeformInput } from "../runtime/freeform";
 import { redirectLargeToolOutput } from "../runtime/largeOutput";
 import { isContentBlockArray } from "../runtime/outputText";
 import { cancelledToolMessage } from "../runtime/toolOutput";
@@ -72,11 +71,8 @@ export function createToolInvoker(
   };
 }
 function materializeFreeformInput(call: ToolCall, parameters: ReadonlyMap<string, string>) {
-  const parameter = parameters.get(call.name),
-    input: unknown = isRecord(call.args) ? call.args["input"] : undefined;
-  return parameter && typeof input === "string"
-    ? { [parameter]: trimFreeformInput(input) }
-    : call.args;
+  const parameter = parameters.get(call.name);
+  return parameter === undefined ? call.args : { [parameter]: rawFreeformInput(call.args) };
 }
 async function normalizeOutput(
   value: unknown,

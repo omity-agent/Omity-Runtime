@@ -8,18 +8,17 @@ import type { SettingsContext } from "./settings/context";
 import { emptyAs } from "./settings/fieldSchemas";
 import { readLayeredSettingsYaml } from "./settings/files";
 
-const argsSchema = z.record(z.string(), z.unknown()),
-  callFields = {
-    args: emptyAs(argsSchema, {}),
+const hookSchema = z.strictObject({
     description: emptyAs(z.string().optional(), undefined).optional(),
     enable: z.boolean().optional(),
     id: z.string().min(1),
+    input: z.union([z.record(z.string(), z.unknown()), z.string()]),
+    mode: z.enum(["silent", "takeover"]),
     runLimit: z.number().int().min(-1),
     target: z.string().min(1),
     tool: z.string().min(1),
     when: z.enum(["before", "after"]),
-  },
-  hookSchema = z.strictObject({ ...callFields, mode: z.enum(["silent", "takeover"]) }),
+  }),
   hooksFileSchema = z
     .strictObject({ hooks: emptyAs(z.array(hookSchema), []) })
     .superRefine(({ hooks }, context) => {
@@ -37,9 +36,6 @@ const argsSchema = z.record(z.string(), z.unknown()),
         ids.add(hook.id);
       }
     });
-function parseHookRules(value: unknown): HookRule[] {
-  return hooksFileSchema.parse(value).hooks;
-}
 export function loadConfiguredHookRules(
   context: SettingsContext,
   placeholders: Omit<PlaceholderOptions, "source"> = { deferSession: true },
@@ -51,5 +47,5 @@ export function loadConfiguredHookRules(
   if (!file) {
     throw new Error(localize("configuration:hooks.configurationMissing"));
   }
-  return parseHookRules(file.value);
+  return hooksFileSchema.parse(file.value).hooks;
 }

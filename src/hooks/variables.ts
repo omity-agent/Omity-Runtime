@@ -2,6 +2,7 @@ import { isPlainObject as isRecord } from "es-toolkit";
 
 import { localize } from "../i18n/server";
 import { resolvePlaceholders } from "../infrastructure/configuration/placeholders";
+import type { HookRule } from "../types";
 import type { HookToolOutput } from "./storage/outputs";
 
 interface HookVariables {
@@ -20,16 +21,15 @@ interface ToolOutputReference {
 const outputVariablePattern =
     /^toolOutputs\.(?<order>fromEnd|fromStart)\.(?<ordinalText>[1-9]\d*)\.(?<field>output|structuredOutput)(?:\.(?<path>[^.]+(?:\.[^.]+)*))?$/,
   outputVariablePrefix = "toolOutputs.";
-export function resolveHookArgs(args: Record<string, unknown>, variables: HookVariables) {
-  const resolved = resolvePlaceholders(args, {
+export function resolveHookInput(
+  { id, input }: Pick<HookRule, "id" | "input">,
+  variables: HookVariables,
+) {
+  return resolvePlaceholders(input, {
     dynamic: (name) => hookVariableValue(name, variables),
     session: { cwd: variables.cwd, session: variables.session },
-    source: localize("hooks:variables.argumentLabel"),
+    source: localize("hooks:variables.inputLabel", { value0: id }),
   });
-  if (!isRecord(resolved)) {
-    throw new Error(localize("hooks:variables.resultMustBeObject"));
-  }
-  return resolved;
 }
 export function isHookOutputVariable(name: string) {
   return parseOutputReference(name) !== undefined;

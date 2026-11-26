@@ -102,12 +102,11 @@ export async function runHostSession(
       logger,
       mode.sessionId,
       workspace,
-      paths.dir,
       mcp.freeformToolParameters,
+      paths.dir,
     ),
     graph = buildGraph(settings, tools, frozenDefinition.prefix.tools.tools, db.db, hooks, {
       codexVersion,
-      freeformToolParameters: mcp.freeformToolParameters,
       toolExecutions,
     });
   options.onReady?.({

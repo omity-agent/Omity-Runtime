@@ -22,7 +22,7 @@ test("session snapshots lock only the model prefix while runtime configuration c
   const root = createTestDirectory("session-snapshot"),
     { choice, open_ended } = fixtureTools,
     toolboxes = { choice, open_ended },
-    rule = { args: {}, mode: "silent", runLimit: -1, target: "agent" };
+    rule = { input: {}, mode: "silent", runLimit: -1, target: "agent" };
   resources.defer(() => removeDatabaseDirectory(root));
   resources.use(scopedEnvironment({ OMITY_HOME: join(root, "home") }));
   const { context, profileDirectory } = writeTestConfiguration(root, {

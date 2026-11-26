@@ -4,6 +4,7 @@ import type { ModelMessage } from "ai";
 import { isPlainObject } from "es-toolkit";
 
 import { localize } from "../../i18n/server";
+import { freeformCallInput } from "../../runtime/freeform";
 import { modelToolOutput } from "../../runtime/multimodal";
 import type { ModelApi } from "../../types";
 import { assistantContent, type ModelAssistantPart, textContent } from "./assistantContent";
@@ -51,7 +52,7 @@ function modelToolCall(
     throw new Error(localize("agent:messages.toolCallIdMissing", { value0: call.name }));
   }
   const part: ModelToolCallPart = {
-      input: customToolInput(call),
+      input: freeformCallInput(call) ?? call.args,
       toolCallId: call.id,
       toolName: call.name,
       type: "tool-call",
@@ -68,14 +69,4 @@ function toolProviderOptions(message: AIMessage, callId: string): ProviderOption
     return undefined;
   }
   return byCall[callId];
-}
-function customToolInput(call: NonNullable<AIMessage["tool_calls"]>[number]) {
-  if (Reflect.get(call, "isCustomTool") !== true) {
-    return call.args;
-  }
-  const input: unknown = isPlainObject(call.args) ? call.args["input"] : undefined;
-  if (typeof input !== "string") {
-    throw new TypeError(localize("agent:messages.freeformInputNotString", { value0: call.name }));
-  }
-  return input;
 }

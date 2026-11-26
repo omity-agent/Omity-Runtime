@@ -69,10 +69,10 @@ export function writeTestConfiguration(root: string, options: TestConfigurationO
 export function writeFixtureYaml(directory: string, name: string, value: unknown) {
   writeFileSync(join(directory, `${name}.yaml`), stringify(value));
 }
-export function testSettings() {
+export function testSettings(options: TestConfigurationOptions = {}) {
   const root = createTestDirectory("settings-fixture");
   try {
-    const { context } = writeTestConfiguration(root, { systemPrompt: "test" });
+    const { context } = writeTestConfiguration(root, { systemPrompt: "test", ...options });
     return loadSettings(root, { settingsContext: context });
   } finally {
     rmSync(root, { force: true, recursive: true });

@@ -2,7 +2,6 @@
   "messages": {
     "typeUnsupported": "不支持转换消息类型：{{value0}}",
     "toolCallIdMissing": "工具调用缺少 ID：{{value0}}",
-    "freeformInputNotString": "MCP free-form 工具 {{value0}} 输入必须是字符串",
     "persistedContentInvalid": "会话保存的 AI SDK 内容格式无效"
   },
   "stream": {

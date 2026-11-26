@@ -70,7 +70,7 @@ export interface HookRule {
   runLimit: number;
   mode: HookMode;
   tool: string;
-  args: Record<string, unknown>;
+  input: Record<string, unknown> | string;
 }
 export interface SkillInfo {
   name: string;

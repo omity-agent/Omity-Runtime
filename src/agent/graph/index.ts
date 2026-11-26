@@ -26,6 +26,7 @@ import {
   type ModelToolDefinition,
   modelToolDefinitions,
 } from "../../infrastructure/mcp/tools/definitions";
+import { freeformCallInput } from "../../runtime/freeform";
 import type { HookInvocation } from "../../runtime/stream/invocations";
 import { toolValueText } from "../../runtime/toolOutput";
 import type { HookRule, Settings } from "../../types";
@@ -56,7 +57,6 @@ type GraphState = typeof AgentState.State;
 interface GraphOptions {
   checkpointer?: BaseCheckpointSaver;
   codexVersion?: string;
-  freeformToolParameters?: ReadonlyMap<string, string>;
   hooks: HookRuntime;
   model?: LanguageModel;
   settings: Settings;
@@ -70,7 +70,7 @@ export function buildGraph(
   toolDefinitions: ModelToolDefinition[],
   database: Database,
   hooks: HookRuntime,
-  options: Pick<GraphOptions, "codexVersion" | "freeformToolParameters" | "toolExecutions"> = {},
+  options: Pick<GraphOptions, "codexVersion" | "toolExecutions"> = {},
 ) {
   return createAgentGraph({
     checkpointer: new BunSqliteSaver(database),
@@ -82,7 +82,8 @@ export function buildGraph(
   });
 }
 export function createAgentGraph(options: GraphOptions) {
-  const freeform = options.freeformToolParameters ?? new Map(),
+  const freeform = options.hooks.freeformToolParameters,
+    freeformToolNames = new Set(freeform.keys()),
     model = options.model ?? buildAiModel(options.settings, options.codexVersion),
     definitions = options.toolDefinitions ?? modelToolDefinitions(options.tools, freeform),
     modelTools = aiModelTools(definitions, modelApi(options.settings)),
@@ -94,7 +95,7 @@ export function createAgentGraph(options: GraphOptions) {
     }),
     requestModel = task("request_model", (messages: BaseMessage[]) =>
       streamAiModel({
-        freeformToolNames: new Set(freeform.keys()),
+        freeformToolNames,
         messages,
         model,
         sessionId: options.hooks.sessionId,
@@ -106,8 +107,7 @@ export function createAgentGraph(options: GraphOptions) {
     ),
     invokeToolTask = task("invoke_tool", (call: ToolCall, mode: HookRule["mode"]) => {
       if (mode === "takeover") {
-        const input: unknown = call.args["input"],
-          raw = freeform.has(call.name) && typeof input === "string" ? input : undefined;
+        const raw = freeformCallInput(call);
         getWriter()?.({
           argumentsText: raw ?? toolValueText(call.args),
           callId: requireCallId(call),
