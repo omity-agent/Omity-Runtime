@@ -36,7 +36,12 @@ export const connectStdioClient: StdioConnector = async (
       args: connection.args,
       command: connection.command,
       cwd: connection.cwd,
-      env: connection.env,
+      env: {
+        ...Object.fromEntries(
+          Object.entries(process.env).map(([name, value]) => [name, String(value)]),
+        ),
+        ...connection.env,
+      },
       stderr: "pipe",
     }),
     { stderr } = transport,
