@@ -18,7 +18,7 @@ const page = css({
   }),
   card = css({
     background: "bg.default",
-    borderColor: "border.emphasized",
+    borderColor: "border.default",
     borderWidth: "hairline",
     display: "grid",
     gap: "5",

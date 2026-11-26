@@ -52,9 +52,6 @@ styles:
       textDecorationColor: current
       textDecorationLine: underline
       textUnderlineOffset: 0.15em
-  selectedCaption:
-    value:
-      fontWeight: semibold
   sidebarCount:
     value:
       fontSize: metadata

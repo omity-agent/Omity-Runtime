@@ -5,7 +5,7 @@ export const syntaxThemeName = "omity";
 export const syntaxTheme = createCssVariablesTheme({
   name: syntaxThemeName,
   variableDefaults: {
-    "ansi-black": token.var("colors.bg.subtle"),
+    "ansi-black": token.var("colors.bg.canvas"),
     "ansi-blue": token.var("colors.syntax.meta"),
     "ansi-bright-black": token.var("colors.fg.muted"),
     "ansi-bright-blue": token.var("colors.syntax.meta"),
@@ -21,7 +21,7 @@ export const syntaxTheme = createCssVariablesTheme({
     "ansi-red": token.var("colors.syntax.deletion"),
     "ansi-white": token.var("colors.fg.default"),
     "ansi-yellow": token.var("colors.syntax.number"),
-    background: token.var("colors.bg.subtle"),
+    background: token.var("colors.bg.canvas"),
     foreground: token.var("colors.fg.default"),
     "token-changed": token.var("colors.syntax.meta"),
     "token-comment": token.var("colors.syntax.comment"),

@@ -10,11 +10,11 @@ const frame = sva({
     accessory: { alignItems: "center", display: "flex", flexShrink: 0 },
     content: {
       _closed: {
-        _motionReduce: { animation: "disabled" },
+        _motionReduce: { animation: "none" },
         animation: "detailCollapse",
       },
       _open: {
-        _motionReduce: { animation: "disabled" },
+        _motionReduce: { animation: "none" },
         animation: "detailExpand",
       },
       overflow: "hidden",
@@ -22,7 +22,7 @@ const frame = sva({
     disclosure: {
       _groupExpanded: { transform: "rotate(180deg)" },
       _motionReduce: { transitionProperty: "none" },
-      color: "fg.subtle",
+      color: "fg.muted",
       flexShrink: 0,
       height: "smallIcon",
       transitionDuration: "fast",
@@ -30,7 +30,7 @@ const frame = sva({
       width: "smallIcon",
     },
     header: {
-      _hover: { background: "bg.hover" },
+      _hover: { background: "bg.emphasized" },
       alignItems: "center",
       display: "flex",
       height: "detailHeader",
@@ -42,7 +42,7 @@ const frame = sva({
     },
     icon: { flexShrink: 0, height: "smallIcon", width: "smallIcon" },
     root: {
-      color: "fg.subtle",
+      color: "fg.muted",
       fontSize: "interface",
       maxWidth: "full",
       minWidth: "0",
@@ -66,7 +66,7 @@ const frame = sva({
       appearance: "none",
       background: "transparent",
       borderWidth: "0",
-      color: "fg.subtle",
+      color: "fg.muted",
       cursor: "pointer",
       display: "flex",
       flexBasis: "0",

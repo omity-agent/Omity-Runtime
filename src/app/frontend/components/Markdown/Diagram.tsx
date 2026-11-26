@@ -11,7 +11,7 @@ const image = css({
     justifySelf: "start",
     maxWidth: "full",
   }),
-  errorText = css({ color: "fg.error" }),
+  errorText = css({ color: "status.error" }),
   pendingText = css({ color: "fg.muted" }),
   svgNamespace = "http://www.w3.org/2000/svg";
 type DiagramLanguage = "mermaid" | "svg";

@@ -2,10 +2,10 @@ import { defineAnimationStyles, defineGlobalStyles, defineLayerStyles } from "@p
 
 export const animationStyles = defineAnimationStyles({
   activity: {
-    value: { _motionReduce: { animation: "disabled" }, animation: "progressPulse" },
+    value: { _motionReduce: { animation: "none" }, animation: "progressPulse" },
   },
   busy: {
-    value: { _motionReduce: { animation: "disabled" }, animation: "spin" },
+    value: { _motionReduce: { animation: "none" }, animation: "spin" },
   },
 });
 
@@ -46,7 +46,13 @@ export const layerStyles = defineLayerStyles({
   },
 });
 export const globalCss = defineGlobalStyles({
-  "*": { boxSizing: "border-box" },
+  "*, *::before, *::after": {
+    borderColor: "border.default",
+    borderStyle: "solid",
+    boxSizing: "border-box",
+  },
+  "*::placeholder": { color: "fg.muted", opacity: 1 },
+  "*::selection": { background: "bg.selection" },
   ".lucide": { flexShrink: 0, height: "interfaceIcon", width: "interfaceIcon" },
   body: {
     background: "bg.canvas",

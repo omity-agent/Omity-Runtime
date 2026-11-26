@@ -14,17 +14,17 @@ const positioning = { gutter: 4, placement: "bottom-start" as const },
   fileMenu = sva({
     base: {
       content: {
-        background: "bg.muted",
-        borderColor: "border.emphasized",
-        borderRadius: "l1",
+        background: "bg.default",
+        borderColor: "border.default",
+        borderRadius: "none",
         borderWidth: "hairline",
-        boxShadow: "lg",
+        boxShadow: "menu",
         padding: "1",
         width: "max",
         zIndex: "dropdown",
       },
       item: {
-        _highlighted: { background: "bg.hover" },
+        _highlighted: { background: "bg.emphasized" },
         alignItems: "center",
         background: "transparent",
         borderWidth: "0",

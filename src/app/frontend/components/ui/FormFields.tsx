@@ -23,17 +23,7 @@ function FieldLabel({ className, ...props }: ComponentProps<typeof ArkField.Labe
   return createElement(ArkField.Label, { ...props, className: cx(classes.label, className) });
 }
 
-function FieldGroup({ className, ...props }: ComponentProps<"fieldset">) {
-  return createElement("fieldset", { ...props, className: cx(classes.root, className) });
-}
-
-function FieldLegend({ className, ...props }: ComponentProps<"legend">) {
-  return createElement("legend", { ...props, className: cx(classes.label, className) });
-}
-
 export const Field = {
-  Group: FieldGroup,
   Label: FieldLabel,
-  Legend: FieldLegend,
   Root: FieldRoot,
 };

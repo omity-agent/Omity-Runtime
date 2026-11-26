@@ -66,7 +66,7 @@ export function MarkdownEditor({
       indentationMarkers({
         colors: {
           activeDark: token.var("colors.fg.muted"),
-          dark: token.var("colors.border.emphasized"),
+          dark: token.var("colors.border.default"),
         },
         hideFirstIndent: false,
         markerType: "fullScope",

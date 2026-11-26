@@ -1,75 +1,100 @@
+breakpoints:
+  sm: 640px
+  md: 768px
+  lg: 1024px
+  xl: 1280px
 dimensions:
   animations:
-    detailCollapse:
-      value: detailCollapse 140ms ease-in
-    detailExpand:
-      value: detailExpand 140ms ease-out
-    progressPulse:
-      value: pulse 1.8s ease-in-out infinite
+    detailCollapse: { value: detailCollapse 140ms ease-in }
+    detailExpand: { value: detailExpand 140ms ease-out }
+    none: { value: none }
+    progressPulse: { value: pulse 1.8s ease-in-out infinite }
+    spin: { value: spin 1s linear infinite }
   borderWidths:
-    "0":
-      value: "0"
-    accent:
-      value: 4px
-    hairline:
-      value: 1px
-    medium:
-      value: 3px
+    "0": { value: "0" }
+    hairline: { value: 1px }
+    medium: { value: 3px }
   durations:
-    fast:
-      value: 120ms
-    medium:
-      value: 150ms
+    fast: { value: 120ms }
+  fontSizes:
+    2xs: { value: 0.5rem }
+    xs: { value: 0.75rem }
+    sm: { value: 0.875rem }
+    md: { value: 1rem }
+    lg: { value: 1.125rem }
+    xl: { value: 1.25rem }
+  fontWeights:
+    normal: { value: "400" }
+    medium: { value: "500" }
+    semibold: { value: "600" }
+    bold: { value: "700" }
   lineHeights:
-    code:
-      value: "1.65"
-    editor:
-      value: "1.6"
-    markdown:
-      value: "1.7"
-    markdownHeading:
-      value: "1.35"
+    tight: { value: "1.25" }
+    normal: { value: "1.5" }
+    code: { value: "1.65" }
+    editor: { value: "1.6" }
+    markdown: { value: "1.7" }
+    markdownHeading: { value: "1.35" }
+  radii:
+    none: { value: "0" }
+    sm: { value: 0.25rem }
+    md: { value: 0.375rem }
+    xl: { value: 0.75rem }
+    full: { value: 9999px }
+  shadows:
+    menu: { value: "0 8px 16px rgb(0 0 0 / 50%), inset 0 0 1px #ffffff3b" }
   sizes:
-    accessCard:
-      value: 32rem
-    appSidebar:
-      value: clamp(15rem, 22vw, 20rem)
-    composerLimit:
-      value: 50dvh
-    content:
-      value: 52rem
-    detailHeader:
-      value: 2.25rem
-    sourceLine:
-      value: 1lh
-    toolOutput:
-      value: 16rem
-    toolOutputMinimum:
-      value: 3rem
-    viewport:
-      value: 100dvh
+    "0": { value: "{spacing.0}" }
+    "0.5": { value: "{spacing.0.5}" }
+    "2.5": { value: "{spacing.2.5}" }
+    "3": { value: "{spacing.3}" }
+    "3.5": { value: "{spacing.3.5}" }
+    "4": { value: "{spacing.4}" }
+    "4.5": { value: "{spacing.4.5}" }
+    "5": { value: "{spacing.5}" }
+    "6": { value: "{spacing.6}" }
+    "7": { value: "{spacing.7}" }
+    "8": { value: "{spacing.8}" }
+    "11": { value: 2.75rem }
+    fit: { value: fit-content }
+    full: { value: 100% }
+    max: { value: max-content }
+    min: { value: min-content }
+    accessCard: { value: 32rem }
+    appSidebar: { value: "clamp(15rem, 22vw, 20rem)" }
+    composerLimit: { value: 50dvh }
+    detailHeader: { value: 2.25rem }
+    setupColumn: { value: 9rem }
+    sourceLine: { value: 1lh }
+    toolOutput: { value: 16rem }
+    toolOutputMinimum: { value: "{spacing.12}" }
+    viewport: { value: 100dvh }
   spacing:
-    focusInset:
-      value: -1px
-    safeAreaBlockEnd:
-      value: env(safe-area-inset-bottom)
-    safeAreaBlockStart:
-      value: env(safe-area-inset-top)
-    safeAreaInlineEnd:
-      value: env(safe-area-inset-right)
-    safeAreaInlineStart:
-      value: env(safe-area-inset-left)
-    sidebarInset:
-      value: 2px
+    "0": { value: 0rem }
+    "0.5": { value: 0.125rem }
+    "1": { value: 0.25rem }
+    "1.5": { value: 0.375rem }
+    "2": { value: 0.5rem }
+    "2.5": { value: 0.625rem }
+    "3": { value: 0.75rem }
+    "3.5": { value: 0.875rem }
+    "4": { value: 1rem }
+    "4.5": { value: 1.125rem }
+    "5": { value: 1.25rem }
+    "6": { value: 1.5rem }
+    "7": { value: 1.75rem }
+    "8": { value: 2rem }
+    "12": { value: 3rem }
+    focusInset: { value: -1px }
+    safeAreaBlockEnd: { value: env(safe-area-inset-bottom) }
+    safeAreaBlockStart: { value: env(safe-area-inset-top) }
+    safeAreaInlineEnd: { value: env(safe-area-inset-right) }
+    safeAreaInlineStart: { value: env(safe-area-inset-left) }
   zIndex:
-    base:
-      value: 1
-    pinned:
-      value: 2
+    base: { value: 1 }
+    pinned: { value: 2 }
+    dropdown: { value: 1000 }
 adaptive:
-  animations:
-    disabled:
-      value: none
   fontSizes:
     editor:
       value:

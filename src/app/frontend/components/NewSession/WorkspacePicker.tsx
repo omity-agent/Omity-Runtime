@@ -1,42 +1,43 @@
-import { Check, FolderOpen, History } from "lucide-react";
+import { Check, Folder, FolderOpen, History } from "lucide-react";
 import { type ChangeEvent, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { css } from "styled-system/css";
 
 import { reportPromiseErrors } from "../../services/errors";
 import { Button, Field, Input } from "../ui";
+import { fieldLabel, setupControl, wrappingRow } from "./setupLayout";
 
 const row = css({
     display: "grid",
     gap: "2",
-    gridTemplateColumns: {
-      base: "minmax(0, 1fr)",
-      sm: "minmax(0, 1fr) auto",
-    },
+    gridTemplateColumns: "minmax(0, 1fr) auto",
     minWidth: "0",
   }),
-  pathInput = css({ minWidth: "0", textOverflow: "ellipsis" }),
+  pathInput = css(setupControl, { fontFamily: "mono", textOverflow: "ellipsis" }),
+  folderButton = css(setupControl, {
+    _hover: { background: "bg.emphasized" },
+    minWidth: "controlTarget",
+    paddingInline: { base: "0", sm: "3" },
+  }),
+  folderText = css({ display: { base: "none", sm: "inline" } }),
   recent = css({
     display: "grid",
-    gap: "2",
-    gridTemplateColumns: "minmax(0, 1fr)",
+    gap: "1",
+    gridColumn: "1 / -1",
     minWidth: "0",
   }),
-  recentLabel = css({ color: "fg.subtle", fontSize: "metadata" }),
-  recentList = css({
-    display: "grid",
-    gap: "2",
-    gridTemplateColumns: "minmax(0, 1fr)",
-    minWidth: "0",
-  }),
+  recentLabel = css({ color: "fg.muted", fontSize: "metadata" }),
+  recentList = css(wrappingRow, { gap: "1" }),
+  recentItem = css({ maxInlineSize: "full", minWidth: "0" }),
   recentButton = css({
-    "&:nth-child(n + 3)": { _short: { display: "none" } },
-    "&:nth-child(n + 4)": { _compact: { display: "none" } },
-    "&:nth-child(n + 6)": { "@media (height < 64rem)": { display: "none" } },
+    '&[aria-pressed="true"]': { background: "bg.default", color: "fg.default" },
+    _focusVisible: { outlineOffset: "focusInset" },
+    _hover: { background: "bg.emphasized", color: "fg.default" },
+    borderRadius: "md",
     justifyContent: "flex-start",
-    maxWidth: "full",
+    maxInlineSize: "full",
     minWidth: "0",
-    width: "full",
+    paddingInline: "2",
   }),
   recentPath = css({
     minWidth: "0",
@@ -60,21 +61,18 @@ async function pickWorkspace(
   }
 }
 export function WorkspacePicker({
-  recentWorkspaces,
-  className,
   disabled = false,
   workspace,
   onChange,
   onPick,
 }: {
-  className?: string;
   disabled?: boolean;
-  recentWorkspaces: string[];
   workspace: string;
   onChange: (workspace: string) => void;
   onPick: () => Promise<string | null>;
 }) {
   const { t } = useTranslation("preparation"),
+    folderLabel = t("chooseFolder"),
     [picking, setPicking] = useState(false),
     handlePick = useCallback(() => {
       reportPromiseErrors(pickWorkspace(onPick, onChange, setPicking));
@@ -86,8 +84,11 @@ export function WorkspacePicker({
       [onChange],
     );
   return (
-    <Field.Root className={className} disabled={disabled}>
-      <Field.Label>{t("workspace")}</Field.Label>
+    <Field.Root disabled={disabled}>
+      <Field.Label className={fieldLabel}>
+        <Folder aria-hidden />
+        {t("workspace")}
+      </Field.Label>
       <span className={row}>
         <Input
           className={pathInput}
@@ -95,28 +96,50 @@ export function WorkspacePicker({
           value={workspace}
           onChange={handleInputChange}
         />
-        <Button disabled={disabled || picking} onClick={handlePick} type="button">
-          <FolderOpen size={14} /> {t("chooseFolder")}
+        <Button
+          aria-label={folderLabel}
+          className={folderButton}
+          disabled={disabled || picking}
+          onClick={handlePick}
+          title={folderLabel}
+        >
+          <FolderOpen aria-hidden />
+          <span className={folderText}>{folderLabel}</span>
         </Button>
       </span>
-      {recentWorkspaces.length > 0 ? (
-        <div className={recent}>
-          <span className={recentLabel}>{t("recentWorkspaces")}</span>
-          <div className={recentList}>
-            {recentWorkspaces.map((item) => (
-              <RecentWorkspaceButton
-                disabled={disabled}
-                item={item}
-                key={item}
-                selected={item === workspace}
-                onChange={onChange}
-              />
-            ))}
-          </div>
-        </div>
-      ) : null}
     </Field.Root>
   );
+}
+export function RecentWorkspaces({
+  disabled,
+  items,
+  onChange,
+  workspace,
+}: {
+  disabled: boolean;
+  items: string[];
+  onChange: (workspace: string) => void;
+  workspace: string;
+}) {
+  const { t } = useTranslation("preparation"),
+    label = t("recentWorkspaces");
+  return items.length > 0 ? (
+    <div className={recent}>
+      <span className={recentLabel}>{label}</span>
+      <ul aria-label={label} className={recentList}>
+        {items.map((item) => (
+          <li className={recentItem} key={item}>
+            <RecentWorkspaceButton
+              disabled={disabled}
+              item={item}
+              selected={item === workspace}
+              onChange={onChange}
+            />
+          </li>
+        ))}
+      </ul>
+    </div>
+  ) : null;
 }
 function RecentWorkspaceButton({
   disabled,
@@ -139,9 +162,9 @@ function RecentWorkspaceButton({
       disabled={disabled}
       onClick={select}
       title={item}
-      type="button"
+      visual="ghost"
     >
-      {selected ? <Check size={14} /> : <History size={14} />}
+      {selected ? <Check aria-hidden /> : <History aria-hidden />}
       <span className={recentPath}>{item}</span>
     </Button>
   );

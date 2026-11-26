@@ -22,6 +22,7 @@ export function readThemeData(directory: URL) {
     metrics = z
       .object({
         adaptive: z.custom<SemanticTokens>(isPlainObject),
+        breakpoints: z.record(z.string(), z.string()),
         dimensions: z.custom<Tokens>(isPlainObject),
       })
       .parse(readTheme(directory, "metrics.yaml")),
@@ -32,6 +33,7 @@ export function readThemeData(directory: URL) {
       })
       .parse(readTheme(directory, "typography.yaml"));
   return {
+    breakpoints: metrics.breakpoints,
     semanticTokens: defineSemanticTokens({ ...metrics.adaptive, colors: colors.roles }),
     textStyles: defineTextStyles(typography.styles),
     tokens: defineTokens({ ...metrics.dimensions, colors: colors.scale, fonts: typography.fonts }),

@@ -14,15 +14,15 @@ export const conversationEntry = sva({
       whiteSpace: "nowrap",
     },
     root: {
-      _focusWithin: { background: "bg.hover" },
-      _hover: { background: "bg.hover" },
+      _focusWithin: { background: "bg.emphasized" },
+      _hover: { background: "bg.emphasized" },
       _motionReduce: { transitionProperty: "none" },
       borderRadius: "md",
       minWidth: "0",
       transitionDuration: "fast",
       transitionProperty: "background",
     },
-    time: { color: "fg.subtle", fontSize: "metadata", whiteSpace: "nowrap" },
+    time: { color: "fg.muted", fontSize: "metadata", whiteSpace: "nowrap" },
     trigger: {
       _focusVisible: { layerStyle: "focusRing", outlineOffset: "focusInset" },
       alignItems: "center",
@@ -45,7 +45,7 @@ export const conversationEntry = sva({
   variants: {
     active: {
       true: {
-        caption: { color: "fg.default", textStyle: "selectedCaption" },
+        caption: { color: "fg.default", fontWeight: "semibold" },
         root: { background: "bg.emphasized" },
       },
     },

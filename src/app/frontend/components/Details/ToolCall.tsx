@@ -37,7 +37,7 @@ const ioGrid = css({
     fontSize: "metadata",
     justifyContent: "space-between",
   }),
-  tokenCount = css({ color: "fg.subtle", fontFamily: "mono" }),
+  tokenCount = css({ color: "fg.muted", fontFamily: "mono" }),
   codeBlock = css({
     maxHeight: "toolOutput",
     minHeight: "toolOutputMinimum",

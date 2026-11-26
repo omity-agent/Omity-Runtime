@@ -7,7 +7,7 @@ export const button = defineRecipe({
     _motionReduce: { transitionProperty: "none" },
     alignItems: "center",
     appearance: "none",
-    borderRadius: "l1",
+    borderRadius: "none",
     borderWidth: "hairline",
     cursor: "pointer",
     display: "inline-flex",
@@ -42,26 +42,26 @@ export const button = defineRecipe({
     visual: {
       ghost: {
         _disabled: { color: "fg.disabled" },
-        _hover: { background: "bg.hover" },
+        _hover: { background: "bg.emphasized" },
         background: "transparent",
         borderColor: "transparent",
         color: "fg.muted",
       },
       outline: {
         _disabled: {
-          background: "bg.disabled",
-          borderColor: "border.disabled",
+          background: "bg.default",
+          borderColor: "border.default",
           color: "fg.disabled",
         },
-        _hover: { background: "bg.hover" },
+        _hover: { background: "bg.emphasized" },
         background: "bg.default",
-        borderColor: "border.emphasized",
+        borderColor: "border.default",
         color: "fg.default",
       },
       solid: {
         _disabled: {
-          background: "bg.disabled",
-          borderColor: "border.disabled",
+          background: "bg.default",
+          borderColor: "border.default",
           color: "fg.disabled",
         },
         _hover: { background: "fg.muted" },

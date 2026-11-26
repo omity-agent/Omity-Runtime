@@ -105,7 +105,7 @@ test("compact layout keeps setup, navigation and message preview controls usable
     directory = await workspace.boundingBox(),
     configuration = await profile.boundingBox();
   expect(directory!.x + directory!.width).toBeLessThan(configuration!.x);
-  expect((await recent.boundingBox())!.y).toBeLessThan((await next.boundingBox())!.y);
+  expect((await next.boundingBox())!.x).toBeGreaterThan((await recent.boundingBox())!.x);
   await browserExpect(credentials).toBeVisible();
   await setPreparationLayout(page, "compact");
   await browserExpect(page.locator("aside")).toBeHidden();

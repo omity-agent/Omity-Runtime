@@ -28,4 +28,8 @@ export const keyframes = {
     from: { opacity: "0", transform: "translate3d(0, 0.375rem, 0)" },
     to: { opacity: "1", transform: "translate3d(0, 0, 0)" },
   },
+  spin: {
+    "0%": { transform: "rotate(0deg)" },
+    "100%": { transform: "rotate(360deg)" },
+  },
 };

@@ -1,112 +1,54 @@
 scale:
   accent:
-    blue:
-      value: "#7dcfff"
-    cyan:
-      value: "#2ac3de"
-    green:
-      value: "#9ece6a"
-    indigo:
-      value: "#aab6e8"
-    orange:
-      value: "#ff9e64"
-    purple:
-      value: "#bb9af7"
-    red:
-      value: "#f7768e"
-    selection:
-      value: "#405d9e"
+    blue: { value: "#7dcfff" }
+    cyan: { value: "#2ac3de" }
+    green: { value: "#9ece6a" }
+    indigo: { value: "#aab6e8" }
+    orange: { value: "#ff9e64" }
+    purple: { value: "#bb9af7" }
+    red: { value: "#f7768e" }
+    selection: { value: "#405d9e" }
   ink:
-    "50":
-      value: "#f5f5f5"
-    "300":
-      value: "#c4c4c4"
-    "500":
-      value: "#888888"
-    "700":
-      value: "#494949"
-    "850":
-      value: "#262626"
-    "1000":
-      value: "#000000"
+    "50": { value: "#f5f5f5" }
+    "300": { value: "#c4c4c4" }
+    "500": { value: "#888888" }
+    "700": { value: "#494949" }
+    "850": { value: "#262626" }
+    "900": { value: "#191919" }
+    "1000": { value: "#000000" }
+  current: { value: currentColor }
+  transparent: { value: transparent }
 roles:
   bg:
-    canvas:
-      value: "{colors.ink.1000}"
-    default:
-      value: "{colors.ink.850}"
-    disabled:
-      value: "{colors.bg.default}"
-    emphasized:
-      value: "{colors.ink.700}"
-    hover:
-      value: "{colors.bg.emphasized}"
-    muted:
-      value: "{colors.bg.default}"
-    selection:
-      value: "{colors.accent.selection}"
-    subtle:
-      value: "{colors.bg.canvas}"
+    canvas: { value: "{colors.ink.1000}" }
+    default: { value: "{colors.ink.850}" }
+    emphasized: { value: "{colors.ink.700}" }
+    panel: { value: "{colors.ink.900}" }
+    selection: { value: "{colors.accent.selection}" }
   border:
-    default:
-      value: "{colors.ink.700}"
-    disabled:
-      value: "{colors.border.default}"
-    emphasized:
-      value: "{colors.border.default}"
-    error:
-      value: "{colors.accent.red}"
-    muted:
-      value: "{colors.border.default}"
-    outline:
-      value: "{colors.ink.300}"
-    subtle:
-      value: "{colors.border.default}"
+    default: { value: "{colors.ink.700}" }
+    outline: { value: "{colors.ink.300}" }
   fg:
-    default:
-      value: "{colors.ink.50}"
-    disabled:
-      value: "{colors.ink.500}"
-    error:
-      value: "{colors.accent.red}"
-    link:
-      value: "{colors.accent.blue}"
-    muted:
-      value: "{colors.ink.300}"
-    subtle:
-      value: "{colors.fg.muted}"
+    default: { value: "{colors.ink.50}" }
+    disabled: { value: "{colors.ink.500}" }
+    link: { value: "{colors.accent.blue}" }
+    muted: { value: "{colors.ink.300}" }
   speaker:
-    assistant:
-      value: "{colors.accent.blue}"
-    user:
-      value: "{colors.accent.orange}"
+    assistant: { value: "{colors.accent.blue}" }
+    user: { value: "{colors.accent.orange}" }
   status:
-    error:
-      value: "{colors.accent.red}"
-    idle:
-      value: "{colors.ink.500}"
-    model:
-      value: "{colors.accent.blue}"
-    paused:
-      value: "{colors.accent.orange}"
-    tool:
-      value: "{colors.accent.green}"
+    error: { value: "{colors.accent.red}" }
+    idle: { value: "{colors.ink.500}" }
+    model: { value: "{colors.accent.blue}" }
+    paused: { value: "{colors.accent.orange}" }
+    tool: { value: "{colors.accent.green}" }
   syntax:
-    addition:
-      value: "{colors.accent.green}"
-    comment:
-      value: "{colors.accent.indigo}"
-    deletion:
-      value: "{colors.accent.red}"
-    keyword:
-      value: "{colors.accent.purple}"
-    meta:
-      value: "{colors.accent.blue}"
-    number:
-      value: "{colors.accent.orange}"
-    property:
-      value: "{colors.accent.blue}"
-    string:
-      value: "{colors.accent.green}"
-    title:
-      value: "{colors.accent.cyan}"
+    addition: { value: "{colors.accent.green}" }
+    comment: { value: "{colors.accent.indigo}" }
+    deletion: { value: "{colors.accent.red}" }
+    keyword: { value: "{colors.accent.purple}" }
+    meta: { value: "{colors.accent.blue}" }
+    number: { value: "{colors.accent.orange}" }
+    property: { value: "{colors.accent.blue}" }
+    string: { value: "{colors.accent.green}" }
+    title: { value: "{colors.accent.cyan}" }

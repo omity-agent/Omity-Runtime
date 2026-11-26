@@ -10,7 +10,7 @@ const classes = sva({
         padding: "2",
         verticalAlign: "top",
       },
-      headerCell: { background: "bg.subtle", fontWeight: "bold", textAlign: "left" },
+      headerCell: { background: "bg.canvas", fontWeight: "bold", textAlign: "left" },
       heading: {
         _first: { paddingBlockStart: "0" },
         paddingBlockStart: "2",
@@ -27,14 +27,14 @@ const classes = sva({
       list: { display: "grid", gap: "1", paddingInlineStart: "5" },
       paragraph: { minWidth: "0", overflowWrap: "anywhere" },
       quote: {
-        borderInlineStartColor: "border.emphasized",
+        borderInlineStartColor: "border.default",
         borderInlineStartWidth: "medium",
         color: "fg.muted",
         display: "grid",
         gap: "3",
         paddingInlineStart: "3",
       },
-      rule: { borderBlockStartWidth: "hairline", borderColor: "border.emphasized", width: "full" },
+      rule: { borderBlockStartWidth: "hairline", borderColor: "border.default", width: "full" },
       table: { borderCollapse: "collapse", minWidth: "max", width: "full" },
     },
     slots: [

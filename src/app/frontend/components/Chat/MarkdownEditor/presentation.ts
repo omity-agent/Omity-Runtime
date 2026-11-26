@@ -32,7 +32,7 @@ export const editorTheme = EditorView.theme(
     ".cm-gutters": {
       backgroundColor: token.var("colors.bg.default"),
       borderInlineEnd: "none",
-      color: token.var("colors.fg.subtle"),
+      color: token.var("colors.fg.muted"),
     },
     ".cm-line": { paddingBlock: "0", paddingInline: token.var("spacing.3") },
     ".cm-placeholder": { color: token.var("colors.fg.muted"), fontStyle: "normal" },

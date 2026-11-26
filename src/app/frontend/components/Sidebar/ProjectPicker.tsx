@@ -8,7 +8,7 @@ import { type WorkspaceGroup, workspaceLabel } from "./sessions";
 
 const projects = css({ display: "grid", gap: "1", paddingBlockEnd: "2" }),
   button = css({
-    _hover: { background: "bg.hover" },
+    _hover: { background: "bg.emphasized" },
     alignItems: "center",
     borderRadius: "md",
     color: "fg.muted",
@@ -29,7 +29,7 @@ const projects = css({ display: "grid", gap: "1", paddingBlockEnd: "2" }),
   name = css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),
   counts = css({
     alignItems: "center",
-    color: "fg.subtle",
+    color: "fg.muted",
     display: "flex",
     fontSize: "metadata",
     gap: "1.5",

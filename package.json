@@ -40,7 +40,6 @@
     "@modelcontextprotocol/sdk": "latest",
     "@openai-oauth/core": "latest",
     "@openai-oauth/local": "latest",
-    "@park-ui/panda-preset": "latest",
     "@replit/codemirror-indentation-markers": "latest",
     "@shikijs/stream": "latest",
     "@simplewebauthn/browser": "latest",

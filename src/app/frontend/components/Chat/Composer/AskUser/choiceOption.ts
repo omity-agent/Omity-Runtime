@@ -5,7 +5,7 @@ export const choiceOption = sva({
     control: {
       _checked: { background: "bg.emphasized", borderColor: "fg.default" },
       alignItems: "center",
-      borderColor: "border.emphasized",
+      borderColor: "border.default",
       borderWidth: "hairline",
       color: "fg.default",
       display: "inline-flex",
@@ -19,7 +19,7 @@ export const choiceOption = sva({
     root: {
       _disabled: { cursor: "not-allowed", opacity: 0.55 },
       _focusWithin: { layerStyle: "focusRing", outlineOffset: "focusInset" },
-      _hover: { background: "bg.hover" },
+      _hover: { background: "bg.emphasized" },
       alignItems: "center",
       cursor: "pointer",
       display: "flex",
@@ -33,7 +33,7 @@ export const choiceOption = sva({
   slots: ["root", "control", "indicator", "label"],
   variants: {
     kind: {
-      checkbox: { control: { borderRadius: "l1" } },
+      checkbox: { control: { borderRadius: "none" } },
       radio: {
         control: {
           _before: {

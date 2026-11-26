@@ -1,6 +1,6 @@
 import { css } from "styled-system/css";
 
-export const total = css({ color: "fg.subtle", textStyle: "sidebarCount" });
+export const total = css({ color: "fg.muted", textStyle: "sidebarCount" });
 export const collections = css({
   alignContent: "start",
   display: "grid",

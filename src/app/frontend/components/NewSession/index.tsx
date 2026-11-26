@@ -6,10 +6,11 @@ import type { useNewSessionDraft } from "../../services/preparation/editorState"
 import { usePreparationCandidates } from "./editor/historyCandidates";
 import { useSessionCreation } from "./editor/submission";
 import { MessageStack } from "./MessageStack";
-import { ConfigurationPanel } from "./options/ConfigurationPanel";
+import { ModelFields } from "./ModelFields";
+import { CapabilityPanels } from "./options/CapabilityPanels";
 import { useSessionPreferences } from "./options/preferences";
-import { scroll, scrollContent, setup } from "./preparationGrid";
-import { WorkspacePicker } from "./WorkspacePicker";
+import { primaryFields, scroll, scrollContent, setup } from "./setupLayout";
+import { RecentWorkspaces, WorkspacePicker } from "./WorkspacePicker";
 
 export function NewSessionPage({
   pageClassName,
@@ -105,29 +106,40 @@ export function NewSessionPage({
       workspace,
     }),
     changeWorkspace = useCallback((value: string) => update({ workspace: value }), [update]),
-    changeProfile = useCallback((profile?: string) => update({ profile }), [update]);
+    changeProfile = useCallback((profile?: string) => update({ profile }), [update]),
+    disabled = draftLoading || submitting;
   return (
     <form className={pageClassName} onSubmit={handleFormSubmit}>
       <div className={scroll} ref={scrollRef}>
         <div className={scrollContent}>
           <div className={setup}>
-            <WorkspacePicker
-              disabled={draftLoading || submitting}
-              recentWorkspaces={recentWorkspaces}
-              workspace={workspace}
-              onChange={changeWorkspace}
-              onPick={onPickWorkspace}
-            />
-            <ConfigurationPanel
-              availableProfiles={availableProfiles}
-              disabled={draftLoading || submitting}
-              onProfileChange={changeProfile}
-              selectedProfile={preparation.draft.profile}
-              selection={selection}
-            />
+            <div className={primaryFields}>
+              <WorkspacePicker
+                disabled={disabled}
+                workspace={workspace}
+                onChange={changeWorkspace}
+                onPick={onPickWorkspace}
+              />
+              <ModelFields
+                availableProfiles={availableProfiles}
+                disabled={disabled}
+                model={selection.model}
+                modelDisabled={!selection.ready}
+                onModelChange={selection.handleModelChange}
+                onProfileChange={changeProfile}
+                profile={preparation.draft.profile}
+              />
+              <RecentWorkspaces
+                disabled={disabled}
+                items={recentWorkspaces}
+                onChange={changeWorkspace}
+                workspace={workspace}
+              />
+            </div>
+            <CapabilityPanels disabled={disabled} selection={selection} />
           </div>
           <MessageStack
-            disabled={draftLoading || submitting}
+            disabled={disabled}
             latest={latest}
             onAppend={handleAppend}
             onPasteFiles={pasteFiles}
