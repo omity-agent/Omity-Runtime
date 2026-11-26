@@ -1,5 +1,8 @@
-import { sessionPaths } from "../../../infrastructure/configuration/sessionPaths";
-import { AgentDatabase } from "../../../infrastructure/database/agentDatabase";
+import {
+  resolveSessionPaths,
+  sessionPaths,
+} from "../../../infrastructure/configuration/sessionPaths";
+import type { AgentDatabase } from "../../../infrastructure/database/agentDatabase";
 import { UserMessageArchive } from "../../../infrastructure/database/session/archive";
 import { initializeConversation } from "../../../infrastructure/database/session/initialConversation";
 import {
@@ -14,6 +17,7 @@ import { initialHistory, type InitialMessagePair } from "../../initialState";
 import { forkConversation } from "./branch";
 
 export function createSessionStorage(
+  database: AgentDatabase,
   sessionId: string,
   workspace: string,
   profiles: string[],
@@ -21,32 +25,41 @@ export function createSessionStorage(
   message: string,
   definition: SessionDefinition = emptySessionDefinition(),
 ) {
-  initializeSessionStorage(sessionId, (db) => {
-    db.createSession(sessionId, workspace, profiles, definition);
-    initializeConversation(db.db, sessionId, initialHistory(history), message);
+  initializeSessionStorage(database, sessionId, () => {
+    database.createSession(sessionId, workspace, profiles, definition);
+    initializeConversation(database.db, sessionId, initialHistory(history), message);
     return [...history.map(({ user }) => user), message];
   });
 }
-export function forkSessionStorage(options: Parameters<typeof forkConversation>[1]) {
-  initializeSessionStorage(options.targetSessionId, ({ db }) => forkConversation(db, options));
+export function forkSessionStorage(
+  database: AgentDatabase,
+  options: Parameters<typeof forkConversation>[1],
+) {
+  initializeSessionStorage(database, options.targetSessionId, () =>
+    forkConversation(database.db, options),
+  );
+}
+export function deleteStoredSession(database: AgentDatabase, sessionId: string) {
+  database.deleteSession(sessionId);
+  removeDatabaseDirectory(resolveSessionPaths(sessionId).dir);
 }
 function initializeSessionStorage(
+  database: AgentDatabase,
   sessionId: string,
-  initialize: (db: AgentDatabase) => readonly string[],
+  initialize: () => readonly string[],
 ) {
   const paths = sessionPaths(sessionId);
-  using db = new AgentDatabase(paths.dbPath);
   try {
     runTransaction(
-      db.db,
+      database.db,
       () => {
-        const messages = initialize(db);
+        const messages = initialize();
         new UserMessageArchive(paths.userMessagesDir).writeAll(messages);
       },
       "immediate",
     );
   } catch (error) {
-    if (!db.hasSession(sessionId)) {
+    if (!database.hasSession(sessionId)) {
       removeDatabaseDirectory(paths.dir);
     }
     throw error;

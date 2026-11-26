@@ -31,8 +31,7 @@
   "loop": {
     "storageReclaimDelayed": "数据库页面回收因并发写入延后",
     "pausedAfterCancel": "暂停状态收到 cancel，Host 已关闭",
-    "closedAfterCancel": "收到 cancel，Host 已关闭",
-    "waitingForClientInput": "等待 Client 输入"
+    "closedAfterCancel": "收到取消请求，宿主已关闭"
   },
   "retry": {
     "modelUnavailable": "模型 API 暂不可用，正在重试"
@@ -53,12 +52,6 @@
   "model": {
     "outputMissing": "模型 API 没有返回文本或工具调用"
   },
-  "lease": {
-    "conflict": "会话已有 Host 正在运行：{{sessionId}}",
-    "assertionLost": "Host Lease 已丢失：{{sessionId}}",
-    "renewalLost": "Host Lease 已丢失：{{sessionId}}",
-    "renewalFailed": "Host Lease 续租失败"
-  },
   "boundary": {
     "cancelled": "运行已取消",
     "modelAndToolsConcurrent": "Agent 图同时调度了模型与工具节点",
@@ -71,11 +64,6 @@
     "cancelledAndHostClosed": "暂停状态收到 cancel，Host 已关闭",
     "runCancelled": "运行已取消",
     "waitingForResume": "暂停中，等待 resume 或 cancel"
-  },
-  "signal": {
-    "received": "收到 {{signal}}",
-    "stopAtRecoveryBoundary": "收到 {{signal}}，Host 将在可恢复边界停止",
-    "recoveryBoundaryTimeout": "Host 未在关闭期限内到达恢复边界"
   },
   "step": {
     "completed": "单步完成，已暂停"

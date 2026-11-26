@@ -7,33 +7,28 @@ import { MockLanguageModelV4 } from "ai/test";
 import { raceSignal } from "race-signal";
 import { z } from "zod";
 
-import { AppEvents } from "../../src/app/events";
 import { buildTimeline } from "../../src/app/timeline";
 import { loadTranscript } from "../../src/app/transcript";
 import { requestControlRecord } from "../../src/infrastructure/database/records/execution/control";
 import { processInput } from "../../src/runtime/consumeInputs";
 import { hostLoop } from "../../src/runtime/loop";
-import { cleanupDatabaseDirs, makeDatabases, required, workspace } from "../support/database";
+import { cleanupDatabaseDirs, required, workspace } from "../support/database";
 import { agentFixture, textResponse, toolResponse } from "./support/agentFixture";
 
 afterEach(cleanupDatabaseDirs);
 test.each(["model", "tool"] as const)(
   "forced pause interrupts a running %s and resumes the same run",
   async (mode) => {
-    const databases = makeDatabases(2);
-    using hostDb = required(databases[0]),
-      clientDb = required(databases[1]);
     let toolCalls = 0;
-    const events = mode === "model" ? new AppEvents() : undefined,
-      started = Promise.withResolvers<AbortSignal | undefined>(),
+    const started = Promise.withResolvers<AbortSignal | undefined>(),
       release = Promise.withResolvers<string>(),
       paused = Promise.withResolvers<void>(),
       idle = Promise.withResolvers<string>(),
       timeout = AbortSignal.timeout(3000),
       wait = <T>(promise: Promise<T>) => raceSignal(promise, timeout),
       command = (control: Parameters<typeof requestControlRecord>[2]) => {
-        requestControlRecord(clientDb.db, "target", control);
-        events?.wake("target");
+        requestControlRecord(db.db, "target", control);
+        context.notifications.notify(control);
       },
       echo = tool(
         (_, { signal }) => {
@@ -54,12 +49,8 @@ test.each(["model", "tool"] as const)(
       model = new MockLanguageModelV4({
         doStream: [mode === "model" ? { stream: partial } : toolResponse(), textResponse()],
       });
-    using fixture = agentFixture({ db: hostDb, model, tools: [echo] });
+    using fixture = agentFixture({ model, tools: [echo] });
     const { context, db } = fixture;
-    if (events) {
-      context.settings.host.pollMs = context.settings.host.pausePollMs = 30_000;
-      context.wake = (delayMs, signal) => events.wait("target", delayMs, signal);
-    }
     db.resetSession("target", workspace);
     db.appendUser("target", "hello");
     const { runId } = required(db.nextInput("target"));

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { mcpLoadDetailsSchema } from "../../../../src/infrastructure/mcp/failures/wireFormat";
 import { snapshotMcpTools } from "../../../../src/infrastructure/mcp/tools/definitions";
-import { isProcessRunning } from "../../../../src/infrastructure/process/ownership";
+import { isProcessRunning } from "../../../../src/infrastructure/processLiveness";
 import { containingText, partialObject } from "../../../support/asymmetric";
 import { coordinateStartup } from "./startupCoordinator";
 

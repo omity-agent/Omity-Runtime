@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import mitt from "mitt";
 
 import type { DisplayEvent } from "../timeline";
+import type { SyncPoint } from "./contracts";
 import { eventStream, type OutboundEvent } from "./stream";
 
 export class ContentChannel {
@@ -13,13 +14,13 @@ export class ContentChannel {
       id: event.id.toString(),
     });
   }
-  invalidate(sessionId: string, eventCursor: number) {
-    this.bus.emit(`session:${sessionId}`, contentSync(eventCursor));
+  invalidate(sessionId: string, point: SyncPoint) {
+    this.bus.emit(`session:${sessionId}`, contentSync(point));
   }
-  stream(c: Context, sessionId: string, getEventCursor: () => number) {
+  stream(c: Context, sessionId: string, point: SyncPoint) {
     return eventStream(c, (write) => {
       const key = `session:${sessionId}` as const,
-        snapshot = contentSync(getEventCursor());
+        snapshot = contentSync(point);
       this.bus.on(key, write);
       write(snapshot);
       return () => {
@@ -31,10 +32,10 @@ export class ContentChannel {
     });
   }
 }
-function contentSync(eventCursor: number): OutboundEvent {
+function contentSync(point: SyncPoint): OutboundEvent {
   return {
-    data: { eventCursor },
+    data: point,
     event: "sync",
-    id: eventCursor.toString(),
+    id: point.eventCursor.toString(),
   };
 }

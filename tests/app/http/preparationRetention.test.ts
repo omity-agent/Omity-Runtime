@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 
 import { AppController } from "../../../src/app/controller";
 import { createApi } from "../../../src/app/http/handler";
+import { createSettingsContext } from "../../../src/infrastructure/configuration/settings/context";
 import { liveApplication } from "./liveApplication";
 
 const preparation = {
@@ -16,14 +17,16 @@ const preparation = {
   profile: "alternate",
   workspace: "/projects/unsent",
 };
-test("new session drafts retain incomplete message pairs across controller reopening and reject stale saves", async () => {
+test("new session drafts restore without a model profile and reject stale saves", async () => {
   await using app = liveApplication();
   const endpoint = `${app.url}/api/session-preparation`,
     initial = await fetch(endpoint);
   expect(await initial.json()).toEqual({ content: null, revision: 0 });
   await saveDraft(endpoint, preparation, 4);
   expect(await saveDraft(endpoint, { message: "stale", pairs: [] }, 3)).toEqual({ revision: 4 });
-  const reopened = new AppController(app.root);
+  const reopened = new AppController(app.root, {
+    settingsContext: createSettingsContext(app.root, app.context.userDirectory, []),
+  });
   try {
     const restored = await createApi(reopened, app.settings).request("/api/session-preparation");
     expect(await restored.json()).toEqual({

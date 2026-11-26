@@ -14,7 +14,7 @@ import type { AccessStore } from "./store";
 
 export class WebAuthnCeremony {
   constructor(
-    private readonly settings: Settings,
+    private readonly settings: Pick<Settings, "access">,
     private readonly store: AccessStore,
   ) {}
   async registrationOptions() {

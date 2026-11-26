@@ -3,8 +3,13 @@ import { existsSync, readFileSync } from "node:fs";
 
 import { submissionForm } from "../../../src/app/attachments/submission";
 import { messageResponseSchema } from "../../../src/app/contracts/results";
+import {
+  transcriptHistoryHeader,
+  transcriptResponseSchema,
+} from "../../../src/app/timeline/contracts/records";
 import { sessionPaths } from "../../../src/infrastructure/configuration/sessionPaths";
 import { containingItems, partialObject } from "../../support/asymmetric";
+import { required } from "../../support/database";
 import { liveApplication } from "./liveApplication";
 
 const requestBodyLimit = 4096;
@@ -22,8 +27,9 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   await app.waitForRun(session.id);
   expect(app.requests).toHaveLength(1);
   expect(warnings).toEqual([]);
-  const transcript = await fetch(`${endpoint}/transcript`);
-  expect(await transcript.json()).toMatchObject({
+  const snapshot = await readTranscript(),
+    base = required(snapshot.messageHistory).token;
+  expect(snapshot).toMatchObject({
     messages: containingItems([partialObject({ content: "workflow answer", role: "assistant" })]),
   });
   const control = await fetch(`${endpoint}/control`, json({ control: "force_pause" })),
@@ -56,12 +62,14 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
     path = accepted.content.slice("read ".length);
   expect(readFileSync(path, "utf8")).toBe("attachment content");
   const draftAfterMessage = await fetch(`${endpoint}/composer-draft`),
-    transcriptAfterMessage = await fetch(`${endpoint}/transcript`);
+    transcriptAfterMessage = await readTranscript(base);
   expect(await draftAfterMessage.json()).toMatchObject({
     content: "newer draft",
   });
-  expect(await transcriptAfterMessage.json()).toMatchObject({
+  expect(transcriptAfterMessage).toMatchObject({
     control: "pause",
+    messageHistory: { offset: null, token: base },
+    messages: [],
     queue: containingItems([
       partialObject({
         content: accepted.content,
@@ -84,6 +92,10 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   expect(step.status).toBe(200);
   await app.waitForRun(session.id);
   expect(app.controller.transcript(session.id).control).toBe("pause");
+  expect(await readTranscript(base)).toMatchObject({
+    messageHistory: { offset: snapshot.messages.length },
+    messages: [{ content: accepted.content }, { content: "workflow answer" }],
+  });
   expect(updates.mock.calls.map(([info]) => info.status)).toContain("stepping");
   expect(app.controller.sessions()).toMatchObject([{ status: "paused", stepAvailable: false }]);
   const paths = sessionPaths(session.id),
@@ -94,6 +106,12 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   expect(existsSync(paths.dir)).toBe(false);
   expect(deletedTranscript.status).toBe(404);
   expect(await sessions.json()).toEqual({ sessions: [] });
+  async function readTranscript(token?: string) {
+    const response = await fetch(`${endpoint}/transcript`, {
+      headers: token ? { [transcriptHistoryHeader]: token } : undefined,
+    });
+    return transcriptResponseSchema.parse(await response.json());
+  }
 }, 15_000);
 test("HTTP validation rejects malformed or ambiguous submissions before session mutations", async () => {
   await using app = liveApplication({ requestBodyLimitBytes: requestBodyLimit });

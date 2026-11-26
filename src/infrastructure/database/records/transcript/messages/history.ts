@@ -16,13 +16,15 @@ export function insertUserMessage(
   content: string,
   inputId: number,
 ) {
-  return storeMessage(
-    db,
-    sessionId,
-    new HumanMessage({ content, id: inputMessageId(sessionId, inputId) }),
-    nextPosition(db, sessionId),
-    inputId,
-  );
+  const position = nextPosition(db, sessionId),
+    id = storeMessage(
+      db,
+      sessionId,
+      new HumanMessage({ content, id: inputMessageId(sessionId, inputId) }),
+      position,
+      inputId,
+    );
+  return { id, position };
 }
 export function inputMessageId(sessionId: string, inputId: number) {
   return `input:${sessionId}:${inputId.toString()}`;
@@ -95,9 +97,9 @@ export function storePreparedMessage(
   return row.id;
 }
 function nextPosition(db: Database, sessionId: string) {
-  const row = messageMutations(db).nextPosition.get({ sessionId });
-  if (!row) {
+  const position = Number(messageMutations(db).nextPosition.get({ sessionId })?.position);
+  if (!Number.isSafeInteger(position) || position < 0) {
     throw new Error(localize("database:messages.positionUnavailable"));
   }
-  return row.position;
+  return position;
 }

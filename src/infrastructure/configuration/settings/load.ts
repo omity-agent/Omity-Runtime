@@ -1,6 +1,8 @@
 import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 
+import { isPlainObject, omit } from "es-toolkit";
+
 import { buildSkillsList } from "../../../skills";
 import type { Settings } from "../../../types";
 import { resolveConfiguredPath } from "../configuredPath";
@@ -14,6 +16,7 @@ import { prepareMainSettings } from "./models";
 import {
   omitCodexConnectionSettings,
   parseAgentSettings,
+  parseAppSettings,
   parseMainSettings,
   parseModelSettings,
 } from "./schema";
@@ -87,6 +90,19 @@ export function loadModelSettings(context: SettingsContext) {
       { beforePlaceholders: omitCodexConnectionSettings },
     ).value,
   );
+}
+export function loadAppSettings(context: SettingsContext) {
+  const { value } = requireLayeredSettingsYaml(
+    context,
+    "global",
+    "main.yaml",
+    {},
+    {
+      beforePlaceholders: (settings) =>
+        isPlainObject(settings) ? omit(settings, ["prediction"]) : settings,
+    },
+  );
+  return parseAppSettings(value);
 }
 export function loadMainSettings(context: SettingsContext, model: Settings["model"]) {
   return parseMainSettings(

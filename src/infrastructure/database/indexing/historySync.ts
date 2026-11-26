@@ -1,6 +1,6 @@
 import type { Database } from "bun:sqlite";
 
-import type { BaseMessage } from "@langchain/core/messages";
+import { type BaseMessage, HumanMessage } from "@langchain/core/messages";
 
 import { messageFileLinkSources } from "../../../fileLinks/messageSources";
 import { clearCompletedCancellations } from "../records/execution/toolCancellations";
@@ -42,5 +42,11 @@ export async function syncIndexedHistory(options: {
       return streams.events;
     });
   prepared.commit();
-  return finished;
+  return {
+    finished,
+    position: history.changed ? history.position : undefined,
+    userMessagesChanged:
+      history.previous.some((message) => HumanMessage.isInstance(message)) ||
+      history.updated.some((message) => HumanMessage.isInstance(message)),
+  };
 }

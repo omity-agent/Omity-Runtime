@@ -69,7 +69,7 @@ export async function createPredictionFixture(outputCount = 2) {
     new ToolMessage({ content: "执行结果", id: "work-result", tool_call_id: "work-call" }),
     new AIMessage({ content: "当前回复 <current>", id: "current-assistant" }),
   ]);
-  const service = new PredictionService(() => settings.prediction);
+  const service = new PredictionService(database.db, () => settings.prediction);
   cleanup.defer(() => service.close());
   const resources = cleanup.move();
   return {

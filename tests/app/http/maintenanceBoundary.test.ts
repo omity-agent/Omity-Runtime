@@ -1,5 +1,4 @@
 import { afterEach, expect, test } from "bun:test";
-import { randomUUID } from "node:crypto";
 import { readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -8,7 +7,6 @@ import { createApi } from "../../../src/app/http/handler";
 import { sessionPaths } from "../../../src/infrastructure/configuration/sessionPaths";
 import { loadSettings } from "../../../src/infrastructure/configuration/settings/load";
 import { AgentDatabase } from "../../../src/infrastructure/database/agentDatabase";
-import { hostOwnerId } from "../../../src/infrastructure/process/ownership";
 import { createTestDirectory } from "../../support/artifacts";
 import { writeTestConfiguration } from "../../support/configuration";
 import { runOf } from "../../support/database";
@@ -30,17 +28,11 @@ test("controller permits cleanup while running and rejects unknown sessions", as
   const { context } = writeTestConfiguration(root);
   db.createSession("cleanup-running", root);
   const inputId = db.appendUser("cleanup-running", "running task");
-  db.setRunStatus(runOf(db, inputId), "running");
-  db.acquireHostLease({
-    now: Date.now(),
-    ownerId: hostOwnerId({ instanceId: randomUUID(), kind: "standalone", pid: process.pid }),
-    sessionId: "cleanup-running",
-    ttlMs: 30_000,
-  });
   db.close();
   writeFileSync(join(paths.tempDir, "scratch.txt"), "temporary");
   const controller = new AppController(root, { settingsContext: context });
   try {
+    controller.database.setRunStatus(runOf(controller.database, inputId), "running");
     const api = createApi(controller, loadSettings(root, { settingsContext: context })),
       response = await api.request("/api/sessions/cleanup-running/temporary-files", {
         method: "DELETE",

@@ -1,12 +1,12 @@
 import type { Database } from "bun:sqlite";
 
-import { and, eq, exists, gt, not, sql } from "drizzle-orm";
+import { and, eq, exists, not } from "drizzle-orm";
 
 import { sessionProfileBusy } from "../../../../failures/rejections";
-import { hostLeases, runs, sessions } from "../../schema";
+import { runs, sessions } from "../../schema";
 import type { SessionDefinition } from "../../session/sessionDefinition";
-import { sessionDatabase } from "../../sqlite/connection";
-import { requireSessionRecord } from "./metadata";
+import { runTransaction, sessionDatabase } from "../../sqlite/connection";
+import { requireSessionRecord, touchSessionRecord } from "./metadata";
 
 export function writeSessionConfigurationRecord(
   db: Database,
@@ -14,26 +14,21 @@ export function writeSessionConfigurationRecord(
   profiles: readonly string[],
   definition: SessionDefinition,
 ) {
-  requireSessionRecord(db, sessionId);
-  const orm = sessionDatabase(db),
-    running = orm
-      .select({ id: runs.id })
-      .from(runs)
-      .where(and(eq(runs.sessionId, sessionId), eq(runs.status, "running"))),
-    leased = orm
-      .select({ sessionId: hostLeases.sessionId })
-      .from(hostLeases)
-      .where(and(eq(hostLeases.sessionId, sessionId), gt(hostLeases.expiresAt, Date.now()))),
-    updated = orm
-      .update(sessions)
-      .set({
-        definition,
-        profiles: [...profiles],
-        updatedAt: sql`max(${sessions.updatedAt}, unixepoch())`,
-      })
-      .where(and(eq(sessions.id, sessionId), not(exists(running)), not(exists(leased))))
-      .run();
-  if (updated.changes !== 1) {
-    throw sessionProfileBusy(sessionId);
-  }
+  runTransaction(db, () => {
+    requireSessionRecord(db, sessionId);
+    const orm = sessionDatabase(db),
+      running = orm
+        .select({ id: runs.id })
+        .from(runs)
+        .where(and(eq(runs.sessionId, sessionId), eq(runs.status, "running"))),
+      updated = orm
+        .update(sessions)
+        .set({ definition, profiles: [...profiles] })
+        .where(and(eq(sessions.id, sessionId), not(exists(running))))
+        .run();
+    if (updated.changes !== 1) {
+      throw sessionProfileBusy(sessionId);
+    }
+    touchSessionRecord(db, sessionId);
+  });
 }

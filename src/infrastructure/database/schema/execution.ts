@@ -42,11 +42,6 @@ export const runs = sqliteTable(
 export function activeRuns(status: SQLiteColumn = runs.status) {
   return sql`${status} in ('pending', 'running', 'paused')`;
 }
-export const forcePauseRequests = sqliteTable("force_pause_requests", {
-  sessionId: text("session_id")
-    .primaryKey()
-    .references(() => sessions.id, { onDelete: "cascade" }),
-});
 export const inputs = sqliteTable(
   "inputs",
   {
@@ -72,13 +67,6 @@ export const inputs = sqliteTable(
     uniqueIndex("inputs_submission").on(table.sessionId, table.submissionId),
   ],
 );
-export const hostLeases = sqliteTable("host_leases", {
-  expiresAt: integer("expires_at").notNull(),
-  ownerId: text("owner_id").notNull(),
-  sessionId: text("session_id")
-    .primaryKey()
-    .references(() => sessions.id, { onDelete: "cascade" }),
-});
 export const toolCancellations = sqliteTable(
   "tool_cancellations",
   {

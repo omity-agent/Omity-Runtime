@@ -86,7 +86,12 @@ test("sync bursts during a pending transcript request schedule one later snapsho
     await initial.promise;
     await page.evaluate(() => {
       for (let index = 0; index < 3; index += 1) {
-        dispatchEvent(new MessageEvent("sync", { data: '{"eventCursor":0}', lastEventId: "0" }));
+        dispatchEvent(
+          new MessageEvent("sync", {
+            data: '{"eventCursor":0,"transcriptRevision":2}',
+            lastEventId: "0",
+          }),
+        );
       }
     });
     await settleLayout(page);

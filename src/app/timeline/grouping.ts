@@ -2,6 +2,14 @@ import { lastContentGroup } from "./contentSelection";
 import type { TimelineMessage, TimelinePart } from "./contracts/projection";
 import { sameToolCall } from "./tool/correlation";
 
+export function joinTimeline(history: TimelineMessage[], tail: TimelineMessage[]) {
+  const last = history.at(-1);
+  if (last?.role === "assistant" && tail[0]?.role === "assistant") {
+    const bridge = { ...last, parts: [...last.parts] };
+    return [...history.slice(0, -1), ...groupAssistantMessages([bridge, ...tail])];
+  }
+  return tail.length === 0 ? history : [...history, ...groupAssistantMessages(tail)];
+}
 export function groupAssistantMessages(messages: TimelineMessage[]) {
   const result: TimelineMessage[] = [];
   let currentAssistant: TimelineMessage | undefined;

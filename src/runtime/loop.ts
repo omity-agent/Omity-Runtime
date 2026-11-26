@@ -3,10 +3,9 @@ import { processInput } from "./consumeInputs";
 import { type HostContext, waitForWake } from "./context";
 
 export async function hostLoop(ctx: HostContext) {
-  let lastIdle = 0;
   while (!ctx.controller.signal.aborted) {
-    ctx.assertLease?.();
-    const item = ctx.db.nextInput(ctx.sessionId);
+    const checkpoint = ctx.notifications.checkpoint(),
+      item = ctx.db.nextInput(ctx.sessionId);
     if (ctx.stopping?.aborted) {
       if (item) {
         await processInput(ctx, item);
@@ -35,14 +34,7 @@ export async function hostLoop(ctx: HostContext) {
         });
         return;
       }
-      const now = Date.now();
-      if (now - lastIdle >= ctx.settings.host.idleLogMs) {
-        ctx.logger.debug(localize("runtime:loop.waitingForClientInput"), {
-          sessionId: ctx.sessionId,
-        });
-        lastIdle = now;
-      }
-      await waitForWake(ctx, ctx.settings.host.pollMs);
+      await waitForWake(ctx, checkpoint);
     }
   }
 }

@@ -1,92 +1,37 @@
-import { randomUUID } from "node:crypto";
-import {
-  closeSync,
-  existsSync,
-  mkdirSync,
-  openSync,
-  readFileSync,
-  unlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { Database } from "bun:sqlite";
+import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
-
-import { z } from "zod";
 
 import { hasErrorCode } from "../../failures/thrownValues";
 import { localize } from "../../i18n/server";
-import { isProcessRunning } from "../../infrastructure/process/ownership";
 
-const ownerSchema = z.object({
-  pid: z.number().int().positive(),
-  token: z.uuid(),
-});
-export type AppInstanceOwner = z.infer<typeof ownerSchema>;
-export class AppInstanceLock {
+export class AppInstanceLock implements Disposable {
   private released = false;
-  private constructor(
-    private readonly path: string,
-    readonly owner: AppInstanceOwner,
-    readonly abandonedOwner?: AppInstanceOwner,
-  ) {}
+  private constructor(private readonly db: Database) {}
   static acquire(directory: string) {
     mkdirSync(directory, { recursive: true });
-    const path = resolve(directory, "app.lock");
-    let abandonedOwner: AppInstanceOwner | undefined;
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      const owner = { pid: process.pid, token: randomUUID() };
-      try {
-        const descriptor = openSync(path, "wx");
-        try {
-          writeFileSync(descriptor, JSON.stringify(owner), "utf8");
-        } catch (error) {
-          closeSync(descriptor);
-          unlinkSync(path);
-          throw error;
-        }
-        closeSync(descriptor);
-        return new AppInstanceLock(path, owner, abandonedOwner);
-      } catch (error) {
-        if (!hasErrorCode(error, "EEXIST")) {
-          throw error;
-        }
-        const existingOwner = readOwner(path);
-        if (isProcessRunning(existingOwner.pid)) {
-          throw new Error(
-            localize("application:runtime.instanceAlreadyRunning", {
-              pid: existingOwner.pid.toString(),
-              directory,
-            }),
-            {
-              cause: error,
-            },
-          );
-        }
-        abandonedOwner = existingOwner;
-        unlinkSync(path);
-      }
+    const path = resolve(directory, "app.lock"),
+      db = new Database(path, { create: true, strict: true });
+    try {
+      db.run("BEGIN EXCLUSIVE");
+      return new AppInstanceLock(db);
+    } catch (error) {
+      db.close(true);
+      throw new Error(
+        hasErrorCode(error, "SQLITE_BUSY")
+          ? localize("application:runtime.instanceAlreadyRunning", { directory })
+          : localize("application:runtime.lockAcquireFailed", { path }),
+        { cause: error },
+      );
     }
-    throw new Error(localize("application:runtime.lockAcquireFailed", { path }));
   }
   release() {
-    if (this.released) {
-      return;
+    if (!this.released) {
+      this.db.close(true);
+      this.released = true;
     }
-    const owner = readOwner(this.path);
-    if (owner.token !== this.owner.token) {
-      throw new Error(localize("application:runtime.lockOwnerChanged", { path: this.path }));
-    }
-    unlinkSync(this.path);
-    this.released = true;
   }
-}
-function readOwner(path: string) {
-  if (!existsSync(path)) {
-    throw new Error(localize("application:runtime.lockMissing", { path }));
+  [Symbol.dispose]() {
+    this.release();
   }
-  const value: unknown = JSON.parse(readFileSync(path, "utf8")),
-    parsed = ownerSchema.safeParse(value);
-  if (!parsed.success) {
-    throw new Error(localize("application:runtime.lockInvalid", { path }));
-  }
-  return parsed.data;
 }

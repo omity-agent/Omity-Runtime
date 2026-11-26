@@ -31,6 +31,7 @@ function prepareOverviews(db: Database) {
       id: sessions.id,
       profiles: sessions.profiles,
       runStatus: runs.status,
+      transcriptRevision: sessions.transcriptRevision,
       updatedAt:
         sql`max(${sessions.updatedAt}, coalesce((${latestMessage}), ${sessions.updatedAt}))`.mapWith(
           Number,

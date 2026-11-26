@@ -15,14 +15,17 @@ export function messageInsert(
   message: BaseMessage,
   mode: MessageStorageMode = "history",
 ): MessageInsert {
+  return { ...serializeMessage(message, mode), tokenCount: messageTokenCount(message) };
+}
+export function serializeMessage(message: BaseMessage, mode: MessageStorageMode = "history") {
   if (!message.id) {
     throw new Error(localize("database:messages.persistentIdMissing"));
   }
   return {
     messageJson: JSON.stringify(encodeMessage(message, mode)),
     sourceId: message.id,
-    tokenCount: HumanMessage.isInstance(message)
-      ? countTokens(contentToText(message.content))
-      : null,
   };
+}
+export function messageTokenCount(message: BaseMessage) {
+  return HumanMessage.isInstance(message) ? countTokens(contentToText(message.content)) : null;
 }

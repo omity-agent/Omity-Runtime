@@ -39,17 +39,10 @@ frontend:
   transcriptSnapshotThrottleMs: 250
 
 host:
-  pollMs: 300
-  pausePollMs: 500
-  idleLogMs: 25000
   shutdownTimeoutMs: 10000
 
 logging:
   level: info
-  streamTokens: false
-
-leases:
-  hostTtlMs: 30000
 
 prediction:
   enabled: true

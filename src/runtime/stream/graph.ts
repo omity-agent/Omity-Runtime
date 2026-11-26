@@ -1,9 +1,9 @@
 import { localize } from "../../i18n/server";
 import { type HostContext, streamGraph } from "../context";
-import { watchForcePause } from "../execution/pause";
 import type { StreamLogState } from "../stream";
 import { hookInvocationSchema, recordHookToolStarted } from "./invocations";
 import { recordModelStreamPart } from "./model";
+import { TextStreamWriter } from "./textWriter";
 
 export async function streamGraphSegment(
   ctx: HostContext,
@@ -12,21 +12,25 @@ export async function streamGraphSegment(
   config: Omit<Parameters<typeof streamGraph>[2], "signal" | "streamMode">,
   state: StreamLogState,
 ) {
-  await using execution = watchForcePause(ctx);
+  using execution = ctx.notifications.startOperation(ctx.controller.signal);
+  await using writer = new TextStreamWriter(ctx, execution.signal);
   let completed = false;
   for await (const event of readEvents()) {
-    if (!execution.signal.aborted) {
-      await handleGraphEvent(ctx, inputId, event, state);
+    if (!writer.signal.aborted) {
+      await handleGraphEvent(ctx, inputId, event, state, writer);
     }
   }
-  return completed;
+  if (completed) {
+    await writer.flush();
+  }
+  return completed && !writer.signal.aborted;
 
   async function* readEvents() {
     try {
-      execution.signal.throwIfAborted();
+      writer.signal.throwIfAborted();
       yield* await streamGraph(ctx.graph, input, {
         ...config,
-        signal: execution.signal,
+        signal: writer.signal,
         streamMode: "custom",
       });
       completed = true;
@@ -42,6 +46,7 @@ async function handleGraphEvent(
   inputId: number,
   part: unknown,
   state: StreamLogState,
+  writer: TextStreamWriter,
 ) {
   if (
     typeof part === "object" &&
@@ -49,6 +54,10 @@ async function handleGraphEvent(
     "kind" in part &&
     part.kind === "hook_tool_started"
   ) {
+    await writer.flush();
+    if (writer.signal.aborted) {
+      return;
+    }
     ctx.observer?.activity?.(ctx.sessionId, "tool");
     recordHookToolStarted(ctx, inputId, hookInvocationSchema.parse(part));
     return;
@@ -56,7 +65,7 @@ async function handleGraphEvent(
   if (!isModelStreamEvent(part)) {
     throw new Error(localize("runtime:boundary.customEventInvalid"));
   }
-  await recordModelStreamPart(ctx, inputId, part, state);
+  await recordModelStreamPart(ctx, inputId, part, state, writer);
 }
 function isModelStreamEvent(value: unknown): value is Parameters<typeof recordModelStreamPart>[2] {
   if (typeof value !== "object" || value === null || !("part" in value)) {

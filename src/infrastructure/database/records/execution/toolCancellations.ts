@@ -11,12 +11,10 @@ import { touchSessionRecord } from "../session/metadata";
 import { insertStreamEvent } from "../transcript/streamEvents";
 
 export function requestToolCancellation(db: Database, sessionId: string, callId: string) {
-  return runTransaction(db, () => {
-    if (readToolCancellation(db, sessionId, callId) !== undefined) {
-      return;
-    }
-    persistCancellation(db, sessionId, callId);
-  });
+  return runTransaction(
+    db,
+    () => readToolCancellation(db, sessionId, callId) ?? persistCancellation(db, sessionId, callId),
+  );
 }
 function persistCancellation(db: Database, sessionId: string, callId: string) {
   const orm = sessionDatabase(db),
@@ -48,7 +46,8 @@ function persistCancellation(db: Database, sessionId: string, callId: string) {
   if (cancellable?.kind === undefined || cancellable.kind === "tool_finished") {
     throw toolNotRunning(callId);
   }
-  orm.insert(toolCancellations).values({ callId, requestedAt: Date.now(), sessionId }).run();
+  const requestedAt = Date.now();
+  orm.insert(toolCancellations).values({ callId, requestedAt, sessionId }).run();
   if (cancellable.kind === "tool_call_delta" && cancellable.status === "paused") {
     insertStreamEvent(db, sessionId, {
       inputId: cancellable.inputId,
@@ -59,6 +58,7 @@ function persistCancellation(db: Database, sessionId: string, callId: string) {
     });
   }
   touchSessionRecord(db, sessionId);
+  return requestedAt;
 }
 export function readToolCancellation(db: Database, sessionId: string, callId: string) {
   return sessionDatabase(db)

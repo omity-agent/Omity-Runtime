@@ -33,9 +33,8 @@ export function writeTestConfiguration(root: string, options: TestConfigurationO
   writeFixtureYaml(context.userDirectory, "main", {
     access: { publicOrigin: null, trustedProxies: [], ...options.access },
     attachments: { allowedSuffixes: [".txt", ".md"], maxSizeBytes: 8192 },
-    host: { pausePollMs: 5, pollMs: 5, shutdownTimeoutMs: 1000 },
-    leases: { hostTtlMs: 60_000 },
-    logging: { level: "error", streamTokens: false },
+    host: { shutdownTimeoutMs: 1000 },
+    logging: { level: "error" },
     prediction: options.prediction ?? null,
     server: { idleTimeoutSeconds: 0, requestBodyLimitBytes: options.requestBodyLimitBytes ?? 8192 },
   });

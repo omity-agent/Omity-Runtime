@@ -7,6 +7,7 @@
     "messageInvalid": "消息记录无效"
   },
   "launch": {
+    "webStarted": "Omity 已启动：{{url}}",
     "browserOpenFailed": "无法自动打开浏览器：{{message}}"
   },
   "server": {
@@ -25,11 +26,8 @@
     "toolRejected": "工具执行已拒绝"
   },
   "runtime": {
-    "instanceAlreadyRunning": "数据目录已有 App 在运行（PID {{pid}}）：{{directory}}",
+    "instanceAlreadyRunning": "数据目录已有 Omity 实例在运行：{{directory}}",
     "lockAcquireFailed": "无法获取 App 实例锁：{{path}}",
-    "lockOwnerChanged": "App 实例锁所有者已变化：{{path}}",
-    "lockMissing": "App 实例锁不存在：{{path}}",
-    "lockInvalid": "App 实例锁内容无效：{{path}}",
     "cleanupSkipped": "清空 Agent 临时目录时跳过无法删除的项目：",
     "directoryMustBeReal": "Agent 临时目录必须是实际目录，不能是符号链接"
   },
@@ -37,7 +35,6 @@
     "started": "服务端进入关闭流程",
     "httpServer": "HTTP 服务",
     "hostResources": "会话 Host 与 MCP 资源",
-    "accessStore": "访问控制存储",
     "instanceLock": "应用实例锁",
     "completedWithFailures": "服务端关闭流程完成，但存在失败步骤",
     "failed": "服务端关闭流程失败",
@@ -47,7 +44,6 @@
     "stepFailed": "关闭步骤失败：{{stepName}}"
   },
   "resources": {
-    "databaseReaderClosed": "App 数据库读取器已关闭",
     "snapshotLoaderMissing": "App MCP 未配置会话快照加载器",
     "sessionAlreadyBound": "Session 已绑定 MCP：{{sessionId}}"
   },
@@ -56,6 +52,7 @@
     "failed": "用户输入预测失败"
   },
   "hosts": {
+    "sessionChanging": "会话正在变更配置或关闭：{{sessionId}}",
     "appClosing": "App 正在关闭，不能启动 Host",
     "stopRequested": "App 请求停止 Host",
     "appClosed": "App 正在关闭",

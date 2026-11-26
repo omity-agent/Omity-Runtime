@@ -1,19 +1,20 @@
-import { setSessionControl } from "../client";
+import { once } from "es-toolkit";
+
 import { sessionProfileBusy } from "../failures/rejections";
 import type { FileLinkAction } from "../fileLinks/types";
 import type { SettingsContext } from "../infrastructure/configuration/settings/context";
-import { readComposerDraftRecord } from "../infrastructure/database/records/session/composerDrafts";
-import { appOwner } from "../infrastructure/process/ownership";
+import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
+import { requestControlRecord } from "../infrastructure/database/records/execution/control";
 import { AskUserRuntime } from "../infrastructure/toolbox/runtime";
-import { deleteStoredSession, requestHostToolCancellation } from "../storedSessions";
-import { type ControlCommand, isRunningStatus, type Settings } from "../types";
+import { type AppSettings, type ControlCommand, isRunningStatus } from "../types";
 import type { MessageSubmission, SessionSubmission } from "./attachments/contract";
 import { enqueueMessageWithAttachments } from "./attachments/message";
-import { writeSessionDraft } from "./composition/draftStorage";
+import { DraftStorage } from "./composition/draftStorage";
 import { AppEvents } from "./events";
 import { activateFileLink } from "./fileLinks/launch";
 import { controllerSessionInfo, createControllerHosts } from "./hostCoordination";
 import type { AppHosts } from "./hosts";
+import { ObservedSessions } from "./observedSessions";
 import type { PredictionService } from "./prediction/service";
 import { createSessionPredictions } from "./prediction/settingsSource";
 import type { AppRegistry, RegisteredSession } from "./registry";
@@ -23,16 +24,18 @@ import {
   type ControllerOptions,
   prepareController,
 } from "./runtime/prepareController";
-import { hasLiveHostLease } from "./runtime/recovery";
+import { deleteStoredSession } from "./runtime/sessions/persistence";
 import { storeSessionProfile } from "./runtime/sessions/profileChange";
 import { materializeAppFork, provisionAppSession } from "./runtime/sessions/provision";
 import { closeControllerResources } from "./runtime/shutdown";
 import { clearAgentTemporaryFiles } from "./runtime/temporaryFiles";
-import { loadTranscript } from "./transcript";
 
 export class AppController {
   readonly events = new AppEvents();
-  private readonly settings: Settings;
+  readonly database: AgentDatabase;
+  readonly drafts: DraftStorage;
+  readonly views: ObservedSessions;
+  private readonly settings: AppSettings;
   private readonly registry: AppRegistry;
   private readonly hosts: AppHosts;
   private readonly askUser: AskUserRuntime;
@@ -46,14 +49,19 @@ export class AppController {
     this.settingsContext = prepared.settingsContext;
     this.settings = prepared.settings;
     this.registry = prepared.registry;
-    this.askUser = new AskUserRuntime((sessionId) => this.publishChange(sessionId));
+    this.database = prepared.database;
+    this.drafts = new DraftStorage(this.registry);
+    this.views = new ObservedSessions(this.database, this.registry, this.events, (session) =>
+      this.sessionInfo(session),
+    );
+    this.askUser = new AskUserRuntime((id) => this.views.publishActivity(id));
     this.prediction = createSessionPredictions(this.registry, this.settingsContext);
     this.hosts = createControllerHosts({
       askUser: this.askUser,
-      changed: (id) => this.publishChange(id),
+      changed: (id) => this.views.refresh(id),
       context: this.settingsContext,
+      database: this.database,
       events: this.events,
-      owner: options.owner ?? appOwner(),
       prediction: (sessionId) => {
         void this.prediction.onIdle(sessionId);
       },
@@ -62,7 +70,7 @@ export class AppController {
       settings: this.settings,
     });
   }
-  close = () => closeControllerResources(this.hosts, this.registry, this.prediction);
+  close = once(() => closeControllerResources(this.prediction, this.hosts, this.database));
   bootstrap() {
     return bootstrapPayload(this.appRoot, this.settings, this.settingsContext, this.sessions());
   }
@@ -76,17 +84,15 @@ export class AppController {
       throw sessionProfileBusy(sessionId);
     }
     await this.hosts.withStoppedHost(sessionId, session.workspace, () => {
-      storeSessionProfile(this.appRoot, this.settingsContext, session, profile);
+      storeSessionProfile(this.database.db, this.appRoot, this.settingsContext, session, profile);
       this.hosts.clearError(sessionId);
+      this.views.transcript.forgetHistory(sessionId);
     });
-    return this.notifySession(this.registry.refresh(sessionId));
+    return this.views.refresh(sessionId);
   }
   async predictions(sessionId: string) {
     this.registry.require(sessionId);
     return { predictions: await this.prediction.get(sessionId) };
-  }
-  assertSession(sessionId: string) {
-    this.registry.require(sessionId);
   }
   async activateFileLink(sessionId: string, path: string, action: FileLinkAction) {
     this.registry.require(sessionId);
@@ -94,14 +100,15 @@ export class AppController {
   }
   async createSession(submission: SessionSubmission) {
     const { sessionId, workspace } = await provisionAppSession({
-        baseContext: this.settingsContext,
-        mcp: this.hosts.mcp,
-        root: this.appRoot,
-        submission,
-      }),
-      session = this.registry.refresh(sessionId);
+      baseContext: this.settingsContext,
+      database: this.database,
+      mcp: this.hosts.mcp,
+      root: this.appRoot,
+      submission,
+    });
+    const info = this.views.add(sessionId, submission.history.length > 0);
     this.hosts.scheduleStart(sessionId, workspace);
-    return this.notifySession(session);
+    return info;
   }
   async sendMessage(sessionId: string, submission: MessageSubmission) {
     const session = this.registry.require(sessionId),
@@ -109,33 +116,35 @@ export class AppController {
         this.settings.attachments,
         sessionId,
         submission,
-        () => this.ensureHost(session),
+        async (content, revision, submissionId) => {
+          await this.hosts.ensure(sessionId, session.workspace);
+          const inputId = this.database.submitUser(sessionId, content, revision, submissionId);
+          this.hosts.notify(sessionId);
+          return inputId;
+        },
       );
     this.hosts.clearError(sessionId);
-    this.publishChange(sessionId);
+    this.views.refresh(sessionId);
     return result;
-  }
-  composerDraft(sessionId: string) {
-    return this.registry.read(sessionId, (db) => readComposerDraftRecord(db, sessionId));
-  }
-  saveComposerDraft(sessionId: string, content: string, revision: number) {
-    this.registry.require(sessionId);
-    return writeSessionDraft(sessionId, content, revision);
   }
   async control(sessionId: string, control: ControlCommand) {
     const session = this.registry.require(sessionId);
     if (control === "running" || control === "step") {
-      await this.ensureHost(session);
+      await this.hosts.ensure(sessionId, session.workspace);
     }
-    const result = setSessionControl(sessionId, control);
-    this.publishChange(sessionId);
-    return result;
+    requestControlRecord(this.database.db, sessionId, control);
+    if (control === "cancel" && !this.hosts.has(sessionId)) {
+      this.database.recoverInterruptedSession(sessionId);
+    }
+    this.hosts.notify(sessionId, control);
+    this.views.refresh(sessionId);
+    return { control };
   }
   cancelTool(sessionId: string, toolCallId: string) {
     this.registry.require(sessionId);
-    requestHostToolCancellation(sessionId, toolCallId);
-    this.hosts.cancelTool(sessionId, toolCallId);
-    this.publishChange(sessionId);
+    const requestedAt = this.database.requestToolCancellation(sessionId, toolCallId);
+    this.hosts.cancelTool(sessionId, toolCallId, requestedAt);
+    this.views.refresh(sessionId);
     return { toolCallId };
   }
   answerTool(sessionId: string, toolCallId: string, answer: unknown) {
@@ -144,7 +153,7 @@ export class AppController {
   }
   async materializeFork(sessionId: string, beforeMessageId: number) {
     const session = this.registry.require(sessionId),
-      id = await materializeAppFork({
+      id = await materializeAppFork(this.database, {
         beforeMessageId,
         pauseSource: () => this.control(sessionId, "pause"),
         profiles: session.profiles,
@@ -152,42 +161,28 @@ export class AppController {
         workspace: session.workspace,
       });
     this.hosts.clearError(id);
-    return this.notifySession(this.registry.refresh(id));
+    return this.views.add(id, true);
   }
   async deleteSession(sessionId: string) {
     this.registry.require(sessionId);
-    await this.hosts.stop(sessionId);
-    deleteStoredSession(sessionId);
-    this.hosts.clearError(sessionId);
-    this.registry.remove(sessionId);
-    this.events.notifyDeleted(sessionId);
-    return { deleted: sessionId };
+    return this.hosts.withStoppedHost(sessionId, undefined, () => {
+      try {
+        deleteStoredSession(this.database, sessionId);
+      } finally {
+        if (!this.database.hasSession(sessionId)) {
+          this.hosts.clearError(sessionId);
+          this.views.remove(sessionId);
+        }
+      }
+      return { deleted: sessionId };
+    });
   }
   clearTemporaryFiles(sessionId: string) {
     this.registry.require(sessionId);
     return clearAgentTemporaryFiles(sessionId);
   }
   transcript(sessionId: string) {
-    return this.registry.read(sessionId, (db) => loadTranscript(db, sessionId));
-  }
-  eventCursor(sessionId: string) {
-    return this.registry.eventCursor(sessionId);
-  }
-  private ensureHost(session: RegisteredSession) {
-    if (!this.hosts.has(session.id) && hasLiveHostLease(session.id)) {
-      return Promise.resolve();
-    }
-    return this.hosts.ensure(session.id, session.workspace);
-  }
-  private publishChange(sessionId: string) {
-    this.events.wake(sessionId);
-    this.notifySession(this.registry.refresh(sessionId));
-    this.events.invalidateTranscript(sessionId, this.eventCursor(sessionId));
-  }
-  private notifySession(session: RegisteredSession) {
-    const info = this.sessionInfo(session);
-    this.events.notifySession(info);
-    return info;
+    return this.views.transcript.read(sessionId);
   }
   private sessionInfo(session: RegisteredSession) {
     return controllerSessionInfo(session, this.hosts, this.askUser);

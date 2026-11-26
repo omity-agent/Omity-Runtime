@@ -1,0 +1,4 @@
+retainedHistoryChanges: 32
+stream:
+  batchSize: 32
+  maxWaitMs: 20

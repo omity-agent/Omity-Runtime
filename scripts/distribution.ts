@@ -21,7 +21,7 @@ const compilation = {
 } satisfies Bun.CompileBuildOptions & { aot: true };
 export const executableBuild = {
   compile: compilation,
-  entrypoints: [resolve(root, "src/cli.ts")],
+  entrypoints: [resolve(root, "src/main.ts")],
   minify: true,
   plugins: [proxyAddon],
   root,

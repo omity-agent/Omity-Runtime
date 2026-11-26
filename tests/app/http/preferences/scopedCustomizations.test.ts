@@ -5,7 +5,6 @@ import { join, resolve } from "node:path";
 import { createAppMcp } from "../../../../src/app/runtime/resources/toolPool";
 import { readDefinitionRecord } from "../../../../src/infrastructure/database/records/session/metadata";
 import { AskUserRuntime } from "../../../../src/infrastructure/toolbox/runtime";
-import { openStoredSession } from "../../../../src/storedSessions";
 import { containingItems, partialObject } from "../../../support/asymmetric";
 import { writeFixtureYaml } from "../../../support/configuration";
 import { liveApplication } from "../liveApplication";
@@ -62,7 +61,7 @@ test.each([true, false])(
         }),
       ]),
     });
-    using database = openStoredSession(session.id);
+    const { database } = app.controller;
     const { prefix } = readDefinitionRecord(database.db, session.id);
     expect(prefix.tools.tools.find(({ name }) => name === "renamed_tool")).toMatchObject({
       description: "profile description",

@@ -14,10 +14,6 @@ Do not chain shell commands with separators like `echo \"====\";` or `printf '--
 
 你不需要知道你使用的工具的具体位置。
 
-Prefer using ripgrep over grep / Select-String / Get-ChildItem.
-If `rg` is unavailable, you use the next best tool.
-建议使用 `--max-count`、`--max-columns-preview`、`head -n` 等方式防止输出过长。
-
 ## Proxy
 
 如果设备配置了系统代理，你在运行支持使用网络代理但不默认遵循系统代理的程序时，应显式控制其使用代理。

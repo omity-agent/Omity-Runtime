@@ -34,9 +34,12 @@ export function consumeInputRecord(db: Database, sessionId: string, item: Queued
       }),
     );
   }
-  const messageId = item.userMessageId ?? insertUserMessage(db, sessionId, item.content, item.id);
+  const message =
+    item.userMessageId === null
+      ? insertUserMessage(db, sessionId, item.content, item.id)
+      : { id: item.userMessageId, position: undefined };
   queries.start.run({ runId: item.runId });
-  return messageId;
+  return message;
 }
 function prepareAdmission(db: Database) {
   const orm = sessionDatabase(db),

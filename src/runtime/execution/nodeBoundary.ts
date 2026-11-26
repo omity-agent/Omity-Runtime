@@ -29,7 +29,6 @@ export async function runGraphUntilBoundary(
     stepping = initialStepping;
   const streamState = createStreamLogState();
   for (;;) {
-    ctx.assertLease?.();
     const state = await readGraphState(ctx.graph, config);
     if (synchronizeHistory && state && state.values.messages.length > 0) {
       await ctx.db.syncHistory(ctx.sessionId, state.values.messages);

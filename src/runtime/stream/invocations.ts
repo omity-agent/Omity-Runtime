@@ -10,6 +10,7 @@ import type { HostContext } from "../context";
 import type { StreamLogState } from "../stream";
 import { displayToolInput, textOutputSnapshot, toolOutputText, toolValueText } from "../toolOutput";
 import { toolPart } from "./parts";
+import type { TextStreamWriter } from "./textWriter";
 
 type InvocationContext = Pick<HostContext, "db" | "sessionId">;
 interface ToolIdentity {
@@ -68,8 +69,22 @@ export async function recordInvocation(
   inputId: number,
   event: ModelStreamEvent,
   state: StreamLogState,
+  writer: TextStreamWriter,
+  chunk: ReturnType<typeof toUIMessageChunk>,
 ) {
-  const chunk = toUIMessageChunk(event.part);
+  if (
+    chunk?.type !== "tool-input-start" &&
+    chunk?.type !== "tool-input-delta" &&
+    chunk?.type !== "tool-input-available" &&
+    chunk?.type !== "tool-output-available" &&
+    chunk?.type !== "tool-output-error"
+  ) {
+    return;
+  }
+  await writer.flush();
+  if (writer.signal.aborted) {
+    return;
+  }
   if (chunk?.type === "tool-input-start") {
     const identity = invocationIdentity(state, chunk.toolCallId);
     await ctx.db.appendStream(ctx.sessionId, {

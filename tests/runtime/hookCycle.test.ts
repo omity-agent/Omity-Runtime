@@ -59,10 +59,12 @@ test("Freeform hooks bracket a structured tool call without recursive hooks", as
   });
   fixture.db.resetSession("session", workspace);
   fixture.db.appendUser("session", "run");
-  fixture.db.onChange((event) => {
-    if (event.kind === "tool_started" && isHookCallId(event.value)) {
-      visible.resolve();
-    }
+  fixture.db.observe({
+    stream: (_id, event) => {
+      if (event.kind === "tool_started" && isHookCallId(event.value)) {
+        visible.resolve();
+      }
+    },
   });
   const processing = processInput(fixture.context, required(fixture.db.nextInput("session")));
   try {

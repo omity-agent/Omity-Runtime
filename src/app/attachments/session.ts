@@ -1,3 +1,4 @@
+import type { AgentDatabase } from "../../infrastructure/database/agentDatabase";
 import type { SessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
 import type { Settings } from "../../types";
 import type { InitialMessagePair } from "../initialState";
@@ -7,6 +8,7 @@ import { withSavedAttachments } from "./uploads";
 
 export function createSessionWithAttachments(options: {
   settings: Settings;
+  database: AgentDatabase;
   sessionId: string;
   workspace: string;
   profiles: string[];
@@ -22,6 +24,7 @@ export function createSessionWithAttachments(options: {
     options.attachments,
     (rewrite) =>
       createSessionStorage(
+        options.database,
         options.sessionId,
         options.workspace,
         options.profiles,

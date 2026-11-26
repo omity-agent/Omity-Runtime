@@ -1,4 +1,3 @@
-import { submitSessionMessage } from "../../client";
 import type { Settings } from "../../types";
 import type { MessageSubmission } from "./contract";
 import { withSavedAttachments } from "./uploads";
@@ -7,12 +6,11 @@ export function enqueueMessageWithAttachments(
   settings: Settings["attachments"],
   sessionId: string,
   { attachments, content, draftRevision, submissionId }: MessageSubmission,
-  ensureHost: () => Promise<void>,
+  submit: (content: string, draftRevision: number, submissionId: string) => Promise<number>,
 ) {
   return withSavedAttachments(settings, sessionId, [content], attachments, async (rewrite) => {
     const resolved = rewrite(content);
-    await ensureHost();
-    const result = submitSessionMessage(sessionId, resolved, draftRevision, submissionId);
-    return { ...result, content: resolved };
+    const inputId = await submit(resolved, draftRevision, submissionId);
+    return { content: resolved, inputId };
   });
 }

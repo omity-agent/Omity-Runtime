@@ -1,22 +1,23 @@
+import type { ToolExecutions } from "../../agent/toolExecutions";
 import type { ErrorDetails } from "../../failures/details";
 import type { HostObserver } from "../../runtime/context";
-import type { BrowserWarning, HostActivity, StreamEvent } from "../../types";
+import type { HostNotifications } from "../../runtime/execution/notifications";
+import type { BrowserWarning, HostActivity } from "../../types";
 
 export interface RunningHost {
   activity: HostActivity;
   done: Promise<void>;
+  executions: ToolExecutions;
   force: AbortController;
+  notifications: HostNotifications;
   ready: Promise<void>;
   stopping: AbortController;
-  cancelTool: (callId: string) => boolean;
 }
 export interface AppHostEvents {
   activity: (sessionId: string, activity: HostActivity) => void;
   changed: (sessionId: string) => void;
   failure: (sessionId: string, error: ErrorDetails) => void;
-  transcript: (sessionId: string, event: StreamEvent) => void;
   warning: (sessionId: string, warning: BrowserWarning) => void;
-  wait: (sessionId: string, delayMs: number, signal: AbortSignal) => Promise<void>;
 }
 export function createHostObserver(
   events: AppHostEvents,
@@ -37,10 +38,6 @@ export function createHostObserver(
     },
     failure: (sessionId, error) => {
       events.failure(sessionId, error);
-    },
-    token: () => {},
-    transcript: (sessionId, event) => {
-      events.transcript(sessionId, event);
     },
     warning: (sessionId, warning) => {
       events.warning(sessionId, warning);

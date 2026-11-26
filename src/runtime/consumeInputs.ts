@@ -2,7 +2,6 @@ import { captureError } from "../failures/details";
 import { localize } from "../i18n/server";
 import type { QueuedInput } from "../types";
 import type { HostContext } from "./context";
-import { HostLeaseLostError } from "./execution/lease";
 import { runGraphUntilBoundary } from "./execution/nodeBoundary";
 import { pauseForMcpUnavailable, pauseForStop, waitIfPaused } from "./execution/pause";
 import { type ActiveRun, CanceledRunError, pauseFailedRun, setRunStatus } from "./run";
@@ -18,7 +17,6 @@ export async function processInput(ctx: HostContext, item: QueuedInput) {
     threadId: item.runId.toString(),
   };
   try {
-    ctx.assertLease?.();
     const advance = pauseForStop(ctx, run) ? false : await waitIfPaused(ctx, run);
     if (!advance) {
       return;
@@ -33,10 +31,6 @@ export async function processInput(ctx: HostContext, item: QueuedInput) {
     if (error instanceof CanceledRunError) {
       return;
     }
-    if (error instanceof HostLeaseLostError) {
-      throw error;
-    }
-    ctx.assertLease?.();
     if (isTerminal(ctx.db.runStatus(run.id))) {
       throw error;
     }

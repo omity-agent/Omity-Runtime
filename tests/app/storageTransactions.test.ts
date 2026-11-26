@@ -8,7 +8,7 @@ import {
   forkSessionStorage,
 } from "../../src/app/runtime/sessions/persistence";
 import { materializeAppFork } from "../../src/app/runtime/sessions/provision";
-import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
+import { databasePath, sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { emptySessionDefinition } from "../../src/infrastructure/database/session/sessionDefinition";
 import { createTestDirectory } from "../support/artifacts";
@@ -30,11 +30,12 @@ afterEach(() => {
   environment.dispose();
   rmSync(home, { force: true, recursive: true });
 });
-test("fork initialization releases its reservation even if the database cannot open", async () => {
+test("fork initialization releases its reservation when the fork point is missing", async () => {
   const paths = sessionPaths("source");
-  mkdirSync(paths.dbPath);
+  using database = new AgentDatabase(paths.dbPath);
+  database.createSession("source", workspace);
   await expect(
-    materializeAppFork({
+    materializeAppFork(database, {
       beforeMessageId: 1,
       pauseSource: () => Promise.resolve(),
       profiles: [],
@@ -47,12 +48,12 @@ test("fork initialization releases its reservation even if the database cannot o
 test.each(operations)(
   "%s rolls back database records when message files cannot be written",
   (mode) => {
-    const initialize = prepareInitialization(mode),
+    using db = new AgentDatabase(databasePath());
+    const initialize = prepareInitialization(db, mode),
       paths = sessionPaths("target");
     mkdirSync(paths.userMessagesDir);
     writeFileSync(join(paths.userMessagesDir, "1.txt"), "blocked");
     expect(initialize).toThrow("EEXIST");
-    using db = new AgentDatabase(paths.dbPath);
     expect(db.hasSession("target")).toBe(false);
     expect(existsSync(paths.dir)).toBe(false);
     for (const table of ["runs", "inputs", "messages", "composer_drafts"]) {
@@ -72,21 +73,23 @@ test.each(operations)(
   },
 );
 test.each(operations)("%s preserves an existing destination on a session conflict", (mode) => {
-  const initialize = prepareInitialization(mode);
-  createSessionStorage("target", workspace, [], [], "existing message");
+  using db = new AgentDatabase(databasePath());
+  const initialize = prepareInitialization(db, mode);
+  createSessionStorage(db, "target", workspace, [], [], "existing message");
   const paths = sessionPaths("target");
   expect(initialize).toThrow();
   expect(existsSync(paths.dir)).toBe(true);
   expect(readFileSync(join(paths.userMessagesDir, "0.txt"), "utf8")).toBe("existing message");
-  using db = new AgentDatabase(paths.dbPath);
   expect(db.nextInput("target")?.content).toBe("existing message");
   expect(db.hasSession("source")).toBe(true);
 });
 test("attachment initialization only discards its own files on a session conflict", async () => {
-  createSessionStorage("target", workspace, [], [], "existing message");
+  using db = new AgentDatabase(databasePath());
+  createSessionStorage(db, "target", workspace, [], [], "existing message");
   await expect(
     createSessionWithAttachments({
       attachments: [{ file: new File(["attachment"], "notes.txt"), id: "a1b2c3d4" }],
+      database: db,
       definition: emptySessionDefinition(),
       history: [],
       message: "read {{file:a1b2c3d4:notes.txt}}",
@@ -97,16 +100,17 @@ test("attachment initialization only discards its own files on a session conflic
     }),
   ).rejects.toThrow();
   const paths = sessionPaths("target");
-  using db = new AgentDatabase(paths.dbPath);
   expect(db.hasSession("target")).toBe(true);
   expect(db.nextInput("target")?.content).toBe("existing message");
   expect(readFileSync(join(paths.userMessagesDir, "0.txt"), "utf8")).toBe("existing message");
   expect(readdirSync(join(paths.dir, "attachments"))).toEqual([]);
 });
 test("an attachment shared by initial history and the pending message is written once", async () => {
+  using db = new AgentDatabase(databasePath());
   const message = "read {{file:a1b2c3d4:notes.txt}}";
   await createSessionWithAttachments({
     attachments: [{ file: new File(["attachment"], "notes.txt"), id: "a1b2c3d4" }],
+    database: db,
     definition: emptySessionDefinition(),
     history: [{ assistant: "received", user: message }],
     message,
@@ -116,16 +120,15 @@ test("an attachment shared by initial history and the pending message is written
     workspace,
   });
   const paths = sessionPaths("target");
-  using db = new AgentDatabase(paths.dbPath);
   const first = required(db.history("target")[0]).text;
   expect(db.nextInput("target")?.content).toBe(first);
   expect(readFileSync(first.slice("read ".length), "utf8")).toBe("attachment");
   expect(readdirSync(join(paths.dir, "attachments"))).toHaveLength(1);
 });
 test("appending queued inputs preserves archive files and reuses missing sequence numbers", () => {
-  createSessionStorage("target", workspace, [], history, "pending message");
+  using db = new AgentDatabase(databasePath());
+  createSessionStorage(db, "target", workspace, [], history, "pending message");
   const paths = sessionPaths("target");
-  using db = new AgentDatabase(paths.dbPath);
   db.appendUser("target", "appended message");
   expect(readFileSync(join(paths.userMessagesDir, "0.txt"), "utf8")).toBe("first user");
   expect(readFileSync(join(paths.userMessagesDir, "3.txt"), "utf8")).toBe("appended message");
@@ -140,15 +143,14 @@ test("appending queued inputs preserves archive files and reuses missing sequenc
     "fills archive hole",
   ]);
 });
-function prepareInitialization(mode: (typeof operations)[number]) {
-  createSessionStorage("source", workspace, [], history, "fork draft");
-  using source = new AgentDatabase(sessionPaths("source").dbPath);
+function prepareInitialization(source: AgentDatabase, mode: (typeof operations)[number]) {
+  createSessionStorage(source, "source", workspace, [], history, "fork draft");
   const beforeMessageId = source.consumeInput("source", required(source.nextInput("source")));
   return () => {
     if (mode === "create") {
-      createSessionStorage("target", workspace, [], history, "fork draft");
+      createSessionStorage(source, "target", workspace, [], history, "fork draft");
     } else {
-      forkSessionStorage({
+      forkSessionStorage(source, {
         beforeMessageId,
         profiles: [],
         sourceSessionId: "source",

@@ -9,14 +9,11 @@ interface ToolExecution {
   startedAt?: number;
   cancelledAt?: number;
   controller: AbortController;
-  timer?: ReturnType<typeof setInterval>;
 }
-type ToolExecutionsOptions = {
+interface ToolExecutionsOptions {
   now?: () => number;
-} & (
-  | { cancellationRequested: (callId: string) => number | undefined; pollMs: number }
-  | { cancellationRequested?: undefined }
-);
+  cancellationRequested?: (callId: string) => number | undefined;
+}
 export class ToolExecutions {
   private readonly executions = new Map<string, ToolExecution>();
   private readonly now: () => number;
@@ -29,9 +26,11 @@ export class ToolExecutions {
     }
     const execution: ToolExecution = { controller: new AbortController() };
     this.executions.set(callId, execution);
-    this.startPolling(callId, execution);
-    if (execution.cancelledAt === undefined) {
+    const requestedAt = this.options.cancellationRequested?.(callId);
+    if (requestedAt === undefined) {
       execution.startedAt = this.now();
+    } else {
+      this.cancel(callId, requestedAt);
     }
     const signal = parentSignal
       ? AbortSignal.any([parentSignal, execution.controller.signal])
@@ -44,9 +43,6 @@ export class ToolExecutions {
             ? 0
             : Math.max(0, execution.cancelledAt - execution.startedAt),
       complete: () => {
-        if (execution.timer) {
-          clearInterval(execution.timer);
-        }
         if (this.executions.get(callId) === execution) {
           this.executions.delete(callId);
         }
@@ -64,27 +60,6 @@ export class ToolExecutions {
     return true;
   }
   close() {
-    for (const execution of this.executions.values()) {
-      clearInterval(execution.timer);
-    }
     this.executions.clear();
-  }
-  private startPolling(callId: string, execution: ToolExecution) {
-    const { cancellationRequested } = this.options;
-    if (!cancellationRequested) {
-      return;
-    }
-    const check = () => {
-      const requestedAt = cancellationRequested(callId);
-      if (requestedAt !== undefined) {
-        this.cancel(callId, requestedAt);
-      }
-    };
-    check();
-    if (execution.cancelledAt !== undefined) {
-      return;
-    }
-    execution.timer = setInterval(check, this.options.pollMs);
-    execution.timer.unref();
   }
 }

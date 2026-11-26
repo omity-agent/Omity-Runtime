@@ -33,7 +33,11 @@ export const sessionFailureSchema = z.object({
   sessionId: z.string().min(1),
 });
 export const deletedEventSchema = z.object({ sessionId: z.string() });
-export const syncEventSchema = z.object({ eventCursor: z.number().int().nonnegative() });
+export const syncEventSchema = z.object({
+  eventCursor: z.number().int().nonnegative(),
+  transcriptRevision: z.number().int().nonnegative(),
+});
+export type SyncPoint = z.infer<typeof syncEventSchema>;
 export type SessionInfo = z.infer<typeof sessionInfoSchema>;
 export type SessionFailure = z.infer<typeof sessionFailureSchema>;
 export type BrowserWarning = z.infer<typeof warningEventSchema>;

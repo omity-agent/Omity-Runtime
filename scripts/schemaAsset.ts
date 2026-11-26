@@ -2,7 +2,7 @@ import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promise
 import { join } from "node:path";
 
 import { localize } from "../src/i18n/server";
-import { isProcessRunning } from "../src/infrastructure/process/ownership";
+import { isProcessRunning } from "../src/infrastructure/processLiveness";
 import { databaseOutput, schemaGenerationCache } from "./distribution";
 
 const database = {

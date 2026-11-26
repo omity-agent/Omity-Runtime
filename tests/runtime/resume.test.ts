@@ -7,7 +7,6 @@ import { z } from "zod";
 import { queryAll } from "../../src/infrastructure/database/sqlite/connection";
 import { processInput } from "../../src/runtime/consumeInputs";
 import type { HostContext } from "../../src/runtime/context";
-import { wireHostSignals } from "../../src/runtime/execution/signals";
 import type { StreamEvent } from "../../src/types";
 import { cleanupDatabaseDirs, required, workspace } from "../support/database";
 import { agentFixture, textResponse, toolResponse } from "./support/agentFixture";
@@ -33,7 +32,7 @@ test("a paused run steps through one model request or a complete tool batch", as
   db.resetSession("session", workspace);
   db.appendUser("session", "run tool");
   db.setControl("session", "step");
-  db.onChange((event) => delivered.push(event));
+  db.observe({ stream: (_id, event) => delivered.push(event) });
   await processInput(stepContext(context), required(db.nextInput("session")));
   expect(db.nextInput("session")?.status).toBe("paused");
   expect(db.control("session")).toBe("pause");
@@ -64,41 +63,6 @@ test("a paused run steps through one model request or a complete tool batch", as
   expect(finished.every((event) => event.id > cursor)).toBe(true);
   expect(db.eventCursor()).toBe(required(finished.at(-1)).id);
 });
-test.each(["SIGINT", "SIGTERM"] as const)(
-  "repeated %s escalates a paused Agent from a graceful stop to forced cancellation",
-  async (signal) => {
-    using fixture = agentFixture();
-    const { context, db } = fixture,
-      stopping = new AbortController();
-    using listeners = new DisposableStack();
-    listeners.defer(
-      wireHostSignals({
-        enabled: true,
-        force: context.controller,
-        logger: context.logger,
-        stopping,
-        timeoutMs: 60_000,
-      }),
-    );
-    db.resetSession("target", workspace);
-    db.appendUser("target", "hello");
-    context.stopping = stopping.signal;
-    context.observer = {
-      changed: () => {
-        if (fixture.model.doStreamCalls.length === 1 && !stopping.signal.aborted) {
-          process.emit(signal, signal);
-        }
-      },
-      token: () => {},
-    };
-    await processInput(context, required(db.nextInput("target")));
-    expect(stopping.signal.aborted).toBe(true);
-    expect(context.controller.signal.aborted).toBe(false);
-    expect(db.nextInput("target")?.status).toBe("paused");
-    process.emit(signal, signal);
-    expect(context.controller.signal.aborted).toBe(true);
-  },
-);
 function stepContext(ctx: HostContext) {
   const stopping = new AbortController(),
     { db, sessionId } = ctx;

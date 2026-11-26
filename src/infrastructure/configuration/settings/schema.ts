@@ -74,36 +74,25 @@ const promptFileSchema = z
       ({ publicOrigin, trustedProxies }) => publicOrigin === null || trustedProxies.length > 0,
       localize("configuration:settings.schema.trustedProxiesRequired"),
     ),
-  mainSettingsSchema = z.strictObject({
-    access: accessSchema,
-    attachments: createAttachmentSettingsSchema(() =>
-      localize("configuration:settings.schema.duplicateSuffixes"),
-    ),
-    frontend: frontendSettingsSchema,
-    host: z.object({
-      idleLogMs: z.number().int().positive(),
-      pausePollMs: z.number().int().positive(),
-      pollMs: z.number().int().positive(),
-      shutdownTimeoutMs: z.number().int().positive(),
-    }),
-    leases: z.object({
-      hostTtlMs: z.number().int().positive(),
-    }),
-    logging: z.object({
-      level: logLevelSchema,
-      streamTokens: z.boolean(),
-    }),
-    server: z.strictObject({
-      host: z.string().min(1),
-      idleTimeoutSeconds: z.number().int().min(0).max(255),
-      port: z.number().int().min(0).max(65_535),
-      requestBodyLimitBytes: z.number().int().positive(),
-    }),
-  });
-export function parseMainSettings(value: unknown, model: ReturnType<typeof parseModelSettings>) {
-  return mainSettingsSchema
-    .extend({
-      prediction: emptyAs(createPredictionSettingsSchema(model).optional(), undefined).optional(),
+  appSettingsSchema = z
+    .strictObject({
+      access: accessSchema,
+      attachments: createAttachmentSettingsSchema(() =>
+        localize("configuration:settings.schema.duplicateSuffixes"),
+      ),
+      frontend: frontendSettingsSchema,
+      host: z.object({
+        shutdownTimeoutMs: z.number().int().positive(),
+      }),
+      logging: z.object({
+        level: logLevelSchema,
+      }),
+      server: z.strictObject({
+        host: z.string().min(1),
+        idleTimeoutSeconds: z.number().int().min(0).max(255),
+        port: z.number().int().min(0).max(65_535),
+        requestBodyLimitBytes: z.number().int().positive(),
+      }),
     })
     .refine(
       ({ attachments, server }) =>
@@ -112,7 +101,15 @@ export function parseMainSettings(value: unknown, model: ReturnType<typeof parse
         error: localize("configuration:settings.schema.attachmentBodyLimitUnsafe"),
         path: ["attachments", "maxSizeBytes"],
       },
-    )
+    );
+export function parseAppSettings(value: unknown) {
+  return appSettingsSchema.parse(value);
+}
+export function parseMainSettings(value: unknown, model: ReturnType<typeof parseModelSettings>) {
+  return appSettingsSchema
+    .safeExtend({
+      prediction: emptyAs(createPredictionSettingsSchema(model).optional(), undefined).optional(),
+    })
     .parse(prepareMainSettings(value, model));
 }
 export function parseAgentSettings(value: unknown) {

@@ -2,15 +2,15 @@ import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { loadSessionRuntime } from "../../src/app/hosts/execution";
 import { createAppMcp } from "../../src/app/runtime/resources/toolPool";
 import { provisionAppSession } from "../../src/app/runtime/sessions/provision";
-import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
+import { databasePath } from "../../src/infrastructure/configuration/sessionPaths";
 import { settingsProfileNames } from "../../src/infrastructure/configuration/settings/context";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { readDefinitionRecord } from "../../src/infrastructure/database/records/session/metadata";
 import { removeDatabaseDirectory } from "../../src/infrastructure/database/sqlite/connection";
 import { AskUserRuntime } from "../../src/infrastructure/toolbox/runtime";
-import { prepareHostSession } from "../../src/runtime/execution/sessionPreparation";
 import { createTestDirectory } from "../support/artifacts";
 import { containingItems } from "../support/asymmetric";
 import { fixtureTools } from "../support/builtins";
@@ -41,11 +41,14 @@ test("session snapshots lock only the model prefix while runtime configuration c
   });
   writeFixtureYaml(profileDirectory, "toolbox", { toolboxes });
   const workspacePath = join(root, "workspace");
-  mkdirSync(workspacePath);
-  const mcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => {}));
+  mkdirSync(workspacePath, { recursive: true });
+  mkdirSync(join(root, "home"), { recursive: true });
+  const db = resources.use(new AgentDatabase(databasePath())),
+    mcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => {}));
   resources.defer(() => mcp.close());
   const created = await provisionAppSession({
       baseContext: context,
+      database: db,
       mcp,
       root,
       submission: {
@@ -56,8 +59,6 @@ test("session snapshots lock only the model prefix while runtime configuration c
         workspace: workspacePath,
       },
     }),
-    paths = sessionPaths(created.sessionId),
-    db = resources.use(new AgentDatabase(paths.dbPath)),
     definition = readDefinitionRecord(db.db, created.sessionId);
   writeFileSync(join(profileDirectory, "prompts", "fixture.md"), "changed prompt");
   writeFixtureYaml(profileDirectory, "model", {
@@ -87,11 +88,7 @@ test("session snapshots lock only the model prefix while runtime configuration c
   expect(definition.prefix.tools.tools.map(({ name }) => name)).toContain(
     toolboxes.open_ended.name,
   );
-  const prepared = prepareHostSession({ kind: "load", sessionId: created.sessionId }, root, {
-    cwd: workspacePath,
-    settingsContext: context,
-  });
-  resources.use(prepared.db);
+  const prepared = loadSessionRuntime(db, created.sessionId, workspacePath, context);
   expect(prepared.settings.agent.systemPrompt).toBe(definition.prefix.systemPrompt);
   expect(prepared.settings.hooks.map(({ id, enable }) => ({ enable, id }))).toEqual([
     { enable: false, id: "notify" },

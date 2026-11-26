@@ -16,6 +16,7 @@ export function subscribeStateEvents(
     deleted: (sessionId: string) => void;
     session: (session: SessionInfo) => void;
     sessions: (sessions: SessionInfo[]) => void;
+    userMessages?: () => void;
   },
 ) {
   return subscribeEvents(source, {
@@ -28,6 +29,7 @@ export function subscribeStateEvents(
     },
     session: (event) => handlers.session(readSessionEvent(event)),
     sessions: (event) => handlers.sessions(readSessionsEvent(event)),
+    "user-messages": () => handlers.userMessages?.(),
     warning: (event) => reportBrowserWarning(readWarningEvent(event)),
   });
 }

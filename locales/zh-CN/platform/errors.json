@@ -10,14 +10,6 @@
   "control": {
     "notReady": "会话尚未准备好执行控制命令：{{control}}"
   },
-  "host": {
-    "leaseNotEstablished": "Host Lease 尚未建立：{{sessionId}}",
-    "sessionOpened": {
-      "new": "已创建会话",
-      "load": "已加载会话",
-      "overwrite": "已覆盖会话"
-    }
-  },
   "skills": {
     "directoryMissing": "Skills 目录不存在：{{directory}}",
     "duplicateName": "Skill 名称重复：{{skillName}}",
@@ -31,9 +23,6 @@
   },
   "fileLinks": {
     "ownerIdMissing": "模型消息缺少文件链接所有者 ID"
-  },
-  "process": {
-    "ownerIdInvalid": "Host Lease owner_id 无效"
   },
   "generic": {
     "missing": "缺失"

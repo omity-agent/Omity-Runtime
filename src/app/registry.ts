@@ -7,32 +7,21 @@ import { sessionOverviewRows } from "../infrastructure/database/projections/sess
 import { deriveSessionTitle } from "../infrastructure/database/records/transcript/messages/deriveTitle";
 import { streamEventCursor } from "../infrastructure/database/records/transcript/streamEvents";
 import { runTransaction } from "../infrastructure/database/sqlite/connection";
-import { DatabaseReader } from "./runtime/resources/databaseReader";
 
 type SessionOverview = ReturnType<typeof sessionOverviewRows>[number];
 export type RegisteredSession = SessionOverview & {
   title: string;
 };
-export class AppRegistry implements Disposable {
+export class AppRegistry {
   private readonly sessions = new Map<string, RegisteredSession>();
-  private readonly reader = new DatabaseReader();
-  constructor() {
-    try {
-      this.reload();
-    } catch (error) {
-      this.close();
-      throw error;
-    }
-  }
+  constructor(readonly db: Database) {}
   reload() {
-    const db = this.reader.open(),
-      sessions = db
-        ? runTransaction(db, () =>
-            sessionOverviewRows(db)
-              .filter((row) => existsSync(resolveSessionPaths(row.id).dir))
-              .map((row) => toSession(db, row)),
-          )
-        : [];
+    const { db } = this,
+      sessions = runTransaction(db, () =>
+        sessionOverviewRows(db)
+          .filter((row) => existsSync(resolveSessionPaths(row.id).dir))
+          .map((row) => toSession(db, row)),
+      );
     this.sessions.clear();
     for (const session of sessions) {
       this.sessions.set(session.id, session);
@@ -49,7 +38,7 @@ export class AppRegistry implements Disposable {
     return session;
   }
   refresh(id: string) {
-    const db = this.requireDatabase(id),
+    const { db } = this,
       session = runTransaction(db, () => {
         const [row] = sessionOverviewRows(db, id);
         if (!row) {
@@ -62,7 +51,7 @@ export class AppRegistry implements Disposable {
   }
   read<T>(id: string, operation: (db: Database) => T): T {
     this.require(id);
-    return operation(this.requireDatabase(id));
+    return operation(this.db);
   }
   eventCursor(id: string) {
     return this.read(id, streamEventCursor);
@@ -71,19 +60,6 @@ export class AppRegistry implements Disposable {
     if (!this.sessions.delete(id)) {
       throw sessionNotFound(id);
     }
-  }
-  close() {
-    this.reader.close();
-  }
-  [Symbol.dispose]() {
-    this.close();
-  }
-  private requireDatabase(id: string) {
-    const db = this.reader.open();
-    if (!db) {
-      throw sessionNotFound(id);
-    }
-    return db;
   }
 }
 function compareSessions(left: RegisteredSession, right: RegisteredSession) {

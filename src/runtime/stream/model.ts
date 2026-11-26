@@ -9,13 +9,15 @@ import type { HostContext } from "../context";
 import type { StreamLogState } from "../stream";
 import { recordInvocation, toolStartedEvent } from "./invocations";
 import { sequentialPart } from "./parts";
+import type { TextStreamWriter } from "./textWriter";
 
-type StreamContext = Pick<HostContext, "db" | "logger" | "observer" | "sessionId" | "settings">;
+type StreamContext = Pick<HostContext, "db" | "observer" | "sessionId" | "settings">;
 export async function recordModelStreamPart(
   ctx: StreamContext,
   inputId: number,
   event: ModelStreamEvent,
   state: StreamLogState,
+  writer: TextStreamWriter,
 ) {
   if (!state.modelResponding && hasModelContent(event.part)) {
     state.modelResponding = true;
@@ -28,7 +30,7 @@ export async function recordModelStreamPart(
       return;
     }
     const { messageId } = state.parts;
-    await ctx.db.appendStream(ctx.sessionId, {
+    await writer.add({
       inputId,
       kind: "assistant_reasoning_delta",
       messageId,
@@ -44,7 +46,7 @@ export async function recordModelStreamPart(
         chunk.type === "reasoning-delta"
           ? appendReasoningDelta(chunk.id, chunk.delta, state.parts.reasoning)
           : chunk.delta;
-    await ctx.db.appendStream(ctx.sessionId, {
+    await writer.add({
       inputId,
       kind,
       messageId,
@@ -52,13 +54,10 @@ export async function recordModelStreamPart(
       value,
     });
     if (chunk.type === "text-delta") {
-      if (ctx.settings.logging.streamTokens) {
-        ctx.logger.token(chunk.delta);
-      }
-      ctx.observer?.token(ctx.sessionId, inputId, chunk.delta);
+      ctx.observer?.token?.(ctx.sessionId, inputId, chunk.delta);
     }
   } else {
-    await recordInvocation(ctx, inputId, event, state);
+    await recordInvocation(ctx, inputId, event, state, writer, chunk);
   }
 }
 export function recordToolStarted(ctx: StreamContext, messages: BaseMessage[], inputId: number) {

@@ -46,8 +46,12 @@ import {
   runTransaction,
 } from "./sqlite/connection";
 
+interface DatabaseObserver {
+  history?: (sessionId: string, position: number, userMessagesChanged: boolean) => void;
+  stream?: (sessionId: string, event: StreamEvent) => void;
+}
 export class AgentDatabase extends RecoverableDatabase {
-  private notify?: (event: StreamEvent) => void;
+  private observer: DatabaseObserver = {};
   private readonly fileLinks = new FileLinkIndexer(this.db);
   private readonly queueSubmissions = new InputSubmissionStore(this.db);
   private storageReclaimPending = false;
@@ -60,8 +64,8 @@ export class AgentDatabase extends RecoverableDatabase {
   [Symbol.dispose]() {
     this.close();
   }
-  onChange(notify: (event: StreamEvent) => void) {
-    this.notify = notify;
+  observe(observer: DatabaseObserver) {
+    this.observer = observer;
   }
   resetSession(
     sessionId: string,
@@ -122,15 +126,18 @@ export class AgentDatabase extends RecoverableDatabase {
   }
   consumeInput(sessionId: string, item: QueuedInput) {
     const result = runTransaction(this.db, () => {
-      const userMessageId = consumeInputRecord(this.db, sessionId, item),
+      const message = consumeInputRecord(this.db, sessionId, item),
         boundary = insertUserBoundaryEvent(this.db, sessionId, item.id);
       touchSessionRecord(this.db, sessionId);
-      return { boundary, userMessageId };
+      return { boundary, message };
     });
-    if (result.boundary) {
-      this.notify?.(result.boundary);
+    if (result.message.position !== undefined) {
+      this.observer.history?.(sessionId, result.message.position, true);
     }
-    return result.userMessageId;
+    if (result.boundary) {
+      this.observer.stream?.(sessionId, result.boundary);
+    }
+    return result.message.id;
   }
   setRunStatus(runId: number, status: RunStatus, error?: ErrorDetails) {
     const discarded = runTransaction(this.db, () => {
@@ -151,15 +158,18 @@ export class AgentDatabase extends RecoverableDatabase {
   }
   async syncHistory(sessionId: string, messages: BaseMessage[]) {
     requireSessionRecord(this.db, sessionId);
-    const finished = await syncIndexedHistory({
+    const { finished, position, userMessagesChanged } = await syncIndexedHistory({
       db: this.db,
       fileLinks: this.fileLinks,
       messages,
       sessionId,
       workspace: this.workspace(sessionId),
     });
+    if (position !== undefined) {
+      this.observer.history?.(sessionId, position, userMessagesChanged);
+    }
     for (const event of finished) {
-      this.notify?.(event);
+      this.observer.stream?.(sessionId, event);
     }
   }
   history(sessionId: string): BaseMessage[] {
@@ -173,17 +183,17 @@ export class AgentDatabase extends RecoverableDatabase {
   }
   requestToolCancellation(sessionId: string, callId: string) {
     requireSessionRecord(this.db, sessionId);
-    requestToolCancellation(this.db, sessionId, callId);
+    return requestToolCancellation(this.db, sessionId, callId);
   }
   toolCancellation(sessionId: string, callId: string) {
     return readToolCancellation(this.db, sessionId, callId);
   }
   appendStream(sessionId: string, event: StreamEventDraft) {
-    const { db, fileLinks, notify } = this;
-    return appendFileLinkStream({ db, fileLinks, notify, sessionId }, event);
+    const { db, fileLinks } = this;
+    return appendFileLinkStream({ db, fileLinks, notify: this.observer.stream, sessionId }, event);
   }
   appendPlainStreams(sessionId: string, events: readonly PlainStreamEventDraft[]) {
-    return appendPlainStreams({ db: this.db, notify: this.notify, sessionId }, events);
+    return appendPlainStreams({ db: this.db, notify: this.observer.stream, sessionId }, events);
   }
   discardStreamSegment(inputId: number, after: number) {
     runTransaction(this.db, () => {

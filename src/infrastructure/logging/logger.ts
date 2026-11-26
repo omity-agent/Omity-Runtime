@@ -7,10 +7,7 @@ import type { LogLevel } from "../../types";
 export class Logger {
   private indent = 0;
   private readonly output: ConsolaInstance;
-  constructor(
-    level: LogLevel,
-    private readonly silent = false,
-  ) {
+  constructor(level: LogLevel, silent = false) {
     this.output = createConsola({
       level: LogLevels[silent ? "silent" : level],
       throttle: 0,
@@ -35,12 +32,6 @@ export class Logger {
   }
   error(message: string, data?: unknown) {
     this.write("error", message, data);
-  }
-  token(text: string) {
-    if (this.silent) {
-      return;
-    }
-    process.stdout.write(text);
   }
   private write(level: LogLevel, message: string, data?: unknown) {
     if (LogLevels[level] > this.output.level) {

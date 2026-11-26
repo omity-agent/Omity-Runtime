@@ -9,7 +9,6 @@ import errors from "../../locales/zh-CN/platform/errors.json" with { type: "json
 import mcp from "../../locales/zh-CN/platform/mcp.json" with { type: "json" };
 import network from "../../locales/zh-CN/platform/network.json" with { type: "json" };
 import build from "../../locales/zh-CN/tooling/build.json" with { type: "json" };
-import cli from "../../locales/zh-CN/tooling/cli.json" with { type: "json" };
 import access from "../../locales/zh-CN/web/access.json" with { type: "json" };
 import application from "../../locales/zh-CN/web/application.json" with { type: "json" };
 import attachments from "../../locales/zh-CN/web/attachments.json" with { type: "json" };
@@ -23,7 +22,6 @@ export const serverCatalog = {
   attachments,
   build,
   checkpoint,
-  cli,
   configuration,
   database,
   drafts,

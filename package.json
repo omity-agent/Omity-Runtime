@@ -2,10 +2,10 @@
   "name": "omity-agent",
   "private": true,
   "bin": {
-    "omity": "src/cli.ts"
+    "omity": "src/main.ts"
   },
   "type": "module",
-  "module": "src/cli.ts",
+  "module": "src/main.ts",
   "imports": {
     "#settings/*": "./settings/*"
   },
@@ -15,7 +15,7 @@
     "test": "bun run --bun scripts/build.ts --test",
     "benchmark:mcp": "bun run --bun scripts/build.ts --benchmark-mcp",
     "screenshots": "bun run --bun scripts/frontend/screenshots/capture.ts",
-    "omity": "bun run --bun src/cli.ts",
+    "omity": "bun run --bun src/main.ts",
     "build": "bun run --bun scripts/build.ts"
   },
   "dependencies": {
@@ -40,8 +40,6 @@
     "@modelcontextprotocol/sdk": "latest",
     "@openai-oauth/core": "latest",
     "@openai-oauth/local": "latest",
-    "@optique/core": "latest",
-    "@optique/run": "latest",
     "@park-ui/panda-preset": "latest",
     "@replit/codemirror-indentation-markers": "latest",
     "@shikijs/stream": "latest",

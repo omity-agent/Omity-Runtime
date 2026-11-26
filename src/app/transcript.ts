@@ -27,14 +27,15 @@ import { prependInstructions } from "./timeline/build/instructions";
 import { modelTokenUsage } from "./timeline/tokenCounts";
 import { extractToolActivity } from "./timeline/tool/extraction";
 
-export function loadTranscript(db: Database, sessionId: string) {
+export function loadTranscript(
+  db: Database,
+  sessionId: string,
+  history?: { position: number | null; token: string },
+) {
   return runTransaction(db, () => {
     const control = readControlRecord(db, sessionId),
       transcriptRevision = readTranscriptRevisionRecord(db, sessionId),
-      messages = prependInstructions(
-        transcriptMessageRows(db, sessionId).map(toDisplayMessage),
-        readDefinitionRecord(db, sessionId).prefix.systemPrompt,
-      ),
+      { messages, offset } = readMessages(db, sessionId, history ? history.position : 0),
       queue = transcriptInputRows(db, sessionId),
       events = transcriptEvents(db, sessionId),
       fileLinks = loadFileLinkSets(db, sessionId),
@@ -45,12 +46,23 @@ export function loadTranscript(db: Database, sessionId: string) {
       eventCursor,
       events,
       fileLinks,
+      ...(history && { messageHistory: { offset, token: history.token } }),
       messages,
       queue,
       reasoningTranslations,
       transcriptRevision,
     };
   });
+}
+function readMessages(db: Database, sessionId: string, position: number | null) {
+  if (position === null) {
+    return { messages: [], offset: null };
+  }
+  const instructions = readDefinitionRecord(db, sessionId).prefix.systemPrompt,
+    messages = transcriptMessageRows(db, sessionId, position).map(toDisplayMessage);
+  return position === 0
+    ? { messages: prependInstructions(messages, instructions), offset: 0 }
+    : { messages, offset: position + (instructions.trim() ? 1 : 0) };
 }
 function toDisplayMessage(row: ReturnType<typeof transcriptMessageRows>[number]): DisplayMessage {
   const message = decodeMessage(row.messageJson, row.sourceId),

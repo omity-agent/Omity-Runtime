@@ -1,5 +1,3 @@
-import { setTimeout as sleep } from "node:timers/promises";
-
 import { BaseMessage } from "@langchain/core/messages";
 import { z } from "zod";
 
@@ -8,7 +6,8 @@ import type { ErrorDetails } from "../failures/details";
 import { localize } from "../i18n/server";
 import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import type { Logger } from "../infrastructure/logging/logger";
-import type { BrowserWarning, HostActivity, Settings, StreamEvent } from "../types";
+import type { BrowserWarning, HostActivity, Settings } from "../types";
+import type { HostNotifications } from "./execution/notifications";
 
 type AgentGraph = ReturnType<typeof buildGraph>;
 type AgentGraphStream = AgentGraph["stream"];
@@ -23,22 +22,19 @@ export interface HostObserver {
   activity?: (sessionId: string, status: HostActivity) => void;
   changed?: (sessionId: string) => void;
   failure?: (sessionId: string, error: ErrorDetails) => void;
-  transcript?: (sessionId: string, event: StreamEvent) => void;
-  token: (sessionId: string, inputId: number, text: string) => void;
+  token?: (sessionId: string, inputId: number, text: string) => void;
   warning?: (sessionId: string, warning: BrowserWarning) => void;
 }
-export type HostWake = (delayMs: number, signal: AbortSignal) => Promise<void>;
 export interface HostContext {
-  assertLease?: () => void;
   controller: AbortController;
   db: AgentDatabase;
   graph: AgentGraph;
   logger: Logger;
+  notifications: HostNotifications;
   observer?: HostObserver;
   sessionId: string;
   settings: Settings;
   stopping?: AbortSignal;
-  wake?: HostWake;
 }
 export async function streamGraph(
   graph: Pick<AgentGraph, "stream">,
@@ -56,23 +52,18 @@ export async function streamGraph(
   return result;
 }
 export function waitForWake(
-  ctx: Pick<HostContext, "controller" | "wake">,
-  delayMs: number,
-  signal = ctx.controller.signal,
+  ctx: Pick<HostContext, "controller" | "notifications" | "stopping">,
+  checkpoint = ctx.notifications.checkpoint(),
+  deadline?: AbortSignal,
 ) {
-  if (signal.aborted) {
-    return Promise.resolve();
+  const signals = [ctx.controller.signal];
+  if (ctx.stopping) {
+    signals.push(ctx.stopping);
   }
-  return ctx.wake ? ctx.wake(delayMs, signal) : abortableSleep(delayMs, signal);
-}
-async function abortableSleep(delayMs: number, signal: AbortSignal) {
-  try {
-    await sleep(delayMs, undefined, { signal });
-  } catch (error) {
-    if (!signal.aborted) {
-      throw error;
-    }
+  if (deadline) {
+    signals.push(deadline);
   }
+  return ctx.notifications.wait(checkpoint, AbortSignal.any(signals));
 }
 const messageSchema = z.custom<BaseMessage>((value) => BaseMessage.isInstance(value)),
   graphStateSchema = z.looseObject({

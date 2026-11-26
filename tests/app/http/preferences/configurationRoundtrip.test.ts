@@ -6,7 +6,6 @@ import { sessionOptionsSchema } from "../../../../src/app/contracts/results";
 import { createAppMcp } from "../../../../src/app/runtime/resources/toolPool";
 import { readDefinitionRecord } from "../../../../src/infrastructure/database/records/session/metadata";
 import { AskUserRuntime } from "../../../../src/infrastructure/toolbox/runtime";
-import { openStoredSession } from "../../../../src/storedSessions";
 import { fixtureTools } from "../../../support/builtins";
 import { writeFixtureYaml } from "../../../support/configuration";
 import { liveApplication } from "../liveApplication";
@@ -80,7 +79,7 @@ test("HTTP session preferences list disabled servers without resolving secrets a
   await app.waitForRun(session.id);
   expect(app.requests).toHaveLength(1);
   expect(app.requests[0]).toMatchObject({ model: "chosen-model" });
-  using database = openStoredSession(session.id);
+  const { database } = app.controller;
   const { prefix } = readDefinitionRecord(database.db, session.id),
     names = prefix.tools.tools.map(({ name }) => name);
   expect(prefix.model).toMatchObject({ adapter: "completions", model: "chosen-model" });

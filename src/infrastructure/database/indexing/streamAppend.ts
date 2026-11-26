@@ -1,6 +1,6 @@
 import type { Database } from "bun:sqlite";
 
-import { readWorkspaceRecord, touchSessionRecord } from "../records/session/metadata";
+import { readWorkspaceRecord } from "../records/session/metadata";
 import { writeFileLinkSets } from "../records/transcript/matchedFiles";
 import { insertStreamEvent } from "../records/transcript/streamEvents";
 import type {
@@ -14,7 +14,7 @@ import type { FileLinkIndexer } from "./surfaceIndexer";
 
 interface StreamTarget {
   db: Database;
-  notify?: (event: StreamEvent) => void;
+  notify?: (sessionId: string, event: StreamEvent) => void;
   sessionId: string;
 }
 export function appendFileLinkStream(
@@ -34,13 +34,10 @@ export function appendPlainStreams(
     return [];
   }
   const inserted = runTransaction(db, () =>
-    events.map((event) => {
-      touchSessionRecord(db, sessionId);
-      return insertStreamEvent(db, sessionId, event);
-    }),
+    events.map((event) => insertStreamEvent(db, sessionId, event)),
   );
   for (const event of inserted) {
-    notify?.(event);
+    notify?.(sessionId, event);
   }
   return inserted;
 }
@@ -58,7 +55,7 @@ async function appendIndexedStream(
     }),
     inserted = runTransaction(db, () => {
       writeFileLinkSets(db, sessionId, prepared.links);
-      const result = insertStreamEvent(
+      return insertStreamEvent(
         db,
         sessionId,
         prepared.links.length === 0
@@ -72,10 +69,8 @@ async function appendIndexedStream(
               })),
             },
       );
-      touchSessionRecord(db, sessionId);
-      return result;
     });
   prepared.commit();
-  notify?.(inserted);
+  notify?.(sessionId, inserted);
   return inserted;
 }

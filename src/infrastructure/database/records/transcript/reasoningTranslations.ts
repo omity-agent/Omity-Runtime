@@ -1,10 +1,11 @@
 import type { Database } from "bun:sqlite";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 
 import { messageReasoning } from "../../../../runtime/content";
 import { messages, reasoningTranslations } from "../../schema";
-import { sessionDatabase } from "../../sqlite/connection";
+import { runTransaction, sessionDatabase } from "../../sqlite/connection";
+import { touchSessionRecord } from "../session/metadata";
 import { decodeMessage } from "./messages/hydration";
 
 export interface ReasoningTranslation {
@@ -42,23 +43,27 @@ export function storeReasoningTranslation(
   sessionId: string,
   translation: ReasoningTranslation,
 ) {
-  sessionDatabase(db)
-    .insert(reasoningTranslations)
-    .values({
-      messageId: translation.messageId,
-      sessionId,
-      targetLanguage: translation.targetLanguage,
-      translated: translation.translated,
-    })
-    .onConflictDoUpdate({
-      set: {
+  runTransaction(db, () => {
+    const result = sessionDatabase(db)
+      .insert(reasoningTranslations)
+      .values({
+        messageId: translation.messageId,
+        sessionId,
+        targetLanguage: translation.targetLanguage,
         translated: translation.translated,
-      },
-      target: [
-        reasoningTranslations.sessionId,
-        reasoningTranslations.messageId,
-        reasoningTranslations.targetLanguage,
-      ],
-    })
-    .run();
+      })
+      .onConflictDoUpdate({
+        set: { translated: translation.translated },
+        setWhere: ne(reasoningTranslations.translated, translation.translated),
+        target: [
+          reasoningTranslations.sessionId,
+          reasoningTranslations.messageId,
+          reasoningTranslations.targetLanguage,
+        ],
+      })
+      .run();
+    if (result.changes > 0) {
+      touchSessionRecord(db, sessionId);
+    }
+  });
 }

@@ -1,6 +1,6 @@
 import type { Database } from "bun:sqlite";
 
-import { and, eq, isNotNull, sql } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 
 import { localize } from "../../../i18n/server";
 import { events, messages } from "../schema";
@@ -8,8 +8,8 @@ import { streamEventSchema } from "../schema/streamEvent";
 import { sessionDatabase } from "../sqlite/connection";
 
 const statements = new WeakMap<Database, ReturnType<typeof prepareTranscriptRows>>();
-export function transcriptMessageRows(db: Database, sessionId: string) {
-  return queries(db).messages.all({ sessionId });
+export function transcriptMessageRows(db: Database, sessionId: string, firstPosition = 0) {
+  return queries(db).messages.all({ firstPosition, sessionId });
 }
 export function transcriptEvents(db: Database, sessionId: string) {
   return queries(db)
@@ -54,7 +54,12 @@ function prepareTranscriptRows(db: Database) {
         tokenCount: messages.tokenCount,
       })
       .from(messages)
-      .where(and(eq(messages.sessionId, sessionId), isNotNull(messages.position)))
+      .where(
+        and(
+          eq(messages.sessionId, sessionId),
+          gte(messages.position, sql.placeholder("firstPosition")),
+        ),
+      )
       .orderBy(messages.position)
       .prepare(),
   };

@@ -36,7 +36,7 @@ export function liveApplication({
         const frame = {
             choices: [{ delta: { content: "workflow answer" }, finish_reason: null, index: 0 }],
             created: 1,
-            id: "workflow-reply",
+            id: `workflow-reply-${requests.length.toString()}`,
             model: modelName,
             object: "chat.completion.chunk",
           },
@@ -69,9 +69,8 @@ export function liveApplication({
     }),
     settings = loadSettings(root, { settingsContext: context }),
     controller = new AppController(root, { settings, settingsContext: context }),
-    access = new AccessService(settings),
     server = createHttpServer({
-      access,
+      access: new AccessService(settings, controller.database.db),
       controller,
       hostname: "127.0.0.1",
       port: 0,
@@ -112,7 +111,7 @@ export function liveApplication({
         if (queue.length > 0 && queue.every(({ status }) => status === "done")) {
           return;
         }
-        await controller.events.wait(sessionId, 25);
+        await Bun.sleep(25);
       }
       throw new Error(`Session did not finish: ${sessionId}`);
     },
@@ -120,7 +119,6 @@ export function liveApplication({
       try {
         await closeAppResources(
           {
-            access,
             controller,
             releaseLock: () => {},
             server,

@@ -5,8 +5,8 @@ import { and, eq, exists, inArray, not } from "drizzle-orm";
 import { controlNotReady } from "../../../../failures/rejections";
 import { localize } from "../../../../i18n/server";
 import type { ControlCommand } from "../../../../types";
-import { forcePauseRequests, runs, sessions } from "../../schema";
-import { cachedQuery, runTransaction, sessionDatabase } from "../../sqlite/connection";
+import { runs, sessions } from "../../schema";
+import { runTransaction, sessionDatabase } from "../../sqlite/connection";
 import {
   readControlRecord,
   requireSessionRecord,
@@ -24,17 +24,6 @@ export function requestControlRecord(db: Database, sessionId: string, command: C
       }
       if (command === "force_pause") {
         writeControlRecord(db, sessionId, "pause");
-        const orm = sessionDatabase(db);
-        orm
-          .insert(forcePauseRequests)
-          .select(
-            orm
-              .select({ sessionId: runs.sessionId })
-              .from(runs)
-              .where(and(eq(runs.sessionId, sessionId), eq(runs.status, "running"))),
-          )
-          .onConflictDoNothing()
-          .run();
         return;
       }
       const previous = command === "cancel" ? readControlRecord(db, sessionId) : undefined;
@@ -43,23 +32,9 @@ export function requestControlRecord(db: Database, sessionId: string, command: C
         sessionId,
         previous === "pause" || previous === "pause_cancel" ? "pause_cancel" : command,
       );
-      if (command !== "pause") {
-        clearForcePauseRequest(db, sessionId);
-      }
     },
     "immediate",
   );
-}
-export function hasForcePauseRequest(db: Database, sessionId: string) {
-  return Boolean(
-    cachedQuery(db, "SELECT 1 FROM force_pause_requests WHERE session_id = ?").get(sessionId),
-  );
-}
-export function clearForcePauseRequest(db: Database, sessionId: string) {
-  sessionDatabase(db)
-    .delete(forcePauseRequests)
-    .where(eq(forcePauseRequests.sessionId, sessionId))
-    .run();
 }
 function requestStepControlRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);

@@ -3,13 +3,9 @@ import pMap from "p-map";
 import { captureError } from "../../failures/details";
 import { localize } from "../../i18n/server";
 import { Logger } from "../../infrastructure/logging/logger";
-import type { AppHosts } from "../hosts";
-import type { AppRegistry } from "../registry";
-
 type ShutdownSignal = "SIGINT" | "SIGTERM";
 type ShutdownReason = ShutdownSignal | "startup-failure";
 interface ShutdownResources {
-  access?: { close: () => void };
   controller?: { close: () => Promise<void> };
   releaseLock: () => void;
   server?: Pick<Bun.Server<undefined>, "stop">;
@@ -22,14 +18,9 @@ export function createShutdownLogger() {
   return new Logger("debug");
 }
 export async function closeControllerResources(
-  hosts: Pick<AppHosts, "close">,
-  registry: Pick<AppRegistry, "close">,
-  ...background: { close: () => Promise<void> }[]
+  ...resources: { close: () => Promise<void> | void }[]
 ) {
-  await pMap([...background, hosts, registry], (resource) => resource.close(), {
-    concurrency: 1,
-    stopOnError: false,
-  });
+  await pMap(resources, (resource) => resource.close(), { concurrency: 1, stopOnError: false });
 }
 export function listenForShutdownSignal() {
   const waiting = Promise.withResolvers<ShutdownSignal>(),
@@ -68,12 +59,6 @@ export async function closeAppResources(
     logger,
     localize("application:shutdown.hostResources"),
     () => resources.controller?.close(),
-    failures,
-  );
-  await closeStep(
-    logger,
-    localize("application:shutdown.accessStore"),
-    () => resources.access?.close(),
     failures,
   );
   await closeStep(

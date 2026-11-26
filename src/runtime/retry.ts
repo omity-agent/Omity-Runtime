@@ -1,5 +1,3 @@
-import scheduling from "#settings/runtime/scheduling.yaml";
-
 import { captureError } from "../failures/details";
 import { localize } from "../i18n/server";
 import type { BrowserWarning } from "../types";
@@ -17,7 +15,7 @@ interface RetryContext {
     model: Pick<HostContext["settings"]["model"], "retryDelayMs">;
   };
   stopping?: AbortSignal;
-  wake?: HostContext["wake"];
+  notifications: HostContext["notifications"];
 }
 interface RetryControls {
   pause: () => Promise<boolean>;
@@ -45,8 +43,8 @@ export async function waitBeforeModelRetry(
       message: localize("runtime:retry.modelUnavailable"),
     };
   ctx.observer?.warning?.(ctx.sessionId, warning);
-  const deadline = Date.now() + delayMs;
-  while (Date.now() < deadline) {
+  const deadline = AbortSignal.timeout(delayMs);
+  for (;;) {
     if (ctx.controller.signal.aborted || ctx.stopping?.aborted) {
       controls.stop();
       return false;
@@ -59,7 +57,9 @@ export async function waitBeforeModelRetry(
     if (control === "pause" || control === "pause_cancel") {
       return controls.pause();
     }
-    await waitForWake(ctx, Math.min(scheduling.modelRetryPollMs, deadline - Date.now()));
+    if (deadline.aborted) {
+      return true;
+    }
+    await waitForWake(ctx, ctx.notifications.checkpoint(), deadline);
   }
-  return true;
 }

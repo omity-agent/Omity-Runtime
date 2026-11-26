@@ -1,14 +1,12 @@
+import type { Database } from "bun:sqlite";
+
 import { localize } from "../../i18n/server";
-import { databasePath } from "../../infrastructure/configuration/sessionPaths";
 import {
   readPredictionContext,
   readPredictionRecord,
   writePredictionRecord,
 } from "../../infrastructure/database/records/session/inputForecast";
-import {
-  openSessionDatabase,
-  runTransaction,
-} from "../../infrastructure/database/sqlite/connection";
+import { runTransaction } from "../../infrastructure/database/sqlite/connection";
 import type { Settings } from "../../types";
 import { requestCandidates } from "./requestCandidates";
 import { loadPredictionSnapshot, type PredictionSample } from "./samples";
@@ -20,11 +18,13 @@ interface PredictionTask {
   revision: number;
 }
 export class PredictionService {
-  private readonly path = databasePath();
   private readonly pending = new Map<string, PredictionTask>();
   private readonly examples = new PredictionExamples();
   private closed = false;
-  constructor(private readonly configuration: (sessionId: string) => Settings["prediction"]) {}
+  constructor(
+    private readonly db: Database,
+    private readonly configuration: (sessionId: string) => Settings["prediction"],
+  ) {}
   async onIdle(sessionId: string) {
     try {
       await this.get(sessionId);
@@ -60,14 +60,14 @@ export class PredictionService {
     if (this.closed) {
       return [];
     }
-    using db = openSessionDatabase(this.path);
+    const { db } = this;
     return runTransaction(db, () => {
       const context = readPredictionContext(db, sessionId);
       return context ? (readPredictionRecord(db, sessionId, context.revision) ?? []) : [];
     });
   }
   private prepare(sessionId: string, config: PredictionSettings) {
-    using db = openSessionDatabase(this.path);
+    const { db } = this;
     return runTransaction(db, () => {
       const context = readPredictionContext(db, sessionId),
         previous = this.pending.get(sessionId);
@@ -103,8 +103,7 @@ export class PredictionService {
     try {
       const candidates = await requestCandidates(config, context, samples, controller.signal);
       if (!controller.signal.aborted) {
-        using db = openSessionDatabase(this.path);
-        writePredictionRecord(db, sessionId, context.revision, candidates);
+        writePredictionRecord(this.db, sessionId, context.revision, candidates);
       }
     } catch (error) {
       if (!controller.signal.aborted) {

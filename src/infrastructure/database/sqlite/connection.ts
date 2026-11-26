@@ -42,10 +42,6 @@ function configureDatabase(db: Database) {
   db.run(`PRAGMA journal_size_limit = ${sqlite.journalSizeLimitBytes.toString()}`);
   db.run("PRAGMA foreign_keys = ON");
 }
-export function configureReadonlyDatabase(db: Database) {
-  db.run(busyTimeoutPragma);
-  db.run("PRAGMA foreign_keys = ON");
-}
 export function sessionDatabase(db: Database) {
   return databases.getOrInsertComputed(db, (client) => drizzle({ client }));
 }

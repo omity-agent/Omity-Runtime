@@ -1,5 +1,4 @@
 import { afterEach, expect, spyOn, test } from "bun:test";
-import { randomUUID } from "node:crypto";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -8,13 +7,7 @@ import { sessionPaths } from "../../src/infrastructure/configuration/sessionPath
 import { settingsProfileNames } from "../../src/infrastructure/configuration/settings/context";
 import { userDataDirectory } from "../../src/infrastructure/configuration/settings/files";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
-import {
-  hasForcePauseRequest,
-  requestControlRecord,
-} from "../../src/infrastructure/database/records/execution/control";
 import { emptySessionDefinition } from "../../src/infrastructure/database/session/sessionDefinition";
-import { hostOwnerId } from "../../src/infrastructure/process/ownership";
-import { recoverHostSession } from "../../src/runtime/execution/recovery";
 import { createTestDirectory } from "../support/artifacts";
 import { containingText } from "../support/asymmetric";
 import { writeTestConfiguration } from "../support/configuration";
@@ -54,40 +47,6 @@ test("app startup preserves the activity time of an already paused session", asy
   expect(controller.transcript("already-paused").transcriptRevision).toBe(revision);
   await controller.close();
 });
-test.each(["abandoned", "live", "expired"] as const)(
-  "startup reconciles a %s host lease without stealing live work",
-  async (sessionId) => {
-    const fixture = interruptedSession(sessionId),
-      abandonedOwner = { pid: process.pid, token: randomUUID() },
-      expired = sessionId === "expired",
-      live = sessionId === "live";
-    using db = fixture.db;
-    db.acquireHostLease({
-      now: Date.now() - (expired ? 60_000 : 0),
-      ownerId: hostOwnerId({
-        instanceId: abandonedOwner.token,
-        kind: sessionId === "abandoned" ? "app" : "standalone",
-        pid: abandonedOwner.pid,
-      }),
-      sessionId,
-      ttlMs: 30_000,
-    });
-    if (expired) {
-      requestControlRecord(db.db, sessionId, "force_pause");
-      expect(hasForcePauseRequest(db.db, sessionId)).toBe(true);
-      expect(recoverHostSession(db, sessionId).status).toBe("recovered");
-      expect(hasForcePauseRequest(db.db, sessionId)).toBe(false);
-    } else {
-      await new AppController(fixture.root, {
-        abandonedOwner,
-        settingsContext: fixture.context,
-      }).close();
-    }
-    expect(db.control(sessionId)).toBe(live ? "running" : "pause");
-    expect(db.runStatus(runOf(db, fixture.inputId))).toBe(live ? "running" : "paused");
-    expect(db.hostLease(sessionId) !== null).toBe(live);
-  },
-);
 test("resume reloads the current MCP configuration", async () => {
   const fixture = interruptedSession("resume-failure");
   fixture.db.close();

@@ -1,3 +1,5 @@
+import type { Database } from "bun:sqlite";
+
 import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/server";
 import { RateLimiterMemory, RateLimiterRes } from "rate-limiter-flexible";
 
@@ -16,9 +18,12 @@ export class AccessService {
   private readonly store: AccessStore;
   private readonly limiter: RateLimiterMemory;
   private readonly ceremony: WebAuthnCeremony;
-  constructor(private readonly settings: Settings) {
+  constructor(
+    private readonly settings: Pick<Settings, "access">,
+    db: Database,
+  ) {
     this.network = new ClientNetwork(settings.access.trustedProxies);
-    this.store = new AccessStore();
+    this.store = new AccessStore(db);
     this.ceremony = new WebAuthnCeremony(settings, this.store);
     this.limiter = new RateLimiterMemory({
       blockDuration: Math.ceil(settings.access.loginRateLimit.windowMs / 1000),
@@ -31,9 +36,6 @@ export class AccessService {
   }
   get challengeTtlMs() {
     return this.settings.access.challengeTtlMs;
-  }
-  close() {
-    this.store.close();
   }
   identify(remoteAddress: string | undefined, forwardedFor: string | undefined) {
     try {

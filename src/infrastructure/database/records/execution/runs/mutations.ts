@@ -1,6 +1,6 @@
 import type { Database } from "bun:sqlite";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 
 import type { ErrorDetails } from "../../../../../failures/details";
 import { localize } from "../../../../../i18n/server";
@@ -79,6 +79,13 @@ export function pauseRunRecord(
   return sessionDatabase(db)
     .update(runs)
     .set({ error: error ?? runs.error, status: "paused" })
-    .where(and(eq(runs.id, runId), eq(runs.sessionId, sessionId), activeRuns()))
+    .where(
+      and(
+        eq(runs.id, runId),
+        eq(runs.sessionId, sessionId),
+        activeRuns(),
+        error === undefined ? ne(runs.status, "paused") : undefined,
+      ),
+    )
     .run().changes;
 }

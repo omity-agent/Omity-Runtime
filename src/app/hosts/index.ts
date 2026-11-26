@@ -1,26 +1,27 @@
 import { once } from "es-toolkit";
 import pMap from "p-map";
 
+import { ToolExecutions } from "../../agent/toolExecutions";
 import { captureError, type ErrorDetails } from "../../failures/details";
-import { runHostSession } from "../../host";
 import { localize } from "../../i18n/server";
 import type { SettingsContext } from "../../infrastructure/configuration/settings/context";
-import type { ProcessOwner } from "../../infrastructure/process/ownership";
-import type { HostActivity } from "../../types";
+import type { AgentDatabase } from "../../infrastructure/database/agentDatabase";
+import { HostNotifications } from "../../runtime/execution/notifications";
+import type { ControlCommand, HostActivity } from "../../types";
 import type { AppMcp } from "../runtime/resources/toolPool";
+import { runSessionHost, stopAtRecoveryBoundary } from "./execution";
 import { type AppHostEvents, createHostObserver, type RunningHost } from "./observation";
 
 export type { AppHostEvents } from "./observation";
-const noToolCancellation: RunningHost["cancelTool"] = () => false;
 export class AppHosts {
   private readonly running = new Map<string, RunningHost>();
   private readonly scheduled = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly errors = new Map<string, ErrorDetails>();
+  private readonly mutating = new Set<string>();
   private closing = false;
   constructor(
-    private readonly appRoot: string,
     private readonly events: AppHostEvents,
-    private readonly owner: ProcessOwner,
+    private readonly db: AgentDatabase,
     private readonly shutdownTimeoutMs: number,
     readonly mcp: AppMcp,
     private readonly settingsContext: SettingsContext,
@@ -45,10 +46,13 @@ export class AppHosts {
     this.scheduled.set(sessionId, timer);
   }
   ensure(sessionId: string, workspace: string) {
-    this.cancelScheduledStart(sessionId);
     if (this.closing) {
       return Promise.reject(new Error(localize("application:hosts.appClosing")));
     }
+    if (this.mutating.has(sessionId)) {
+      return Promise.reject(this.sessionChanging(sessionId));
+    }
+    this.cancelScheduledStart(sessionId);
     const existing = this.running.get(sessionId);
     if (existing) {
       return existing.ready;
@@ -56,57 +60,64 @@ export class AppHosts {
     this.errors.delete(sessionId);
     const force = new AbortController(),
       stopping = new AbortController(),
-      ready = Promise.withResolvers<undefined>();
-    let initialized = false,
-      cancelTool = noToolCancellation;
-    const hostPromise = runHostSession({ kind: "load", sessionId }, this.appRoot, {
-        controller: force,
-        cwd: workspace,
-        mcp: (id, profiles, definition) =>
-          this.mcp.loadSession(id, profiles, definition.prefix.tools, workspace),
-        observer: createHostObserver(this.events, this.running, force),
-        onReady: (controls) => {
-          cancelTool = (callId) => controls.cancelTool(callId);
-          initialized = true;
-          ready.resolve();
-        },
-        owner: this.owner,
-        quiet: true,
-        settingsContext: this.settingsContext,
-        stoppingController: stopping,
-        wake: (delayMs, signal) => this.events.wait(sessionId, delayMs, signal),
+      ready = Promise.withResolvers<void>(),
+      notifications = new HostNotifications(),
+      executions = new ToolExecutions({
+        cancellationRequested: (callId) => this.db.toolCancellation(sessionId, callId),
       }),
-      done = this.finishHost(hostPromise, sessionId, force, () => initialized, ready);
+      hostPromise = runSessionHost({
+        controller: force,
+        db: this.db,
+        mcp: this.mcp,
+        notifications,
+        observer: createHostObserver(this.events, this.running, force),
+        ready: ready.resolve,
+        sessionId,
+        settingsContext: this.settingsContext,
+        stopping: stopping.signal,
+        toolExecutions: executions,
+        workspace,
+      }),
+      done = this.finishHost(hostPromise, sessionId, force.signal, ready);
     this.running.set(sessionId, {
       activity: "idle",
-      cancelTool: (callId) => cancelTool(callId),
       done,
+      executions,
       force,
+      notifications,
       ready: ready.promise,
       stopping,
     });
     return ready.promise;
   }
-  cancelTool(sessionId: string, callId: string) {
-    const host = this.running.get(sessionId);
-    return host?.cancelTool(callId) ?? false;
+  notify(sessionId: string, control?: ControlCommand) {
+    this.running.get(sessionId)?.notifications.notify(control);
   }
-  async stop(sessionId: string) {
-    this.cancelScheduledStart(sessionId);
-    const host = this.running.get(sessionId);
-    if (!host) {
-      return;
+  cancelTool(sessionId: string, callId: string, requestedAt: number) {
+    this.running.get(sessionId)?.executions.cancel(callId, requestedAt);
+  }
+  async withStoppedHost<Result>(
+    sessionId: string,
+    workspace: string | undefined,
+    operation: () => Result,
+  ) {
+    if (this.mutating.has(sessionId)) {
+      throw this.sessionChanging(sessionId);
     }
-    host.force.abort(new Error(localize("application:hosts.stopRequested")));
-    this.events.changed(sessionId);
-    await host.done;
-  }
-  async withStoppedHost(sessionId: string, workspace: string, operation: () => void) {
-    const restart = this.isBound(sessionId);
-    await this.stop(sessionId);
+    const restart = workspace !== undefined && this.isBound(sessionId);
+    this.mutating.add(sessionId);
     try {
-      operation();
+      this.cancelScheduledStart(sessionId);
+      const host = this.running.get(sessionId);
+      if (host) {
+        host.force.abort(new Error(localize("application:hosts.stopRequested")));
+        await host.done;
+      } else {
+        await this.mcp.discardSession(sessionId);
+      }
+      return operation();
     } finally {
+      this.mutating.delete(sessionId);
       if (restart) {
         this.scheduleStart(sessionId, workspace);
       }
@@ -125,20 +136,23 @@ export class AppHosts {
       host.stopping.abort(new Error(localize("application:hosts.appClosed")));
       this.events.changed(sessionId);
     }
-    await pMap(hosts, ([, host]) => this.stopAtDeadline(host), { stopOnError: false });
+    await pMap(hosts, ([, host]) => stopAtRecoveryBoundary(host, this.shutdownTimeoutMs), {
+      stopOnError: false,
+    });
   });
   private async finishHost(
     hostPromise: Promise<unknown>,
     sessionId: string,
-    force: AbortController,
-    isInitialized: () => boolean,
-    ready: PromiseWithResolvers<undefined>,
+    signal: AbortSignal,
+    ready: PromiseWithResolvers<void>,
   ) {
     let failure: unknown;
     try {
       await hostPromise;
     } catch (error: unknown) {
-      failure = error;
+      if (!signal.aborted || error !== signal.reason) {
+        failure = error;
+      }
     } finally {
       try {
         await this.mcp.discardSession(sessionId);
@@ -152,33 +166,20 @@ export class AppHosts {
         const error = captureError(failure);
         this.errors.set(sessionId, error);
         this.events.failure(sessionId, error);
-        if (!isInitialized()) {
-          ready.reject(failure);
-        }
+        ready.reject(failure);
+      } else if (signal.aborted) {
+        ready.reject(signal.reason);
       }
-      if (this.running.get(sessionId)?.force === force) {
-        this.running.delete(sessionId);
-      }
+      this.running.get(sessionId)?.executions.close();
+      this.running.delete(sessionId);
       this.events.changed(sessionId);
-    }
-  }
-  private async stopAtDeadline(host: RunningHost) {
-    const deadline = Promise.withResolvers<false>(),
-      timer = setTimeout(() => {
-        deadline.resolve(false);
-      }, this.shutdownTimeoutMs);
-    try {
-      const stopped = await Promise.race([host.done.then(() => true), deadline.promise]);
-      if (!stopped) {
-        host.force.abort(new Error(localize("application:hosts.recoveryBoundaryTimeout")));
-      }
-      await host.done;
-    } finally {
-      clearTimeout(timer);
     }
   }
   private isBound(sessionId: string) {
     return this.running.has(sessionId) || this.scheduled.has(sessionId);
+  }
+  private sessionChanging(sessionId: string) {
+    return new Error(localize("application:hosts.sessionChanging", { sessionId }));
   }
   private async startScheduled(sessionId: string, workspace: string) {
     this.scheduled.delete(sessionId);

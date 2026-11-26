@@ -21,6 +21,7 @@ export function useUserMessages() {
     queryFn: ({ signal }) => loadUserMessages(signal),
     queryKey: userMessagesKey,
     select: ({ messages }) => messages.map(({ content }) => content),
+    staleTime: Infinity,
   });
 }
 export function usePredictions(sessionId: string | undefined, idle: boolean) {
@@ -52,7 +53,6 @@ export function useBootstrap() {
           updateCachedSessions(queryClient, (sessions) => withoutSession(sessions, sessionId));
           queryClient.removeQueries({ queryKey: transcriptKey(sessionId) });
           queryClient.removeQueries({ queryKey: predictionKey(sessionId) });
-          refreshUserMessages(queryClient);
         },
         session(session) {
           attention.upsert(session);
@@ -61,7 +61,6 @@ export function useBootstrap() {
           }
           updateCachedSessions(queryClient, (sessions) => upsertSessionList(sessions, session));
           void queryClient.invalidateQueries({ queryKey: predictionKey(session.id) });
-          refreshUserMessages(queryClient);
         },
         sessions(sessions) {
           attention.replace(sessions);
@@ -69,6 +68,7 @@ export function useBootstrap() {
           updateCachedSessions(queryClient, () => sessions);
           refreshUserMessages(queryClient);
         },
+        userMessages: () => refreshUserMessages(queryClient),
       }),
     [attention, queryClient],
   );
@@ -77,7 +77,6 @@ export function useBootstrap() {
 export function addSession(queryClient: QueryClient, session: SessionInfo) {
   sessionAttentionStore(queryClient).upsert(session);
   updateCachedSessions(queryClient, (sessions) => upsertSessionList(sessions, session));
-  refreshUserMessages(queryClient);
 }
 export function updateSession(queryClient: QueryClient, session: SessionInfo) {
   sessionAttentionStore(queryClient).upsert(session);
@@ -90,7 +89,6 @@ export function removeSession(queryClient: QueryClient, sessionId: string) {
   updateCachedSessions(queryClient, (sessions) => withoutSession(sessions, sessionId));
   queryClient.removeQueries({ queryKey: transcriptKey(sessionId) });
   queryClient.removeQueries({ queryKey: predictionKey(sessionId) });
-  refreshUserMessages(queryClient);
 }
 function refreshUserMessages(queryClient: QueryClient) {
   void queryClient.invalidateQueries({ queryKey: userMessagesKey }, { cancelRefetch: false });

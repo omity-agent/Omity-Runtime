@@ -1,6 +1,12 @@
 import type { HookRule } from "../../../types";
-import type { parseAgentSettings, parseMainSettings, parseModelSettings } from "./schema";
+import type {
+  parseAgentSettings,
+  parseAppSettings,
+  parseMainSettings,
+  parseModelSettings,
+} from "./schema";
 
+export type AppSettings = ReturnType<typeof parseAppSettings>;
 type ParsedModel = ReturnType<typeof parseModelSettings>;
 type ParsedMain = ReturnType<typeof parseMainSettings>;
 export type ModelSettings =

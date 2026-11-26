@@ -13,73 +13,36 @@ import {
   writeControlRecord,
 } from "../session/metadata";
 import { pruneUnreferencedMessages } from "../transcript/messages/writing";
-import { clearForcePauseRequest } from "./control";
-import {
-  acquireHostLeaseRecord,
-  type HostLeaseClaim,
-  type HostLeaseRecord,
-  readHostLeaseRecord,
-  releaseHostLeaseRecord,
-  renewHostLeaseRecord,
-} from "./hostLeases";
 import { activeInputRows } from "./queue/workItems";
 import { pauseRunRecord } from "./runs/mutations";
 
-interface InterruptedSessionClaim {
-  sessionId: string;
-  now: number;
-  confirmedDeadOwnerId?: string;
-}
-type InterruptedSessionRecovery =
-  | { status: "blocked"; lease: HostLeaseRecord }
-  | {
-      status: "recovered";
-      action: "paused" | "canceled" | "none";
-      activeItems: number;
-    };
-function recoverInterruptedSessionRecord(
-  db: Database,
-  claim: InterruptedSessionClaim,
-): InterruptedSessionRecovery {
-  const lease = readHostLeaseRecord(db, claim.sessionId);
-  if (lease && lease.expiresAt > claim.now && lease.ownerId !== claim.confirmedDeadOwnerId) {
-    return { lease, status: "blocked" };
-  }
-  const active = activeInputRows(db, claim.sessionId),
-    control = readControlRecord(db, claim.sessionId);
-  clearForcePauseRequest(db, claim.sessionId);
+function recoverInterruptedSessionRecord(db: Database, sessionId: string) {
+  const active = activeInputRows(db, sessionId),
+    control = readControlRecord(db, sessionId);
   let action: "paused" | "canceled" | "none" = "none";
   if (control === "cancel") {
-    cancelActiveRuns(db, claim.sessionId, active);
-    writeControlRecord(db, claim.sessionId, "running");
-    action = active.length > 0 ? "canceled" : "none";
+    if (active.length > 0) {
+      cancelActiveRuns(db, sessionId);
+      action = "canceled";
+    }
+    writeControlRecord(db, sessionId, "running");
   } else if (active.length > 0) {
     const paused = sessionDatabase(db)
         .update(runs)
         .set({ status: "paused" })
-        .where(and(eq(runs.sessionId, claim.sessionId), eq(runs.status, "running")))
+        .where(and(eq(runs.sessionId, sessionId), eq(runs.status, "running")))
         .run(),
-      controlChanged = writeControlRecord(db, claim.sessionId, "pause");
+      controlChanged = writeControlRecord(db, sessionId, "pause");
     if (paused.changes > 0 && !controlChanged) {
-      touchSessionRecord(db, claim.sessionId);
+      touchSessionRecord(db, sessionId);
     }
     action = "paused";
-  } else if (control === "pause_cancel") {
-    writeControlRecord(db, claim.sessionId, "pause");
+  } else if (control === "pause_cancel" || control === "step") {
+    writeControlRecord(db, sessionId, "pause");
   }
-  if (lease) {
-    releaseHostLeaseRecord(db, claim.sessionId, lease.ownerId);
-  }
-  return { action, activeItems: active.length, status: "recovered" };
+  return { action, activeItems: active.length };
 }
-function cancelActiveRuns(
-  db: Database,
-  sessionId: string,
-  active: ReturnType<typeof activeInputRows>,
-) {
-  if (active.length === 0) {
-    return;
-  }
+function cancelActiveRuns(db: Database, sessionId: string) {
   const orm = sessionDatabase(db),
     ownedRuns = orm
       .select({ id: runs.id })
@@ -106,17 +69,17 @@ function cancelActiveRuns(
 }
 export class RecoverableDatabase {
   constructor(readonly db: Database) {}
-  hostLease(sessionId: string) {
-    return readHostLeaseRecord(this.db, sessionId);
-  }
   activeInputs(sessionId: string) {
     return activeInputRows(this.db, sessionId);
   }
   pauseRun(sessionId: string, runId: number, error?: ErrorDetails) {
     return runTransaction(this.db, () => {
-      writeControlRecord(this.db, sessionId, "pause");
-      clearForcePauseRequest(this.db, sessionId);
-      return pauseRunRecord(this.db, sessionId, runId, error);
+      const controlChanged = writeControlRecord(this.db, sessionId, "pause"),
+        paused = pauseRunRecord(this.db, sessionId, runId, error);
+      if (paused > 0 && !controlChanged) {
+        touchSessionRecord(this.db, sessionId);
+      }
+      return paused;
     });
   }
   pauseCompletedStep(sessionId: string, runId: number) {
@@ -128,16 +91,7 @@ export class RecoverableDatabase {
       return true;
     });
   }
-  recoverInterruptedSession(claim: InterruptedSessionClaim) {
-    return runTransaction(this.db, () => recoverInterruptedSessionRecord(this.db, claim));
-  }
-  acquireHostLease(claim: HostLeaseClaim) {
-    return acquireHostLeaseRecord(this.db, claim);
-  }
-  renewHostLease(claim: HostLeaseClaim) {
-    return renewHostLeaseRecord(this.db, claim);
-  }
-  releaseHostLease(sessionId: string, ownerId: string) {
-    return releaseHostLeaseRecord(this.db, sessionId, ownerId);
+  recoverInterruptedSession(sessionId: string) {
+    return runTransaction(this.db, () => recoverInterruptedSessionRecord(this.db, sessionId));
   }
 }

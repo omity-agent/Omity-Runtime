@@ -1,3 +1,5 @@
+import type { Database } from "bun:sqlite";
+
 import {
   prioritizeSettingsProfile,
   selectSettingsProfiles,
@@ -8,16 +10,15 @@ import { loadSettings } from "../../../infrastructure/configuration/settings/loa
 import { readDefinitionRecord } from "../../../infrastructure/database/records/session/metadata";
 import { writeSessionConfigurationRecord } from "../../../infrastructure/database/records/session/sessionConfiguration";
 import { refreshSessionDefinition } from "../../../infrastructure/database/session/sessionDefinition";
-import { openStoredSession } from "../../../storedSessions";
 import type { RegisteredSession } from "../../registry";
 
 export function storeSessionProfile(
+  db: Database,
   root: string,
   baseContext: SettingsContext,
   session: Pick<RegisteredSession, "id" | "profiles" | "workspace">,
   profile?: string,
 ) {
-  using database = openStoredSession(session.id);
   const settingsContext =
       profile === undefined
         ? baseContext
@@ -27,9 +28,9 @@ export function storeSessionProfile(
       sessionId: session.id,
       settingsContext,
     }),
-    definition = refreshSessionDefinition(settings, readDefinitionRecord(database.db, session.id));
+    definition = refreshSessionDefinition(settings, readDefinitionRecord(db, session.id));
   writeSessionConfigurationRecord(
-    database.db,
+    db,
     session.id,
     settingsProfileNames(settingsContext),
     definition,

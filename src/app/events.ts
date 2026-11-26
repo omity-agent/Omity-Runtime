@@ -1,16 +1,12 @@
-import { once } from "node:events";
-import { setTimeout as sleep } from "node:timers/promises";
-
 import type { Context } from "hono";
 
 import { ContentChannel } from "./events/contentChannel";
-import type { BrowserWarning, SessionFailure } from "./events/contracts";
+import type { BrowserWarning, SessionFailure, SyncPoint } from "./events/contracts";
 import { StateChannel } from "./events/stateChannel";
 import type { SessionInfo } from "./sessionState";
 import type { DisplayEvent } from "./timeline";
 
 export class AppEvents {
-  private readonly bus = new EventTarget();
   private readonly content = new ContentChannel();
   private readonly state = new StateChannel();
   notifySession(session: SessionInfo) {
@@ -19,41 +15,25 @@ export class AppEvents {
   notifyDeleted(sessionId: string) {
     this.state.notifyDeleted(sessionId);
   }
+  notifyUserMessages() {
+    this.state.notifyUserMessages();
+  }
   notifyWarning(warning: BrowserWarning) {
     this.state.notifyWarning(warning);
   }
   notifyFailure(failure: SessionFailure) {
     this.state.notifyFailure(failure);
   }
-  invalidateTranscript(sessionId: string, eventCursor: number) {
-    this.content.invalidate(sessionId, eventCursor);
+  invalidateTranscript(sessionId: string, point: SyncPoint) {
+    this.content.invalidate(sessionId, point);
   }
   notifyTranscript(sessionId: string, event: DisplayEvent) {
     this.content.notify(sessionId, event);
   }
-  wake(sessionId: string) {
-    this.bus.dispatchEvent(new Event(`wake:${sessionId}`));
-  }
-  async wait(sessionId: string, delayMs: number, until?: AbortSignal) {
-    const controller = new AbortController(),
-      signal = until ? AbortSignal.any([until, controller.signal]) : controller.signal;
-    try {
-      await Promise.race([
-        once(this.bus, `wake:${sessionId}`, { signal }),
-        sleep(delayMs, undefined, { signal }),
-      ]);
-    } catch (error) {
-      if (!until?.aborted) {
-        throw error;
-      }
-    } finally {
-      controller.abort();
-    }
-  }
   streamState(c: Context, getSessions: () => SessionInfo[]) {
     return this.state.stream(c, getSessions);
   }
-  streamContent(c: Context, sessionId: string, getEventCursor: () => number) {
-    return this.content.stream(c, sessionId, getEventCursor);
+  streamContent(c: Context, sessionId: string, point: SyncPoint) {
+    return this.content.stream(c, sessionId, point);
   }
 }

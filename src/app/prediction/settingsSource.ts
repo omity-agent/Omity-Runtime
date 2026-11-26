@@ -16,7 +16,7 @@ import type { AppRegistry } from "../registry";
 import { PredictionService } from "./service";
 
 export function createSessionPredictions(registry: AppRegistry, baseContext: SettingsContext) {
-  return new PredictionService((sessionId) =>
+  return new PredictionService(registry.db, (sessionId) =>
     registry.read(sessionId, (db) =>
       runTransaction(db, () => {
         const context = selectSettingsProfiles(baseContext, readProfilesRecord(db, sessionId)),

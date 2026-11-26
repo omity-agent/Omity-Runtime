@@ -7,7 +7,6 @@ import { z } from "zod";
 import { submissionForm } from "../../../../src/app/attachments/submission";
 import { settingsProfileNames } from "../../../../src/infrastructure/configuration/settings/context";
 import { readDefinitionRecord } from "../../../../src/infrastructure/database/records/session/metadata";
-import { openStoredSession } from "../../../../src/storedSessions";
 import { liveApplication } from "../liveApplication";
 
 test("idle sessions can move a profile to the top without changing frozen tool schemas", async () => {
@@ -17,8 +16,8 @@ test("idle sessions can move a profile to the top without changing frozen tool s
   writeFileSync(join(profileDirectory, "model.yaml"), "model: alternate-model\n");
   const { id } = await app.createSession({ message: "first question" });
   await app.waitForRun(id);
-  using database = openStoredSession(id);
-  const before = readDefinitionRecord(database.db, id),
+  const { database } = app.controller,
+    before = readDefinitionRecord(database.db, id),
     switched = await fetch(`${app.url}/api/sessions/${id}/profile`, {
       body: JSON.stringify({ profile: "alternate" }),
       headers: { "content-type": "application/json" },

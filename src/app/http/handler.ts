@@ -4,7 +4,6 @@ import { compress } from "hono/compress";
 import { localize } from "../../i18n/server";
 import type { Settings } from "../../types";
 import type { AccessService } from "../access/service";
-import { readPreparationDraft, writePreparationDraft } from "../composition/draftStorage";
 import {
   answerToolBody,
   cancelToolBody,
@@ -17,8 +16,7 @@ import {
   reasoningTranslationBody,
 } from "../contracts/commands";
 import type { AppController } from "../controller";
-import { writeReasoningTranslation } from "../reasoningTranslation";
-import { loadUserMessages } from "../userMessages";
+import { transcriptHistoryHeader } from "../timeline/contracts/records";
 import { pickWorkspaceDirectory } from "../workspaceDialog/bridge";
 import { type AccessEnvironment, mountAccess } from "./access";
 import { errorResponse, HttpError } from "./errors";
@@ -45,11 +43,11 @@ export function createApi(
   app.onError(handleApiError);
   return routes
     .get("/api/bootstrap", (c) => c.json(controller.bootstrap()))
-    .get("/api/user-messages", (c) => c.json({ messages: loadUserMessages() }))
-    .get("/api/session-preparation", (c) => c.json(readPreparationDraft()))
+    .get("/api/user-messages", (c) => c.json({ messages: controller.views.userMessages.read() }))
+    .get("/api/session-preparation", (c) => c.json(controller.drafts.preparation()))
     .on(["PUT", "POST"], "/api/session-preparation", ...jsonBody(preparationDraftBody), (c) => {
       const body = c.req.valid("json");
-      return c.json(writePreparationDraft(body.content, body.revision));
+      return c.json(controller.drafts.savePreparation(body.content, body.revision));
     })
     .get("/api/session-options", validate("query", profileBody), (c) =>
       c.json(controller.sessionOptions(c.req.valid("query").profile)),
@@ -77,7 +75,12 @@ export function createApi(
     .delete("/api/sessions/:sessionId/temporary-files", async (c) =>
       c.json(await controller.clearTemporaryFiles(sessionId(c))),
     )
-    .get("/api/sessions/:sessionId/transcript", (c) => c.json(controller.transcript(sessionId(c))))
+    .get("/api/sessions/:sessionId/transcript", (c) => {
+      c.header("Cache-Control", "no-store");
+      return c.json(
+        controller.views.transcript.read(sessionId(c), c.req.header(transcriptHistoryHeader)),
+      );
+    })
     .get("/api/sessions/:sessionId/predictions", async (c) =>
       c.json(await controller.predictions(sessionId(c))),
     )
@@ -91,11 +94,10 @@ export function createApi(
     )
     .get("/api/sessions/:sessionId/events/content", (c) => {
       const id = sessionId(c);
-      controller.assertSession(id);
-      return controller.events.streamContent(c, id, () => controller.eventCursor(id));
+      return controller.events.streamContent(c, id, controller.views.transcript.syncPoint(id));
     })
     .get("/api/sessions/:sessionId/composer-draft", (c) =>
-      c.json(controller.composerDraft(sessionId(c))),
+      c.json(controller.drafts.session(sessionId(c))),
     )
     .on(
       ["PUT", "POST"],
@@ -103,19 +105,14 @@ export function createApi(
       ...jsonBody(composerDraftBody),
       (c) => {
         const body = c.req.valid("json");
-        return c.json(controller.saveComposerDraft(sessionId(c), body.content, body.revision));
+        return c.json(controller.drafts.saveSession(sessionId(c), body.content, body.revision));
       },
     )
     .put(
       "/api/sessions/:sessionId/reasoning-translation",
       ...jsonBody(reasoningTranslationBody),
       (c) => {
-        const body = c.req.valid("json"),
-          id = sessionId(c);
-        controller.assertSession(id);
-        const result = writeReasoningTranslation(id, body);
-        controller.events.invalidateTranscript(id, controller.eventCursor(id));
-        return c.json(result);
+        return c.json(controller.views.saveTranslation(sessionId(c), c.req.valid("json")));
       },
     )
     .post("/api/sessions/:sessionId/messages", messageForm, async (c) =>

@@ -9,6 +9,7 @@ export type {
   ToolOutputSnapshot,
 } from "./infrastructure/database/schema/streamEvent";
 export type {
+  AppSettings,
   ModelPrefixSettings,
   ModelSettings,
   Settings,
@@ -57,11 +58,6 @@ export function isRunningStatus(status: SessionStatus | undefined) {
     status === "stepping" ||
     status === "tool"
   );
-}
-export interface HostMode {
-  kind: "new" | "load" | "overwrite";
-  sessionId: string;
-  profile?: string;
 }
 type HookMode = "silent" | "takeover";
 export type HookWhen = "before" | "after";

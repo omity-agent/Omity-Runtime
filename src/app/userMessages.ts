@@ -1,9 +1,7 @@
-import { Database } from "bun:sqlite";
-import { existsSync } from "node:fs";
+import type { Database } from "bun:sqlite";
 
-import { databasePath } from "../infrastructure/configuration/sessionPaths";
 import { decodeMessage } from "../infrastructure/database/records/transcript/messages/hydration";
-import { configureReadonlyDatabase, queryAll } from "../infrastructure/database/sqlite/connection";
+import { queryAll } from "../infrastructure/database/sqlite/connection";
 import { contentToText } from "../runtime/content";
 
 interface UserMessageRow {
@@ -12,13 +10,18 @@ interface UserMessageRow {
   message_json: string;
   source_id: string;
 }
-export function loadUserMessages() {
-  const path = databasePath();
-  if (!existsSync(path)) {
-    return [];
+export class UserMessageHistory {
+  private snapshot?: ReturnType<typeof loadUserMessages>;
+  constructor(private readonly db: Database) {}
+  read() {
+    this.snapshot ??= loadUserMessages(this.db);
+    return this.snapshot;
   }
-  using db = new Database(path, { create: false, readonly: true, strict: true });
-  configureReadonlyDatabase(db);
+  invalidate() {
+    this.snapshot = undefined;
+  }
+}
+function loadUserMessages(db: Database) {
   return queryAll<UserMessageRow>(
     db,
     `SELECT id, source_id, message_json, created_at

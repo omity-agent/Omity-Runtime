@@ -8,6 +8,7 @@ import { BunSqliteSaver } from "../../../src/checkpointer/saver";
 import { HookRuntime } from "../../../src/hooks/runtime";
 import { Logger } from "../../../src/infrastructure/logging/logger";
 import type { HostContext } from "../../../src/runtime/context";
+import { HostNotifications } from "../../../src/runtime/execution/notifications";
 import type { HookRule } from "../../../src/types";
 import { testSettings } from "../../support/configuration";
 import { makeDb, workspace } from "../../support/database";
@@ -36,7 +37,6 @@ export function agentFixture({
     checkpointer = new BunSqliteSaver(db.db),
     executions = new ToolExecutions({
       cancellationRequested: (callId) => db.toolCancellation(sessionId, callId),
-      pollMs: settings.host.pollMs,
     }),
     hooks = new HookRuntime(
       settings.hooks,
@@ -60,6 +60,7 @@ export function agentFixture({
       db,
       graph,
       logger,
+      notifications: new HostNotifications(),
       sessionId,
       settings,
     };

@@ -1,42 +1,9 @@
 import { captureError } from "../../failures/details";
 import { localize } from "../../i18n/server";
-import { hasForcePauseRequest } from "../../infrastructure/database/records/execution/control";
 import { findMcpStdioUnavailable } from "../../infrastructure/mcp/client/availability";
 import { type HostContext, waitForWake } from "../context";
 import { type ActiveRun, CanceledRunError, cancelRun, pauseFailedRun, setRunStatus } from "../run";
 
-export function watchForcePause(ctx: HostContext) {
-  const operation = new AbortController(),
-    done = new AbortController(),
-    signal = AbortSignal.any([ctx.controller.signal, operation.signal]),
-    until = AbortSignal.any([signal, done.signal]);
-  let interrupted = false;
-  const watching = watch().catch((error: unknown) => {
-    operation.abort(error);
-    return { error };
-  });
-  return {
-    interrupted: () => interrupted,
-    signal,
-    async [Symbol.asyncDispose]() {
-      done.abort();
-      const failure = await watching;
-      if (failure) {
-        throw failure.error;
-      }
-    },
-  };
-  async function watch() {
-    while (!until.aborted) {
-      if (hasForcePauseRequest(ctx.db.db, ctx.sessionId)) {
-        interrupted = true;
-        operation.abort(new Error(localize("runtime:pause.forced")));
-        return;
-      }
-      await waitForWake(ctx, ctx.settings.host.pollMs, until);
-    }
-  }
-}
 export function pauseForStop(ctx: HostContext, run: ActiveRun) {
   if (!ctx.stopping?.aborted && !ctx.controller.signal.aborted) {
     return false;
@@ -63,7 +30,8 @@ export async function waitIfPaused(ctx: HostContext, run: ActiveRun) {
     if (pauseForStop(ctx, run)) {
       return false;
     }
-    const control = ctx.db.control(ctx.sessionId);
+    const checkpoint = ctx.notifications.checkpoint(),
+      control = ctx.db.control(ctx.sessionId);
     if (control === "pause_cancel") {
       setRunStatus(ctx, run, "paused");
       ctx.controller.abort(new CanceledRunError(localize("runtime:pause.cancelled")));
@@ -87,6 +55,6 @@ export async function waitIfPaused(ctx: HostContext, run: ActiveRun) {
       });
       pauseLogged = true;
     }
-    await waitForWake(ctx, ctx.settings.host.pausePollMs);
+    await waitForWake(ctx, checkpoint);
   }
 }

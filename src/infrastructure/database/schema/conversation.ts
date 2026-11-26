@@ -40,6 +40,11 @@ export const messages = sqliteTable(
     uniqueIndex("messages_source").on(table.sessionId, table.sourceId),
     uniqueIndex("messages_position").on(table.sessionId, table.position),
     uniqueIndex("messages_input").on(table.inputId),
+    index("messages_user_history")
+      .on(table.createdAt, table.id)
+      .where(
+        sql`${table.position} IS NOT NULL AND json_extract(${table.message}, '$.type') = 'human'`,
+      ),
     index("messages_title_results")
       .on(table.sessionId, table.position)
       .where(
@@ -87,6 +92,7 @@ export const events = sqliteTable(
       .references(() => sessions.id, { onDelete: "cascade" }),
   },
   (table) => [
+    index("events_timeline").on(table.sessionId, table.id),
     index("events_tool_identity")
       .on(table.sessionId, sql`json_extract(${table.payload}, '$.idDelta')`)
       .where(

@@ -58,11 +58,15 @@ export const reasoningTranslationSchema = z.object({
   targetLanguage: z.string().min(1),
   translated: z.string(),
 });
+export const transcriptHistoryHeader = "x-omity-message-history";
 export const transcriptResponseSchema = z.object({
   control: controlSchema,
   eventCursor: integer.nonnegative(),
   events: z.array(streamEventSchema),
   fileLinks: z.array(fileLinkSetSchema),
+  messageHistory: z
+    .object({ offset: integer.nonnegative().nullable(), token: z.uuid() })
+    .optional(),
   messages: z.array(messageSchema),
   queue: z.array(queueSchema),
   reasoningTranslations: z.array(reasoningTranslationSchema),

@@ -3,35 +3,20 @@ import { createHash, randomBytes } from "node:crypto";
 
 import type { WebAuthnCredential } from "@simplewebauthn/server";
 import { and, count, eq, gt, lte, sql } from "drizzle-orm";
-import { drizzle, type SQLiteBunDatabase } from "drizzle-orm/bun-sqlite";
 
 import { localize } from "../../i18n/server";
-import { databasePath } from "../../infrastructure/configuration/sessionPaths";
 import {
   accessSessions,
   challenges,
   credentials,
   registrationTickets,
 } from "../../infrastructure/database/schema";
-import {
-  closeDatabase,
-  openSessionDatabase,
-} from "../../infrastructure/database/sqlite/connection";
+import { sessionDatabase } from "../../infrastructure/database/sqlite/connection";
 
 export class AccessStore {
-  private readonly db: Database;
-  private readonly orm: SQLiteBunDatabase;
-  constructor(root = process.cwd()) {
-    this.db = openSessionDatabase(databasePath(), root);
-    try {
-      this.orm = drizzle({ client: this.db });
-    } catch (error) {
-      closeDatabase(this.db);
-      throw error;
-    }
-  }
-  close() {
-    closeDatabase(this.db);
+  private readonly orm;
+  constructor(db: Database) {
+    this.orm = sessionDatabase(db);
   }
   credentialCount() {
     return this.orm.select({ value: count() }).from(credentials).get()?.value ?? 0;

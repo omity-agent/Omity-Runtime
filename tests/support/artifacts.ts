@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { removeDatabaseDirectory } from "../../src/infrastructure/database/sqlite/connection";
-import { isProcessRunning } from "../../src/infrastructure/process/ownership";
+import { isProcessRunning } from "../../src/infrastructure/processLiveness";
 
 const artifactsDirectory = join(tmpdir(), "omity-test");
 export const testArtifactsRoot = join(artifactsDirectory, process.pid.toString());

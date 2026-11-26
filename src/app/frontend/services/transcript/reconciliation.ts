@@ -39,13 +39,21 @@ export function reconcileTranscript(
   }
   const replay = current?.events.filter((event) => event.id > snapshot.eventCursor) ?? [],
     events = mergeEventBatches(snapshot.events, replay),
-    replayLinks = replay.flatMap((event) => event.fileLinks ?? []);
+    replayLinks = replay.flatMap((event) => event.fileLinks ?? []),
+    offset = snapshot.messageHistory?.offset,
+    messages =
+      offset === null && current
+        ? current.messages
+        : offset && current
+          ? [...current.messages.slice(0, offset), ...snapshot.messages]
+          : snapshot.messages;
   return buildTranscript(
     {
       ...snapshot,
       eventCursor: Math.max(snapshot.eventCursor, current?.eventCursor ?? 0),
       events,
       fileLinks: mergeFileLinks(snapshot.fileLinks, replayLinks),
+      messages,
     },
     current,
     snapshot.eventCursor,

@@ -52,11 +52,15 @@ function followTranscript(queryClient: QueryClient, sessionId: string, waitMs: n
     }),
     snapshots = new AsyncQueuer<"snapshot">(
       async () => {
-        const snapshot = await loadTranscript(sessionId, signal);
+        const base = queryClient.getQueryData<TranscriptData>(key)?.messageHistory?.token,
+          snapshot = await loadTranscript(sessionId, signal, base);
         if (!signal.aborted) {
-          queryClient.setQueryData<TranscriptData>(key, (current) =>
-            reconcileTranscript(snapshot, current),
-          );
+          queryClient.setQueryData<TranscriptData>(key, (current) => {
+            const offset = snapshot.messageHistory?.offset;
+            return offset !== undefined && offset !== 0 && current?.messageHistory?.token !== base
+              ? current
+              : reconcileTranscript(snapshot, current);
+          });
         }
       },
       {
@@ -86,8 +90,15 @@ function followTranscript(queryClient: QueryClient, sessionId: string, waitMs: n
         deltas.add(readTranscriptEvent(event));
       },
       sync(event) {
-        readContentSyncEvent(event);
-        requestSnapshot();
+        const point = readContentSyncEvent(event),
+          cached = queryClient.getQueryData<TranscriptData>(key);
+        if (
+          !cached ||
+          cached.transcriptRevision < point.transcriptRevision ||
+          cached.snapshotCursor < point.eventCursor
+        ) {
+          requestSnapshot();
+        }
       },
     }),
     unfollowFocus = focusManager.subscribe((focused) => {

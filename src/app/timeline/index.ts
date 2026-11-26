@@ -1,5 +1,5 @@
 import type { FileLinkSet } from "../../fileLinks/types";
-import { persistedTimelineMessage } from "./build/message";
+import { projectPersistedHistory } from "./build/persisted";
 import { syntheticMessage } from "./build/synthetic";
 import type {
   DisplayEvent,
@@ -9,7 +9,7 @@ import type {
   TimelineMessage,
 } from "./contracts/projection";
 import type { TranscriptSnapshot } from "./contracts/records";
-import { groupAssistantMessages } from "./grouping";
+import { joinTimeline } from "./grouping";
 import { streamTimelineMessages, toolCallLifecycle } from "./streamEvents";
 import { sameToolCall } from "./tool/correlation";
 
@@ -33,30 +33,16 @@ export function buildTimeline({
   queue,
   reasoningTranslations,
 }: TranscriptSnapshot): TimelineMessage[] {
-  const outputs = new Map(
-      messages.flatMap((item) => [
-        ...Object.entries(item.toolOutputs ?? {}),
-        ...(item.role === "tool" && item.toolCallId
-          ? [[item.toolCallId, item as DisplayToolOutput] as const]
-          : []),
-      ]),
+  const { calls, history, inputs, lifecycle, outputs, sources } = projectPersistedHistory(
+      messages,
+      events,
+      fileLinks,
+      reasoningTranslations,
     ),
-    persistedToolCalls = messages.flatMap((item) => item.toolCalls),
-    lifecycle = toolCallLifecycle(events, outputs),
-    visible = messages
-      .filter((item) => item.role !== "tool")
-      .map((item) =>
-        persistedTimelineMessage(item, outputs, lifecycle, fileLinks, reasoningTranslations),
-      ),
-    persistedSourceIds = new Set(
-      messages.map((item) => item.sourceId).filter((id) => id !== undefined),
-    ),
-    knownInputs = new Set(messages.map((item) => item.inputId)),
     queuedUsers = new Map(
       queue
         .filter(
-          (item) =>
-            item.content.length > 0 && item.userMessageId == null && !knownInputs.has(item.id),
+          (item) => item.content.length > 0 && item.userMessageId == null && !inputs.has(item.id),
         )
         .map(
           (item) =>
@@ -78,18 +64,18 @@ export function buildTimeline({
       (event) =>
         (event.kind === "user_appended" && queuedUsers.has(event.inputId)) ||
         (activeQueueIds.has(event.inputId) &&
-          (event.kind === "tool_call_delta" || !persistedSourceIds.has(event.messageId))),
+          (event.kind === "tool_call_delta" || !sources.has(event.messageId))),
     ),
     live = timelineTail(
       liveEvents,
       queuedUsers,
       outputs,
       lifecycle,
-      persistedToolCalls,
+      calls,
       fileLinks,
       reasoningTranslations,
     );
-  return groupAssistantMessages([...visible, ...live]);
+  return joinTimeline(history, live);
 }
 function timelineTail(
   events: DisplayEvent[],

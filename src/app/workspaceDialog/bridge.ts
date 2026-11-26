@@ -8,7 +8,7 @@ import { z } from "zod";
 
 import { localize } from "../../i18n/server";
 
-export const workspaceDialogArgument = "--internal-pick-workspace";
+export const workspaceDialogProcessEnv = "OMITY_WORKSPACE_DIALOG_HELPER";
 const selectionSchema = z.string().min(1).nullable(),
   exitSchema = z.tuple([z.number().nullable(), z.string().nullable()]),
   knownPngWarning = "libpng warning: iCCP: known incorrect sRGB profile";
@@ -17,6 +17,7 @@ export async function pickWorkspaceDirectory(
   diagnostic: (line: string) => void = writeDiagnostic,
 ) {
   const child = spawn(executable, args, {
+    env: { ...process.env, [workspaceDialogProcessEnv]: "1" },
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
   });
@@ -42,8 +43,8 @@ export async function pickWorkspaceDirectory(
 function dialogCommand(): [string, ...string[]] {
   const entrypoint = Bun.isStandaloneExecutable
     ? []
-    : [fileURLToPath(new URL("../../cli.ts", import.meta.url))];
-  return [process.execPath, ...entrypoint, workspaceDialogArgument];
+    : [fileURLToPath(new URL("../../main.ts", import.meta.url))];
+  return [process.execPath, ...entrypoint];
 }
 async function forwardDiagnostics(
   stderr: NodeJS.ReadableStream,

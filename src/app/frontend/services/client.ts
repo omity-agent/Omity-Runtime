@@ -21,6 +21,7 @@ import {
 } from "../../contracts/results";
 import type { InitialSessionState } from "../../initialState";
 import type { ReasoningTranslation } from "../../timeline";
+import { transcriptHistoryHeader } from "../../timeline/contracts/records";
 import { api, request } from "./httpTransport";
 
 export type { SessionInfo } from "../../sessionState";
@@ -68,9 +69,16 @@ export async function pickWorkspacePath() {
   const result = await request(api["workspace-picker"].$post(), workspaceResponseSchema);
   return result.workspace;
 }
-export async function loadTranscript(sessionId: string, signal?: AbortSignal) {
+export async function loadTranscript(
+  sessionId: string,
+  signal?: AbortSignal,
+  historyToken?: string,
+) {
   return request(
-    sessions.transcript.$get(sessionRequest(sessionId), { init: { signal } }),
+    sessions.transcript.$get(sessionRequest(sessionId), {
+      ...(historyToken && { headers: { [transcriptHistoryHeader]: historyToken } }),
+      init: { signal },
+    }),
     transcriptResponseSchema,
   );
 }
