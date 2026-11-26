@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 
-import { type Control, isRunningStatus } from "../../../types";
+import { isRunningStatus, type PlaybackControl } from "../../../types";
 import type { SessionInfo } from "../../sessionState";
 import { setControl, setSessionProfile } from "./client";
 import { reportError } from "./errors";
@@ -35,10 +35,10 @@ export function createProfileChangeHandler(options: {
 }
 export function createControlChangeHandler(options: {
   activeSessionId?: string;
-  controlPendingFork: (control: Extract<Control, "running" | "step" | "pause">) => Promise<void>;
+  controlPendingFork: (control: PlaybackControl) => Promise<void>;
   pendingFork: boolean;
 }) {
-  return async (control: Extract<Control, "running" | "step" | "pause">) => {
+  return async (control: PlaybackControl) => {
     if (options.pendingFork) {
       await options.controlPendingFork(control);
       return;

@@ -62,7 +62,6 @@ export function agentFixture({
       logger,
       sessionId,
       settings,
-      toolExecutions: executions,
     };
   return {
     context,

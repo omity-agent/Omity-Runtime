@@ -28,7 +28,7 @@ function controllerHostEvents(
     transcript: (sessionId, event) => {
       events.notifyTranscript(sessionId, event);
     },
-    wait: (sessionId, delayMs) => events.wait(sessionId, delayMs),
+    wait: (sessionId, delayMs, signal) => events.wait(sessionId, delayMs, signal),
     warning: (sessionId, warning: BrowserWarning) => {
       events.notifyWarning({ ...warning, details: { ...warning.details, sessionId } });
     },

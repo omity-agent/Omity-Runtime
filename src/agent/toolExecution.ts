@@ -1,6 +1,7 @@
 import { type BaseMessage, type ToolCall, ToolMessage } from "@langchain/core/messages";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import type { LangGraphRunnableConfig } from "@langchain/langgraph";
+import { raceSignal } from "race-signal";
 
 import { requireCallId } from "../hooks/plan";
 import { localize } from "../i18n/server";
@@ -30,16 +31,17 @@ export function createToolInvoker(
     if (!tool) {
       throw new Error(localize("agent:tool.notFound", { value0: call.name }));
     }
-    const execution = options.toolExecutions?.begin(callId, config.signal);
+    const execution = options.toolExecutions?.begin(callId, config.signal),
+      signal = execution?.signal ?? config.signal;
     try {
-      execution?.signal.throwIfAborted();
-      const raw: unknown = await tool.invoke(
-          materializeFreeformInput(call, options.freeformToolParameters),
-          {
+      signal?.throwIfAborted();
+      const raw: unknown = await raceSignal(
+          tool.invoke(materializeFreeformInput(call, options.freeformToolParameters), {
             configurable: { ...config.configurable, sessionId: options.sessionId },
-            signal: execution?.signal ?? config.signal,
+            signal,
             toolCall: call,
-          },
+          }),
+          signal,
         ),
         duration = execution?.cancellationDurationMs();
       execution?.complete();

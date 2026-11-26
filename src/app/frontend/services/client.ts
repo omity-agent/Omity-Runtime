@@ -1,5 +1,5 @@
 import type { FileLinkAction } from "../../../fileLinks/types";
-import type { Control, Settings } from "../../../types";
+import type { ControlCommand, Settings } from "../../../types";
 import type { PendingAttachment } from "../../attachments/contract";
 import { submissionForm } from "../../attachments/submission";
 import {
@@ -151,10 +151,7 @@ export async function sendMessage(
     messageResponseSchema,
   );
 }
-export async function setControl(
-  sessionId: string,
-  control: Extract<Control, "running" | "step" | "pause" | "cancel">,
-) {
+export async function setControl(sessionId: string, control: ControlCommand) {
   return request(
     sessions.control.$post({ ...sessionRequest(sessionId), json: { control } }),
     controlResponseSchema,

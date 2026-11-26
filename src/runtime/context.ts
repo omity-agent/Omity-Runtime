@@ -4,7 +4,6 @@ import { BaseMessage } from "@langchain/core/messages";
 import { z } from "zod";
 
 import type { buildGraph } from "../agent";
-import type { ToolExecutions } from "../agent/toolExecutions";
 import type { ErrorDetails } from "../failures/details";
 import { localize } from "../i18n/server";
 import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
@@ -28,6 +27,7 @@ export interface HostObserver {
   token: (sessionId: string, inputId: number, text: string) => void;
   warning?: (sessionId: string, warning: BrowserWarning) => void;
 }
+export type HostWake = (delayMs: number, signal: AbortSignal) => Promise<void>;
 export interface HostContext {
   assertLease?: () => void;
   controller: AbortController;
@@ -38,12 +38,7 @@ export interface HostContext {
   sessionId: string;
   settings: Settings;
   stopping?: AbortSignal;
-  toolExecutions?: ToolExecutions;
-  wake?: (delayMs: number) => Promise<void>;
-}
-interface WakeContext {
-  controller: AbortController;
-  wake?: (delayMs: number) => Promise<void>;
+  wake?: HostWake;
 }
 export async function streamGraph(
   graph: Pick<AgentGraph, "stream">,
@@ -60,8 +55,15 @@ export async function streamGraph(
   }
   return result;
 }
-export function waitForWake(ctx: WakeContext, delayMs: number) {
-  return ctx.wake ? ctx.wake(delayMs) : abortableSleep(delayMs, ctx.controller.signal);
+export function waitForWake(
+  ctx: Pick<HostContext, "controller" | "wake">,
+  delayMs: number,
+  signal = ctx.controller.signal,
+) {
+  if (signal.aborted) {
+    return Promise.resolve();
+  }
+  return ctx.wake ? ctx.wake(delayMs, signal) : abortableSleep(delayMs, signal);
 }
 async function abortableSleep(delayMs: number, signal: AbortSignal) {
   try {

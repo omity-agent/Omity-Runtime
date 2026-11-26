@@ -8,6 +8,10 @@ import { sessionPaths } from "../../src/infrastructure/configuration/sessionPath
 import { settingsProfileNames } from "../../src/infrastructure/configuration/settings/context";
 import { userDataDirectory } from "../../src/infrastructure/configuration/settings/files";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
+import {
+  hasForcePauseRequest,
+  requestControlRecord,
+} from "../../src/infrastructure/database/records/execution/control";
 import { emptySessionDefinition } from "../../src/infrastructure/database/session/sessionDefinition";
 import { hostOwnerId } from "../../src/infrastructure/process/ownership";
 import { recoverHostSession } from "../../src/runtime/execution/recovery";
@@ -43,74 +47,47 @@ test("app startup preserves the activity time of an already paused session", asy
   fixture.db.setControl("already-paused", "pause");
   fixture.db.db.run("UPDATE sessions SET updated_at = 1 WHERE id = 'already-paused'");
   fixture.db.db.run("UPDATE messages SET created_at = 1 WHERE session_id = 'already-paused'");
+  const revision = fixture.db.transcriptRevision("already-paused");
   fixture.db.close();
   const controller = new AppController(fixture.root, { settingsContext: fixture.context });
   expect(controller.bootstrap().sessions[0]?.updatedAt).toBe(1);
+  expect(controller.transcript("already-paused").transcriptRevision).toBe(revision);
   await controller.close();
 });
-test("app startup reclaims the lease of its terminated predecessor", async () => {
-  const fixture = interruptedSession("abandoned"),
-    abandonedOwner = { pid: process.pid, token: randomUUID() };
-  fixture.db.acquireHostLease({
-    now: Date.now(),
-    ownerId: hostOwnerId({
-      instanceId: abandonedOwner.token,
-      kind: "app",
-      pid: abandonedOwner.pid,
-    }),
-    sessionId: "abandoned",
-    ttlMs: 30_000,
-  });
-  fixture.db.close();
-  const controller = new AppController(fixture.root, {
-      abandonedOwner,
-      settingsContext: fixture.context,
-    }),
-    reopened = openSession("abandoned");
-  expect(reopened.control("abandoned")).toBe("pause");
-  expect(reopened.runStatus(runOf(reopened, fixture.inputId))).toBe("paused");
-  expect(reopened.hostLease("abandoned")).toBeNull();
-  reopened.close();
-  await controller.close();
-});
-test("app startup never takes over a live standalone host", async () => {
-  const fixture = interruptedSession("live");
-  fixture.db.acquireHostLease({
-    now: Date.now(),
-    ownerId: hostOwnerId({
-      instanceId: randomUUID(),
-      kind: "standalone",
-      pid: process.pid,
-    }),
-    sessionId: "live",
-    ttlMs: 30_000,
-  });
-  fixture.db.close();
-  const controller = new AppController(fixture.root, { settingsContext: fixture.context }),
-    reopened = openSession("live");
-  expect(reopened.control("live")).toBe("running");
-  expect(reopened.runStatus(runOf(reopened, fixture.inputId))).toBe("running");
-  expect(reopened.hostLease("live")).not.toBeNull();
-  reopened.close();
-  await controller.close();
-});
-test("standalone Host uses the shared interrupted-session recovery", () => {
-  const fixture = interruptedSession("standalone");
-  fixture.db.acquireHostLease({
-    now: Date.now() - 1000,
-    ownerId: hostOwnerId({
-      instanceId: randomUUID(),
-      kind: "standalone",
-      pid: process.pid,
-    }),
-    sessionId: "standalone",
-    ttlMs: 1,
-  });
-  expect(recoverHostSession(fixture.db, "standalone").status).toBe("recovered");
-  expect(fixture.db.control("standalone")).toBe("pause");
-  expect(fixture.db.runStatus(runOf(fixture.db, fixture.inputId))).toBe("paused");
-  fixture.db.close();
-});
+test.each(["abandoned", "live", "expired"] as const)(
+  "startup reconciles a %s host lease without stealing live work",
+  async (sessionId) => {
+    const fixture = interruptedSession(sessionId),
+      abandonedOwner = { pid: process.pid, token: randomUUID() },
+      expired = sessionId === "expired",
+      live = sessionId === "live";
+    using db = fixture.db;
+    db.acquireHostLease({
+      now: Date.now() - (expired ? 60_000 : 0),
+      ownerId: hostOwnerId({
+        instanceId: abandonedOwner.token,
+        kind: sessionId === "abandoned" ? "app" : "standalone",
+        pid: abandonedOwner.pid,
+      }),
+      sessionId,
+      ttlMs: 30_000,
+    });
+    if (expired) {
+      requestControlRecord(db.db, sessionId, "force_pause");
+      expect(hasForcePauseRequest(db.db, sessionId)).toBe(true);
+      expect(recoverHostSession(db, sessionId).status).toBe("recovered");
+      expect(hasForcePauseRequest(db.db, sessionId)).toBe(false);
+    } else {
+      await new AppController(fixture.root, {
+        abandonedOwner,
+        settingsContext: fixture.context,
+      }).close();
+    }
+    expect(db.control(sessionId)).toBe(live ? "running" : "pause");
+    expect(db.runStatus(runOf(db, fixture.inputId))).toBe(live ? "running" : "paused");
+    expect(db.hostLease(sessionId) !== null).toBe(live);
+  },
+);
 test("resume reloads the current MCP configuration", async () => {
   const fixture = interruptedSession("resume-failure");
   fixture.db.close();
@@ -118,14 +95,7 @@ test("resume reloads the current MCP configuration", async () => {
   const controller = new AppController(fixture.root, { settingsContext: fixture.context }),
     failures = spyOn(controller.events, "notifyFailure");
   try {
-    let caught: unknown;
-    try {
-      await controller.control("resume-failure", "running");
-    } catch (error) {
-      caught = error;
-    }
-    expect(caught).toBeInstanceOf(Error);
-    expect(String(caught)).toContain("MCP 配置");
+    await expect(controller.control("resume-failure", "running")).rejects.toThrow("MCP 配置");
     expect(failures).toHaveBeenCalledTimes(1);
     expect(failures.mock.calls[0]?.[0]).toMatchObject({
       error: { message: containingText("MCP 配置") },

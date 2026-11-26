@@ -65,6 +65,7 @@
     "customEventInvalid": "LangGraph custom 事件不是 AI SDK 流事件"
   },
   "pause": {
+    "forced": "用户强制暂停了当前操作",
     "mcpUnavailable": "MCP stdio 不可用，队列已暂停",
     "cancelled": "暂停状态收到 cancel",
     "cancelledAndHostClosed": "暂停状态收到 cancel，Host 已关闭",

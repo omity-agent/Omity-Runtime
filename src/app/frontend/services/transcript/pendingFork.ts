@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 
-import type { Control } from "../../../../types";
+import type { PlaybackControl } from "../../../../types";
 import type { PendingAttachment } from "../../../attachments/contract";
 import { localize } from "../../i18n";
 import { type ForkPage, forkPage, sessionPage, type usePageRouting } from "../../route";
@@ -25,9 +25,8 @@ type SubmitMessage = (
   draftRevision: number,
   attachments: PendingAttachment[],
 ) => Promise<void>;
-type ForkControl = Extract<Control, "running" | "step" | "pause">;
 type ForkAction =
-  | { kind: "control"; value: ForkControl }
+  | { kind: "control"; value: PlaybackControl }
   | { kind: "discard" }
   | {
       kind: "send";
@@ -100,7 +99,7 @@ export function usePendingFork({
       navigate(forkPage(sourceSessionId, beforeMessageId), page !== undefined);
     },
     busy: page !== undefined && action !== undefined,
-    control: (value: ForkControl) => run({ kind: "control", value }),
+    control: (value: PlaybackControl) => run({ kind: "control", value }),
     discard: () => run({ kind: "discard" }),
     pendingMessage:
       action?.kind === "send" && page && action.optimistic.sessionId === composerDraftKey(page)

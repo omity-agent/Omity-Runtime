@@ -1,9 +1,9 @@
 import type { Database } from "bun:sqlite";
 
-import { and, eq, lt, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, lt, sql } from "drizzle-orm";
 
 import { localize } from "../../../../i18n/server";
-import { events, streamClock } from "../../schema";
+import { events, fileLinkSets, streamClock } from "../../schema";
 import type { StreamEvent, StreamEventDraft } from "../../schema/streamEvent";
 import { sessionDatabase } from "../../sqlite/connection";
 
@@ -86,6 +86,13 @@ export function insertUserBoundaryEvent(db: Database, sessionId: string, inputId
     value: null,
   });
 }
-export function deleteInputStream(db: Database, inputId: number) {
-  sessionDatabase(db).delete(events).where(eq(events.inputId, inputId)).run();
+export function deleteStreamSegment(db: Database, inputId: number, after: number) {
+  const orm = sessionDatabase(db),
+    segment = and(eq(events.inputId, inputId), gt(events.id, after)),
+    owners = orm.select({ ownerId: events.messageId }).from(events).where(segment);
+  orm
+    .delete(fileLinkSets)
+    .where(and(eq(fileLinkSets.inputId, inputId), inArray(fileLinkSets.ownerId, owners)))
+    .run();
+  return orm.delete(events).where(segment).run().changes;
 }

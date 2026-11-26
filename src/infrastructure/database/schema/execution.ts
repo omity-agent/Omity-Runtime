@@ -41,6 +41,11 @@ export const runs = sqliteTable(
 export function activeRuns(status: SQLiteColumn = runs.status) {
   return sql`${status} in ('pending', 'running', 'paused')`;
 }
+export const forcePauseRequests = sqliteTable("force_pause_requests", {
+  sessionId: text("session_id")
+    .primaryKey()
+    .references(() => sessions.id, { onDelete: "cascade" }),
+});
 export const inputs = sqliteTable(
   "inputs",
   {

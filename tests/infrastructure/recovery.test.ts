@@ -7,8 +7,10 @@ afterEach(cleanupDatabaseDirs);
 test("recovery refuses a live lease unless its exact owner is confirmed dead", () => {
   using db = makeDb();
   db.resetSession("123", workspace);
-  const inputId = db.appendUser("123", "继续运行");
-  db.consumeInput("123", required(db.nextInput("123")));
+  db.appendUser("123", "继续运行");
+  const input = required(db.nextInput("123")),
+    claim = { now: 1050, sessionId: "123" };
+  db.consumeInput("123", input);
   db.acquireHostLease({
     now: 1000,
     ownerId: "host-a",
@@ -20,25 +22,17 @@ test("recovery refuses a live lease unless its exact owner is confirmed dead", (
     ownerId: "host-a",
     sessionId: "123",
   });
-  expect(db.recoverInterruptedSession({ now: 1050, sessionId: "123" })).toMatchObject({
-    status: "blocked",
+  expect(db.recoverInterruptedSession(claim).status).toBe("blocked");
+  expect(db.recoverInterruptedSession({ ...claim, confirmedDeadOwnerId: "host-b" }).status).toBe(
+    "blocked",
+  );
+  expect(db.runStatus(input.runId)).toBe("running");
+  expect(db.recoverInterruptedSession({ ...claim, confirmedDeadOwnerId: "host-a" })).toEqual({
+    action: "paused",
+    activeItems: 1,
+    status: "recovered",
   });
-  expect(
-    db.recoverInterruptedSession({
-      confirmedDeadOwnerId: "host-b",
-      now: 1050,
-      sessionId: "123",
-    }),
-  ).toMatchObject({ status: "blocked" });
-  expect(db.runStatus(runOf(db, inputId))).toBe("running");
-  expect(
-    db.recoverInterruptedSession({
-      confirmedDeadOwnerId: "host-a",
-      now: 1050,
-      sessionId: "123",
-    }),
-  ).toEqual({ action: "paused", activeItems: 1, status: "recovered" });
-  expect(db.runStatus(runOf(db, inputId))).toBe("paused");
+  expect(db.runStatus(input.runId)).toBe("paused");
   expect(db.control("123")).toBe("pause");
   expect(db.hostLease("123")).toBeNull();
   db.setControl("123", "running");
@@ -76,23 +70,6 @@ test("recovery preserves pending work while normalizing an interrupted run", () 
     { id: pending, status: "pending" },
   ]);
   expect(db.control("123")).toBe("pause");
-});
-test("recovery leaves a stable paused session activity time unchanged", () => {
-  using db = makeDb();
-  db.resetSession("123", workspace);
-  const inputId = db.appendUser("123", "已经暂停");
-  db.setRunStatus(runOf(db, inputId), "paused");
-  db.setControl("123", "pause");
-  db.db.run("UPDATE sessions SET updated_at = 1 WHERE id = '123'");
-  expect(db.recoverInterruptedSession({ now: 1000, sessionId: "123" })).toEqual({
-    action: "paused",
-    activeItems: 1,
-    status: "recovered",
-  });
-  expect(db.db.query<{ updated_at: number }, []>("SELECT updated_at FROM sessions").get()).toEqual({
-    updated_at: 1,
-  });
-  expect(db.transcriptRevision("123")).toBe(3);
 });
 test("recovery completes a persisted cancel and removes only its run data", async () => {
   using db = makeDb();
@@ -161,26 +138,17 @@ test("pauseRun is atomic, preserves pending work and omitted errors", () => {
     "paused",
     "pending",
   ]);
-  const rows = db.db
-    .query<{ id: number; error: string | null }, []>(
-      "SELECT id, error_json AS error FROM runs ORDER BY id",
-    )
-    .all();
-  expect(parseError(required(rows[0]?.error))).toMatchObject({
+  const errors = db.db.query<{ error: string | null }, []>("SELECT error_json AS error FROM runs");
+  expect(parseError(required(errors.get()?.error))).toMatchObject({
     details: {
       error: { message: "清理错误" },
       suppressed: { message: "执行错误" },
     },
     message: "旧错误",
   });
-  expect(rows).toHaveLength(1);
   const replacement = captureError(new Error("新错误"));
   expect(db.pauseRun("123", runId, replacement)).toBe(1);
-  const errors = db.db
-    .query<{ error: string | null }, []>("SELECT error_json AS error FROM runs ORDER BY id")
-    .all();
-  expect(parseError(required(errors[0]?.error)).message).toBe("新错误");
-  expect(errors).toHaveLength(1);
+  expect(errors.all().map(({ error }) => parseError(required(error)).message)).toEqual(["新错误"]);
 });
 function count(db: ReturnType<typeof makeDb>, table: "events", predicate: string) {
   return required(

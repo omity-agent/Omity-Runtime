@@ -6,7 +6,6 @@ interface ToolExecutionHandle {
   complete: () => void;
 }
 interface ToolExecution {
-  active: boolean;
   startedAt?: number;
   cancelledAt?: number;
   controller: AbortController;
@@ -24,18 +23,12 @@ export class ToolExecutions {
   constructor(private readonly options: ToolExecutionsOptions = {}) {
     this.now = options.now ?? Date.now;
   }
-  announce(callId: string) {
-    if (!this.executions.has(callId)) {
-      this.executions.set(callId, this.createExecution());
-    }
-  }
   begin(callId: string, parentSignal?: AbortSignal): ToolExecutionHandle {
-    const execution = this.executions.get(callId) ?? this.createExecution();
-    if (execution.active) {
+    if (this.executions.has(callId)) {
       throw new Error(localize("agent:tool.alreadyRunning", { value0: callId }));
     }
+    const execution: ToolExecution = { controller: new AbortController() };
     this.executions.set(callId, execution);
-    execution.active = true;
     this.startPolling(callId, execution);
     if (execution.cancelledAt === undefined) {
       execution.startedAt = this.now();
@@ -75,12 +68,6 @@ export class ToolExecutions {
       clearInterval(execution.timer);
     }
     this.executions.clear();
-  }
-  private createExecution(): ToolExecution {
-    return {
-      active: false,
-      controller: new AbortController(),
-    };
   }
   private startPolling(callId: string, execution: ToolExecution) {
     const { cancellationRequested } = this.options;

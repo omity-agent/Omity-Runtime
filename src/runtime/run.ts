@@ -2,6 +2,7 @@ import type { BaseMessage } from "@langchain/core/messages";
 
 import type { ErrorDetails } from "../failures/details";
 import { localize } from "../i18n/server";
+import { clearForcePauseRequest } from "../infrastructure/database/records/execution/control";
 import { consumeStepControlRecord } from "../infrastructure/database/records/session/metadata";
 import { runTransaction } from "../infrastructure/database/sqlite/connection";
 import type { QueuedInput } from "../types";
@@ -64,6 +65,7 @@ export function cancelRun(ctx: HostContext, run: ActiveRun) {
 function finalizeRun(ctx: HostContext, run: ActiveRun, status: "done" | "canceled") {
   runTransaction(ctx.db.db, () => {
     ctx.db.setRunStatus(run.id, status);
+    clearForcePauseRequest(ctx.db.db, ctx.sessionId);
     if (status === "canceled") {
       ctx.db.setControl(ctx.sessionId, "running");
     } else {

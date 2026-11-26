@@ -1,11 +1,11 @@
 import { localize } from "../../i18n/server";
-import { recordAiStreamPart, recordToolStarted } from "../aiStream";
 import { prepareGraphInput } from "../appends";
-import { type HostContext, readGraphState, streamGraph } from "../context";
+import { type HostContext, readGraphState } from "../context";
 import { waitBeforeModelRetry } from "../retry";
 import { type ActiveRun, CanceledRunError, cancelRun, finishRun, setRunStatus } from "../run";
 import { completeActiveStream, createStreamLogState, discardActiveStream } from "../stream";
-import { hookInvocationSchema, recordHookToolStarted } from "../stream/invocations";
+import { streamGraphSegment } from "../stream/graph";
+import { recordToolStarted } from "../stream/model";
 import { isRetryableModelError } from "../transientErrors";
 import { pauseForStop, waitIfPaused } from "./pause";
 import { waitAfterCompletedStep } from "./step";
@@ -30,16 +30,16 @@ export async function runGraphUntilBoundary(
   const streamState = createStreamLogState();
   for (;;) {
     ctx.assertLease?.();
-    const control = ctx.db.control(ctx.sessionId);
-    if (control === "cancel") {
-      cancelRun(ctx, run);
-      return;
-    }
     const state = await readGraphState(ctx.graph, config);
     if (synchronizeHistory && state && state.values.messages.length > 0) {
       await ctx.db.syncHistory(ctx.sessionId, state.values.messages);
       completeActiveStream(streamState);
       ctx.observer?.changed?.(ctx.sessionId);
+    }
+    const control = ctx.db.control(ctx.sessionId);
+    if (control === "cancel") {
+      cancelRun(ctx, run);
+      return;
     }
     if (pauseForStop(ctx, run)) {
       return;
@@ -73,25 +73,22 @@ export async function runGraphUntilBoundary(
       finishRun(ctx, run, state.values.messages, state.values.hookPlan);
       return;
     }
+    const cursor = ctx.db.eventCursor();
     if (operation && state) {
       announceOperation(ctx, item.id, operation, state.values.messages);
     }
     try {
-      const stream = await streamGraph(ctx.graph, input, {
-        ...config,
-        signal: ctx.controller.signal,
-        streamMode: "custom",
-      });
-      for await (const event of stream) {
-        await handleGraphEvent(ctx, item.id, event, streamState);
-      }
-      if (stepping && operation) {
+      const completed = await streamGraphSegment(ctx, item.id, input, config, streamState);
+      if (!completed) {
+        discardActiveStream(ctx, streamState, item.id, cursor);
+        steppedOperation = undefined;
+      } else if (stepping && operation) {
         steppedOperation ??= operation;
       }
       retries = 0;
       synchronizeHistory = true;
     } catch (error) {
-      discardActiveStream(ctx, streamState, item.id);
+      discardActiveStream(ctx, streamState, item.id, cursor);
       synchronizeHistory = false;
       if (!isRetryableModelError(error)) {
         throw error;
@@ -134,32 +131,4 @@ function announceOperation(
   if (operation === "tools") {
     recordToolStarted(ctx, messages, inputId);
   }
-}
-async function handleGraphEvent(
-  ctx: HostContext,
-  inputId: number,
-  part: unknown,
-  state: ReturnType<typeof createStreamLogState>,
-) {
-  if (
-    typeof part === "object" &&
-    part !== null &&
-    "kind" in part &&
-    part.kind === "hook_tool_started"
-  ) {
-    ctx.observer?.activity?.(ctx.sessionId, "tool");
-    recordHookToolStarted(ctx, inputId, hookInvocationSchema.parse(part));
-    return;
-  }
-  if (!isAiStreamEvent(part)) {
-    throw new Error(localize("runtime:boundary.customEventInvalid"));
-  }
-  await recordAiStreamPart(ctx, inputId, part, state);
-}
-function isAiStreamEvent(value: unknown): value is Parameters<typeof recordAiStreamPart>[2] {
-  if (typeof value !== "object" || value === null || !("part" in value)) {
-    return false;
-  }
-  const { part } = value;
-  return typeof part === "object" && part !== null && "type" in part;
 }

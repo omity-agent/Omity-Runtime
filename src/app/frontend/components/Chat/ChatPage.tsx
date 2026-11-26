@@ -1,4 +1,4 @@
-import { type Control, isRunningStatus, type SessionStatus } from "../../../../types";
+import { isRunningStatus, type PlaybackControl, type SessionStatus } from "../../../../types";
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
 import type { InitialSessionState } from "../../../initialState";
 import type { TimelineMessage } from "../../../timeline";
@@ -77,7 +77,7 @@ export function ChatPage({
   ) => Promise<void>;
   askUser: AskUserQuestion | null;
   onAnswer: (callId: string, answer: AskUserAnswer) => Promise<void>;
-  onControl: (control: Extract<Control, "running" | "step" | "pause">) => Promise<void>;
+  onControl: (control: PlaybackControl) => Promise<void>;
   onDelete?: () => Promise<void>;
   onFork: (messageId: number) => Promise<void>;
   onPickWorkspace: () => Promise<string | null>;

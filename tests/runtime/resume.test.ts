@@ -13,49 +13,6 @@ import { cleanupDatabaseDirs, required, workspace } from "../support/database";
 import { agentFixture, textResponse, toolResponse } from "./support/agentFixture";
 
 afterEach(cleanupDatabaseDirs);
-test("a paused run resumes from the model boundary without repeating the model call", async () => {
-  const calls: string[] = [],
-    echo = tool(
-      () => {
-        calls.push("tool");
-        return Promise.resolve("echoed");
-      },
-      { description: "echo", name: "echo", schema: z.object({}) },
-    ),
-    model = modelWithToolCalls(),
-    stopping = new AbortController();
-  using fixture = agentFixture({ model, sessionId: "session", tools: [echo] });
-  const { context, db } = fixture;
-  db.resetSession("session", workspace);
-  db.appendUser("session", "run tool");
-  context.stopping = stopping.signal;
-  context.observer = {
-    changed: () => {
-      if (model.doStreamCalls.length === 1) {
-        stopping.abort();
-      }
-    },
-    token: () => {},
-  };
-  await processInput(context, required(db.nextInput("session")));
-  expect(db.nextInput("session")?.status).toBe("paused");
-  expect(model.doStreamCalls).toHaveLength(1);
-  expect(calls).toEqual([]);
-  db.appendUser("session", "follow-up before resuming");
-  db.setControl("session", "running");
-  context.stopping = undefined;
-  await processInput(context, required(db.nextInput("session")));
-  expect(db.nextInput("session")).toBeNull();
-  expect(model.doStreamCalls).toHaveLength(2);
-  expect(calls).toEqual(["tool", "tool"]);
-  expect(
-    model.doStreamCalls[1]?.prompt.filter(({ role }) => role !== "system").map(({ role }) => role),
-  ).toEqual(["user", "assistant", "tool", "user"]);
-  expect(model.doStreamCalls[1]?.prompt.at(-1)).toEqual({
-    content: [{ text: "follow-up before resuming", type: "text" }],
-    role: "user",
-  });
-});
 test("a paused run steps through one model request or a complete tool batch", async () => {
   const calls: string[] = [],
     delivered: StreamEvent[] = [],

@@ -3,7 +3,7 @@ import { afterEach, expect, test } from "bun:test";
 import { HumanMessage, ToolMessage } from "@langchain/core/messages";
 
 import { toModelMessages } from "../../../src/agent/messages/encode";
-import { type AiStreamEvent, streamAiModel } from "../../../src/agent/model/request";
+import { type ModelStreamEvent, streamAiModel } from "../../../src/agent/model/request";
 import { aiModelTools } from "../../../src/agent/model/tools";
 import { containingItems } from "../../support/asymmetric";
 import { cleanupDatabaseDirs, makeDb, required, workspace } from "../../support/database";
@@ -22,7 +22,7 @@ test.each([...geminiApis])(
         sessionId: "gemini",
         settings: wire.settings,
         tools: aiModelTools([echoDefinition], api),
-        write: ({ part }: AiStreamEvent) => {
+        write: ({ part }: ModelStreamEvent) => {
           events.push(part.type);
         },
       },

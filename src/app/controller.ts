@@ -6,7 +6,7 @@ import { readComposerDraftRecord } from "../infrastructure/database/records/sess
 import { appOwner } from "../infrastructure/process/ownership";
 import { AskUserRuntime } from "../infrastructure/toolbox/runtime";
 import { deleteStoredSession, requestHostToolCancellation } from "../storedSessions";
-import { type Control, isRunningStatus, type Settings } from "../types";
+import { type ControlCommand, isRunningStatus, type Settings } from "../types";
 import type { MessageSubmission, SessionSubmission } from "./attachments/contract";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { writeSessionDraft } from "./composition/draftStorage";
@@ -122,7 +122,7 @@ export class AppController {
     this.registry.require(sessionId);
     return writeSessionDraft(sessionId, content, revision);
   }
-  async control(sessionId: string, control: Control) {
+  async control(sessionId: string, control: ControlCommand) {
     const session = this.registry.require(sessionId);
     if (control === "running" || control === "step") {
       await this.ensureHost(session);

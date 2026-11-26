@@ -17,7 +17,7 @@ interface RetryContext {
     model: Pick<HostContext["settings"]["model"], "retryDelayMs">;
   };
   stopping?: AbortSignal;
-  wake?: (delayMs: number) => Promise<void>;
+  wake?: HostContext["wake"];
 }
 interface RetryControls {
   pause: () => Promise<boolean>;

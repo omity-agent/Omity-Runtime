@@ -16,7 +16,7 @@ export interface AppHostEvents {
   failure: (sessionId: string, error: ErrorDetails) => void;
   transcript: (sessionId: string, event: StreamEvent) => void;
   warning: (sessionId: string, warning: BrowserWarning) => void;
-  wait: (sessionId: string, delayMs: number) => Promise<void>;
+  wait: (sessionId: string, delayMs: number, signal: AbortSignal) => Promise<void>;
 }
 export function createHostObserver(
   events: AppHostEvents,

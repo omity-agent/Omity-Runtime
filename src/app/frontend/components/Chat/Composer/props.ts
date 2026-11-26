@@ -1,4 +1,4 @@
-import type { Control, SessionStatus } from "../../../../../types";
+import type { PlaybackControl, SessionStatus } from "../../../../../types";
 import type { AttachmentSettings, PendingAttachment } from "../../../../attachments/contract";
 import type { TokenUsage } from "../../../../timeline";
 import type { ComposerDraftTarget } from "../../../services/composerDrafts";
@@ -24,7 +24,7 @@ export interface ComposerProps {
   stepAvailable?: boolean;
   usage?: TokenUsage | null;
   askUser?: AskUserQuestion | null;
-  onControl?: (control: Extract<Control, "running" | "step" | "pause">) => Promise<void>;
+  onControl?: (control: PlaybackControl) => Promise<void>;
   onDelete?: () => Promise<void>;
   onAnswer?: (callId: string, answer: AskUserAnswer) => Promise<void>;
   onProfileChange?: (profile?: string) => void | Promise<void>;

@@ -1,6 +1,6 @@
-import { requestStepControlRecord } from "./infrastructure/database/records/execution/control";
+import { requestControlRecord } from "./infrastructure/database/records/execution/control";
 import { openStoredSession } from "./storedSessions";
-import type { Control } from "./types";
+import type { ControlCommand } from "./types";
 
 export function appendSessionMessage(sessionId: string, content: string) {
   using db = openStoredSession(sessionId);
@@ -15,17 +15,8 @@ export function submitSessionMessage(
   using db = openStoredSession(sessionId);
   return { inputId: db.submitUser(sessionId, content, draftRevision, submissionId) };
 }
-export function setSessionControl(sessionId: string, control: Control) {
+export function setSessionControl(sessionId: string, control: ControlCommand) {
   using db = openStoredSession(sessionId);
-  if (control === "step") {
-    requestStepControlRecord(db.db, sessionId);
-    return { control };
-  }
-  const stored =
-    control === "cancel" &&
-    (db.control(sessionId) === "pause" || db.control(sessionId) === "pause_cancel")
-      ? "pause_cancel"
-      : control;
-  db.setControl(sessionId, stored);
+  requestControlRecord(db.db, sessionId, control);
   return { control };
 }

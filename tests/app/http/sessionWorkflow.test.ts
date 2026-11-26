@@ -26,7 +26,7 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   expect(await transcript.json()).toMatchObject({
     messages: containingItems([partialObject({ content: "workflow answer", role: "assistant" })]),
   });
-  const control = await fetch(`${endpoint}/control`, json({ control: "pause" })),
+  const control = await fetch(`${endpoint}/control`, json({ control: "force_pause" })),
     newerDraft = await fetch(
       `${endpoint}/composer-draft`,
       json({ content: "newer draft", revision: 4 }),
@@ -37,6 +37,7 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
     ),
     currentDraft = await fetch(`${endpoint}/composer-draft`);
   expect(control.status).toBe(200);
+  expect(await control.json()).toEqual({ control: "force_pause" });
   expect(newerDraft.status).toBe(200);
   expect(staleDraft.status).toBe(200);
   expect(await currentDraft.json()).toMatchObject({

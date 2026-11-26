@@ -1,14 +1,13 @@
 import { LoaderCircle, Pause, Play, StepForward } from "lucide-react";
-import { useCallback } from "react";
+import { type MouseEvent, useCallback } from "react";
 import { css } from "styled-system/css";
 
-import type { Control, SessionStatus } from "../../../../../../types";
+import type { PlaybackControl, SessionStatus } from "../../../../../../types";
 import { useTranslation } from "../../../../i18n";
 import { reportPromiseErrors } from "../../../../services/errors";
 import { IconButton } from "../../../ui";
 import { runtimeControls } from "../arrangement";
 
-type RequestedControl = Extract<Control, "running" | "step" | "pause">;
 const activeIcon = css({ animationStyle: "activity" }),
   controlStates = {
     error: "resume",
@@ -29,34 +28,40 @@ export function RuntimeControl({
   controlDisabled: boolean;
   sessionStatus?: SessionStatus;
   stepAvailable?: boolean;
-  onControl?: (control: RequestedControl) => Promise<void>;
+  onControl?: (control: PlaybackControl) => Promise<void>;
 }) {
   const { t } = useTranslation(),
     requestControl = useCallback(
-      (control: RequestedControl) => {
+      (control: PlaybackControl) => {
         if (onControl) {
           reportPromiseErrors(onControl(control));
         }
       },
       [onControl],
     ),
-    pause = useCallback(() => {
-      requestControl("pause");
-    }, [requestControl]),
+    controlState = sessionStatus && controlStates[sessionStatus],
+    pausing = controlState === "pausing",
+    pause = useCallback(
+      (event: MouseEvent<HTMLButtonElement>) => {
+        requestControl(event.ctrlKey ? "force_pause" : pausing ? "running" : "pause");
+      },
+      [pausing, requestControl],
+    ),
     resume = useCallback(() => {
       requestControl("running");
     }, [requestControl]),
     step = useCallback(() => {
       requestControl("step");
     }, [requestControl]),
-    controlState = sessionStatus && controlStates[sessionStatus],
     disabled = controlDisabled || sessionStatus === "idle",
     controlLabel = controlState ? t(`conversation:${controlState}`) : "",
     resumeLabel = t("conversation:resumeContinuous"),
     stepLabel = t("conversation:step"),
-    cancelPauseLabel = t("conversation:cancelPause"),
-    control =
-      controlState === "resume" || controlState === "stepping" ? (
+    pauseLabel = t(pausing ? "conversation:cancelPause" : "conversation:pause"),
+    canPause = controlState === "pause" || pausing || controlState === "stepping";
+  return (
+    <fieldset aria-label={controlLabel} className={runtimeControls}>
+      {controlState === "resume" || controlState === "stepping" ? (
         <>
           <IconButton
             aria-label={resumeLabel}
@@ -84,25 +89,19 @@ export function RuntimeControl({
             </IconButton>
           ) : null}
         </>
-      ) : controlState ? (
+      ) : null}
+      {canPause ? (
         <IconButton
-          aria-label={controlState === "pausing" ? cancelPauseLabel : controlLabel}
+          aria-label={pauseLabel}
           disabled={disabled}
-          onClick={controlState === "pause" ? pause : resume}
-          title={controlState === "pausing" ? cancelPauseLabel : controlLabel}
+          onClick={pause}
+          title={pauseLabel}
           type="button"
           visual="ghost"
         >
-          {controlState === "pausing" ? (
-            <LoaderCircle className={activeIcon} size={16} />
-          ) : (
-            <Pause size={16} />
-          )}
+          {pausing ? <LoaderCircle className={activeIcon} size={16} /> : <Pause size={16} />}
         </IconButton>
-      ) : null;
-  return (
-    <fieldset aria-label={controlLabel} className={runtimeControls}>
-      {control}
+      ) : null}
     </fieldset>
   );
 }

@@ -2,7 +2,7 @@ import type { SettingsContext } from "../../infrastructure/configuration/setting
 import type { SessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
 import type { LoadedMcp } from "../../infrastructure/mcp/tools/catalog";
 import type { ProcessOwner } from "../../infrastructure/process/ownership";
-import type { HostObserver } from "../context";
+import type { HostObserver, HostWake } from "../context";
 
 interface HostControls {
   cancelTool: (callId: string) => boolean;
@@ -22,6 +22,6 @@ export interface HostRunOptions {
   recoverInterrupted?: boolean;
   settingsContext?: SettingsContext;
   stoppingController?: AbortController;
-  wake?: (delayMs: number) => Promise<void>;
+  wake?: HostWake;
   wireSigint?: boolean;
 }

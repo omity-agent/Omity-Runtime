@@ -74,7 +74,7 @@ export class AppHosts {
         quiet: true,
         settingsContext: this.settingsContext,
         stoppingController: stopping,
-        wake: (delayMs) => this.events.wait(sessionId, delayMs),
+        wake: (delayMs, signal) => this.events.wait(sessionId, delayMs, signal),
       }),
       done = this.finishHost(hostPromise, sessionId, force, () => initialized, ready);
     this.running.set(sessionId, {

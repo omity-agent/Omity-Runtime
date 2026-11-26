@@ -1,7 +1,7 @@
 import { BrushCleaning, Trash2 } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-import type { Control, SessionStatus } from "../../../../../../types";
+import type { PlaybackControl, SessionStatus } from "../../../../../../types";
 import type { TokenUsage } from "../../../../../timeline";
 import { useTranslation } from "../../../../i18n";
 import { clearTemporaryFiles } from "../../../../services/client";
@@ -43,7 +43,7 @@ export function Actions({
   submitLabel?: string;
   stepAvailable?: boolean;
   usage?: TokenUsage | null;
-  onControl?: (control: Extract<Control, "running" | "step" | "pause">) => Promise<void>;
+  onControl?: (control: PlaybackControl) => Promise<void>;
   onDelete?: () => Promise<void>;
   onProfileChange?: (profile?: string) => void | Promise<void>;
 }) {

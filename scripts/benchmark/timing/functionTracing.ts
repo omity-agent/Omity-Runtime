@@ -19,7 +19,7 @@ const [
   import("../../../src/agent/model/request"),
   import("../../../src/fileLinks/messageSources"),
   import("../../../src/infrastructure/database/records/transcript/messages/sync"),
-  import("../../../src/runtime/aiStream"),
+  import("../../../src/runtime/stream/model"),
   import("../../../src/runtime/largeOutput"),
   import("../../../src/runtime/tokenizer"),
 ]);
@@ -35,7 +35,7 @@ export class FunctionTracing {
       options: modelProvider.conversationRequestOptions,
       output: largeOutput.redirectLargeToolOutput,
       request: modelRequests.streamAiModel,
-      stream: streamEvents.recordAiStreamPart,
+      stream: streamEvents.recordModelStreamPart,
       sync: historySync.prepareMessageSync,
       toModel: outgoingMessages.toModelMessages,
       toolStarted: streamEvents.recordToolStarted,
@@ -51,7 +51,7 @@ export class FunctionTracing {
             this.wrap(originals.fromModel, "模型响应转换为会话消息"),
           ),
         () =>
-          spyOn(streamEvents, "recordAiStreamPart").mockImplementation(
+          spyOn(streamEvents, "recordModelStreamPart").mockImplementation(
             this.wrap(originals.stream, "模型流收尾及事件处理"),
           ),
         () =>

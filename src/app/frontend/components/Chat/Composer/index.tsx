@@ -68,7 +68,9 @@ export function Composer({
     } = useMessageCandidates(content, change, userMessages, predictions),
     handleControl = useCallback(
       async (control: Parameters<NonNullable<ComposerProps["onControl"]>>[0]) => {
-        await flush();
+        if (control !== "force_pause") {
+          await flush();
+        }
         await onControl?.(control);
       },
       // eslint-disable-next-line react-hooks/preserve-manual-memoization -- Composer opts out of compilation; keep callback identity stable while draft refs change.

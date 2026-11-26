@@ -1,79 +1,115 @@
 import { afterEach, expect, test } from "bun:test";
 
-import { HumanMessage, ToolMessage } from "@langchain/core/messages";
+import type { LanguageModelV4StreamPart } from "@ai-sdk/provider";
+import { ToolMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { MockLanguageModelV4 } from "ai/test";
+import { raceSignal } from "race-signal";
 import { z } from "zod";
 
-import { streamAiModel } from "../../src/agent/model/request";
+import { AppEvents } from "../../src/app/events";
 import { buildTimeline } from "../../src/app/timeline";
 import { loadTranscript } from "../../src/app/transcript";
+import { requestControlRecord } from "../../src/infrastructure/database/records/execution/control";
 import { processInput } from "../../src/runtime/consumeInputs";
 import { hostLoop } from "../../src/runtime/loop";
-import { testSettings } from "../support/configuration";
-import { cleanupDatabaseDirs, required, workspace } from "../support/database";
+import { cleanupDatabaseDirs, makeDatabases, required, workspace } from "../support/database";
 import { agentFixture, textResponse, toolResponse } from "./support/agentFixture";
 
 afterEach(cleanupDatabaseDirs);
-test.each([false, true])(
-  "model cancellation preserves its reason (already aborted: %s)",
-  async (aborted) => {
-    const started = Promise.withResolvers<void>(),
-      released = Promise.withResolvers<void>(),
-      controller = new AbortController(),
-      reason = new Error("generation cancelled"),
-      settings = testSettings(),
-      model = new MockLanguageModelV4({
-        doStream: async () => {
-          started.resolve();
-          await released.promise;
-          return textResponse("late reply");
+test.each(["model", "tool"] as const)(
+  "forced pause interrupts a running %s and resumes the same run",
+  async (mode) => {
+    const databases = makeDatabases(2);
+    using hostDb = required(databases[0]),
+      clientDb = required(databases[1]);
+    let toolCalls = 0;
+    const events = mode === "model" ? new AppEvents() : undefined,
+      started = Promise.withResolvers<AbortSignal | undefined>(),
+      release = Promise.withResolvers<string>(),
+      paused = Promise.withResolvers<void>(),
+      idle = Promise.withResolvers<string>(),
+      timeout = AbortSignal.timeout(3000),
+      wait = <T>(promise: Promise<T>) => raceSignal(promise, timeout),
+      command = (control: Parameters<typeof requestControlRecord>[2]) => {
+        requestControlRecord(clientDb.db, "target", control);
+        events?.wake("target");
+      },
+      echo = tool(
+        (_, { signal }) => {
+          if (++toolCalls === 1) {
+            started.resolve(signal instanceof AbortSignal ? signal : undefined);
+            return release.promise;
+          }
+          return "tool response";
         },
+        { name: "echo", schema: z.object({}) },
+      ),
+      partial = new ReadableStream<LanguageModelV4StreamPart>({
+        start(stream) {
+          stream.enqueue({ id: "answer", type: "text-start" });
+          stream.enqueue({ delta: "discard me", id: "answer", type: "text-delta" });
+        },
+      }),
+      model = new MockLanguageModelV4({
+        doStream: [mode === "model" ? { stream: partial } : toolResponse(), textResponse()],
       });
-    settings.model.maxConcurrentRequests = 1;
-    if (aborted) {
-      controller.abort(reason);
+    using fixture = agentFixture({ db: hostDb, model, tools: [echo] });
+    const { context, db } = fixture;
+    if (events) {
+      context.settings.host.pollMs = context.settings.host.pausePollMs = 30_000;
+      context.wake = (delayMs, signal) => events.wait("target", delayMs, signal);
     }
-    const pending = streamAiModel({
-      messages: [new HumanMessage("hello")],
-      model,
-      sessionId: "target",
-      settings,
-      signal: controller.signal,
-      tools: {},
-    });
+    db.resetSession("target", workspace);
+    db.appendUser("target", "hello");
+    const { runId } = required(db.nextInput("target"));
+    context.observer = {
+      activity: (_, status) => {
+        if (status === "idle") idle.resolve(db.runStatus(runId));
+      },
+      changed: () => {
+        if (db.runStatus(runId) === "paused") paused.resolve();
+      },
+      token: () => started.resolve(model.doStreamCalls[0]?.abortSignal),
+    };
+    const running = hostLoop(context);
     try {
-      if (!aborted) {
-        await started.promise;
-        controller.abort(reason);
+      const signal = required(await wait(started.promise));
+      command("pause");
+      await Bun.sleep(10);
+      expect(db.runStatus(runId)).toBe("running");
+      expect(signal.aborted).toBe(false);
+      command("force_pause");
+      await wait(paused.promise);
+      expect(signal.aborted).toBe(true);
+      const snapshot = loadTranscript(db.db, "target");
+      expect(snapshot.queue).toMatchObject([{ error: null, status: "paused" }]);
+      expect(snapshot.events.map(({ kind }) => kind)).not.toContain(
+        mode === "model" ? "assistant_text_delta" : "tool_started",
+      );
+      if (mode === "tool") {
+        expect(snapshot.events.map(({ kind }) => kind)).toContain("tool_call_delta");
+        db.appendUser("target", "follow-up while paused");
       }
-      await expect(pending).rejects.toBe(reason);
-      expect(model.doStreamCalls).toHaveLength(aborted ? 0 : 1);
+      command("running");
+      expect(await wait(idle.promise)).toBe("done");
+      expect(model.doStreamCalls).toHaveLength(2);
+      expect(toolCalls).toBe(mode === "tool" ? 2 : 0);
+      expect(db.history("target").at(-1)?.text).toBe("continued");
+      if (mode === "tool") {
+        expect(
+          model.doStreamCalls[1]?.prompt
+            .filter(({ role }) => role !== "system")
+            .map(({ role }) => role),
+        ).toEqual(["user", "assistant", "tool", "user"]);
+      }
     } finally {
-      released.resolve();
-      await Promise.allSettled([pending]);
+      release.resolve("released by cleanup");
+      context.controller.abort();
+      await running;
     }
   },
 );
-test("the host reports idle only after marking the active run done", async () => {
-  using fixture = agentFixture();
-  const { context, db } = fixture;
-  db.resetSession("target", workspace);
-  db.appendUser("target", "run before idle");
-  const { runId } = required(db.nextInput("target")),
-    statusAtIdle = Promise.withResolvers<ReturnType<typeof db.runStatus>>();
-  context.observer = {
-    activity: (_, activity) => {
-      if (activity === "idle") {
-        statusAtIdle.resolve(db.runStatus(runId));
-        context.controller.abort();
-      }
-    },
-    token: () => {},
-  };
-  await hostLoop(context);
-  expect(await statusAtIdle.promise).toBe("done");
-});
 test("paused cancellation is visible immediately and survives host reconstruction", async () => {
   let called = 0;
   const echo = tool(

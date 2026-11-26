@@ -124,7 +124,6 @@ export async function runHostSession(
     sessionId: mode.sessionId,
     settings,
     stopping: stoppingController.signal,
-    toolExecutions,
     wake: options.wake,
   });
   requireLease().assertOwned();

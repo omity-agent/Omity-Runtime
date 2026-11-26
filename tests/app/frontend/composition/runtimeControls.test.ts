@@ -6,7 +6,7 @@ import { browserFixture, settleLayout } from "../scrolling/browserSession";
 import { emitState, emptyTranscript, fixtureSessions, openPreparation } from "./preparationBrowser";
 
 const browser = browserFixture();
-test("session controls follow sidebar updates even when the transcript is still running", async () => {
+test("session controls follow live status and Ctrl-click upgrades a pending pause", async () => {
   const fixture = await openPreparation(browser);
   await using page = fixture.page;
   const working = fixtureSessions[0]!,
@@ -17,17 +17,26 @@ test("session controls follow sidebar updates even when the transcript is still 
     resume = controls.getByRole("button", { name: "继续持续运行" }),
     step = controls.getByRole("button", { name: "向前一步" }),
     cancelPause = controls.getByRole("button", { name: "取消暂停" }),
-    remove = controls.getByRole("button", { name: "删除会话" });
+    remove = controls.getByRole("button", { name: "删除会话" }),
+    commands: unknown[] = [];
+  await page.route("**/api/sessions/working/control", (route) => {
+    const json: unknown = route.request().postDataJSON();
+    commands.push(json);
+    return route.fulfill({ json });
+  });
   await page.route("**/api/sessions/working/transcript", (route) =>
     route.fulfill({ json: queuedTranscript(content, 1) }),
   );
   await session.click();
   await browserExpect(page.getByText(content, { exact: true })).toBeVisible();
   await browserExpect(pause).toBeEnabled();
+  await pause.click();
+  await browserExpect.poll(() => commands).toEqual([{ control: "pause" }]);
 
   await emitState(page, "session", { ...working, status: "pausing" });
   await browserExpect(session.getByLabel("正在暂停", { exact: true })).toBeVisible();
-  await browserExpect(cancelPause).toBeEnabled();
+  await cancelPause.click({ modifiers: ["Control"] });
+  await browserExpect.poll(() => commands.at(-1)).toEqual({ control: "force_pause" });
   await emitState(page, "session", { ...working, status: "paused", stepAvailable: true });
   await browserExpect(session.getByLabel("暂停", { exact: true })).toBeVisible();
   await browserExpect(resume).toBeEnabled();
@@ -39,6 +48,10 @@ test("session controls follow sidebar updates even when the transcript is still 
   await browserExpect(session.getByLabel("单步执行中", { exact: true })).toBeVisible();
   await browserExpect(controls.getByRole("button", { name: "单步执行中" })).toBeDisabled();
   await browserExpect(remove).toBeDisabled();
+  await pause.click({ modifiers: ["Control"] });
+  await browserExpect
+    .poll(() => commands)
+    .toEqual([{ control: "pause" }, { control: "force_pause" }, { control: "force_pause" }]);
   await emitState(page, "session", working);
   await browserExpect(session.getByLabel("接收中", { exact: true })).toBeVisible();
   await browserExpect(pause).toBeEnabled();
@@ -71,27 +84,13 @@ test("sync bursts during a pending transcript request schedule one later snapsho
     .click();
   try {
     await initial.promise;
-    const overlappingReads = await page.evaluate(async () => {
-      const originalFetch = globalThis.fetch;
-      let requests = 0;
-      globalThis.fetch = Object.assign((input: RequestInfo | URL, init?: RequestInit) => {
-        const url = input instanceof Request ? input.url : String(input);
-        if (url.endsWith("/transcript")) {
-          requests += 1;
-        }
-        return originalFetch(input, init);
-      }, originalFetch);
-      try {
-        for (let index = 0; index < 3; index += 1) {
-          dispatchEvent(new MessageEvent("sync", { data: '{"eventCursor":0}', lastEventId: "0" }));
-        }
-        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-        return requests;
-      } finally {
-        globalThis.fetch = originalFetch;
+    await page.evaluate(() => {
+      for (let index = 0; index < 3; index += 1) {
+        dispatchEvent(new MessageEvent("sync", { data: '{"eventCursor":0}', lastEventId: "0" }));
       }
     });
-    expect(overlappingReads).toBe(0);
+    await settleLayout(page);
+    expect(reads).toBe(1);
   } finally {
     release.resolve();
   }

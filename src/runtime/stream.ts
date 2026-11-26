@@ -13,8 +13,13 @@ export function createStreamLogState(): StreamLogState {
     toolIndexes: new Map(),
   };
 }
-export function discardActiveStream(ctx: HostContext, state: StreamLogState, inputId: number) {
-  ctx.db.discardInputStream(inputId);
+export function discardActiveStream(
+  ctx: HostContext,
+  state: StreamLogState,
+  inputId: number,
+  after: number,
+) {
+  ctx.db.discardStreamSegment(inputId, after);
   ctx.observer?.changed?.(ctx.sessionId);
   completeActiveStream(state);
 }

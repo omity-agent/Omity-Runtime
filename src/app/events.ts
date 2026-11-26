@@ -34,14 +34,18 @@ export class AppEvents {
   wake(sessionId: string) {
     this.bus.dispatchEvent(new Event(`wake:${sessionId}`));
   }
-  async wait(sessionId: string, delayMs: number) {
+  async wait(sessionId: string, delayMs: number, until?: AbortSignal) {
     const controller = new AbortController(),
-      { signal } = controller;
+      signal = until ? AbortSignal.any([until, controller.signal]) : controller.signal;
     try {
       await Promise.race([
         once(this.bus, `wake:${sessionId}`, { signal }),
         sleep(delayMs, undefined, { signal }),
       ]);
+    } catch (error) {
+      if (!until?.aborted) {
+        throw error;
+      }
     } finally {
       controller.abort();
     }

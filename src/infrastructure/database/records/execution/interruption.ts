@@ -13,6 +13,7 @@ import {
   writeControlRecord,
 } from "../session/metadata";
 import { pruneUnreferencedMessages } from "../transcript/messages/writing";
+import { clearForcePauseRequest } from "./control";
 import {
   acquireHostLeaseRecord,
   type HostLeaseClaim,
@@ -46,6 +47,7 @@ function recoverInterruptedSessionRecord(
   }
   const active = activeInputRows(db, claim.sessionId),
     control = readControlRecord(db, claim.sessionId);
+  clearForcePauseRequest(db, claim.sessionId);
   let action: "paused" | "canceled" | "none" = "none";
   if (control === "cancel") {
     cancelActiveRuns(db, claim.sessionId, active);
@@ -113,6 +115,7 @@ export class RecoverableDatabase {
   pauseRun(sessionId: string, runId: number, error?: ErrorDetails) {
     return runTransaction(this.db, () => {
       writeControlRecord(this.db, sessionId, "pause");
+      clearForcePauseRequest(this.db, sessionId);
       return pauseRunRecord(this.db, sessionId, runId, error);
     });
   }

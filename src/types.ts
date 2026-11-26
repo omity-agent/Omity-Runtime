@@ -14,7 +14,10 @@ export type {
   Settings,
 } from "./infrastructure/configuration/settings/definition";
 export const controlSchema = z.enum(["running", "step", "pause", "cancel", "pause_cancel"]),
-  controlCommandSchema = controlSchema.exclude(["pause_cancel"]),
+  controlCommandSchema = z.enum([
+    ...controlSchema.exclude(["pause_cancel"]).options,
+    "force_pause",
+  ]),
   sessionStatusSchema = z.enum([
     "tool",
     "waiting",
@@ -37,6 +40,8 @@ export const controlSchema = z.enum(["running", "step", "pause", "cancel", "paus
     "generate-content",
   ]);
 export type Control = z.infer<typeof controlSchema>;
+export type ControlCommand = z.infer<typeof controlCommandSchema>;
+export type PlaybackControl = Exclude<ControlCommand, "cancel">;
 export type SessionStatus = z.infer<typeof sessionStatusSchema>;
 export type HostActivity = Extract<SessionStatus, "tool" | "waiting" | "streaming" | "idle">;
 export type RunStatus = z.infer<typeof runStatusSchema>;

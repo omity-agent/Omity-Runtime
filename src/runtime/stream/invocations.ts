@@ -1,7 +1,7 @@
 import { toUIMessageChunk } from "ai";
 import { z } from "zod";
 
-import type { AiStreamEvent } from "../../agent/model/request";
+import type { ModelStreamEvent } from "../../agent/model/request";
 import { captureError } from "../../failures/details";
 import { localize } from "../../i18n/server";
 import { findToolStreamIdentity } from "../../infrastructure/database/records/transcript/toolStreamIdentity";
@@ -11,7 +11,7 @@ import type { StreamLogState } from "../stream";
 import { displayToolInput, textOutputSnapshot, toolOutputText, toolValueText } from "../toolOutput";
 import { toolPart } from "./parts";
 
-type InvocationContext = Pick<HostContext, "db" | "sessionId" | "toolExecutions">;
+type InvocationContext = Pick<HostContext, "db" | "sessionId">;
 interface ToolIdentity {
   messageId: string;
   partId: string;
@@ -66,14 +66,11 @@ export function toolStartedEvent(
 export async function recordInvocation(
   ctx: InvocationContext,
   inputId: number,
-  event: AiStreamEvent,
+  event: ModelStreamEvent,
   state: StreamLogState,
 ) {
   const chunk = toUIMessageChunk(event.part);
   if (chunk?.type === "tool-input-start") {
-    if (!chunk.providerExecuted) {
-      ctx.toolExecutions?.announce(chunk.toolCallId);
-    }
     const identity = invocationIdentity(state, chunk.toolCallId);
     await ctx.db.appendStream(ctx.sessionId, {
       inputId,

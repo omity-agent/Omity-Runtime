@@ -56,9 +56,6 @@ export function writeFileLinkSets(db: Database, sessionId: string, links: Stored
       .run();
   }
 }
-export function deleteInputFileLinks(db: Database, inputId: number) {
-  sessionDatabase(db).delete(fileLinkSets).where(eq(fileLinkSets.inputId, inputId)).run();
-}
 export function clearStreamLinks(db: Database, sessionId: string) {
   return sessionDatabase(db)
     .delete(fileLinkSets)

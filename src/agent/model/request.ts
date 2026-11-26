@@ -19,9 +19,9 @@ interface ModelRequestOptions {
   settings: Settings;
   signal?: AbortSignal;
   tools: ToolSet;
-  write?: (part: AiStreamEvent) => void;
+  write?: (part: ModelStreamEvent) => void;
 }
-export interface AiStreamEvent {
+export interface ModelStreamEvent {
   freeform?: true;
   part: TextStreamPart<ToolSet>;
 }
@@ -57,7 +57,7 @@ export async function streamAiModel(options: ModelRequestOptions) {
       }
     }
   }
-  function selectWinner(id: number, parts: AiStreamEvent[]) {
+  function selectWinner(id: number, parts: ModelStreamEvent[]) {
     if (winnerId !== undefined) {
       return winnerId === id;
     }
@@ -73,7 +73,7 @@ export async function streamAiModel(options: ModelRequestOptions) {
     id: number,
     controller: AbortController,
   ): Promise<AIMessage | undefined> {
-    const buffered: AiStreamEvent[] = [];
+    const buffered: ModelStreamEvent[] = [];
     try {
       const result = streamText({
         abortSignal: options.signal
@@ -95,7 +95,7 @@ export async function streamAiModel(options: ModelRequestOptions) {
         if (part.type === "error") {
           throw part.error;
         }
-        const event: AiStreamEvent = {
+        const event: ModelStreamEvent = {
           ...(part.type === "tool-input-start" && options.freeformToolNames?.has(part.toolName)
             ? { freeform: true }
             : {}),

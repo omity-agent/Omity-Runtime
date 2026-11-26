@@ -31,10 +31,9 @@ import {
   touchSessionRecord,
   writeControlRecord,
 } from "./records/session/metadata";
-import { deleteInputFileLinks } from "./records/transcript/matchedFiles";
 import { loadMessages } from "./records/transcript/messages/history";
 import {
-  deleteInputStream,
+  deleteStreamSegment,
   insertUserBoundaryEvent,
   streamEventCursor,
 } from "./records/transcript/streamEvents";
@@ -186,11 +185,11 @@ export class AgentDatabase extends RecoverableDatabase {
   appendPlainStreams(sessionId: string, events: readonly PlainStreamEventDraft[]) {
     return appendPlainStreams({ db: this.db, notify: this.notify, sessionId }, events);
   }
-  discardInputStream(inputId: number) {
+  discardStreamSegment(inputId: number, after: number) {
     runTransaction(this.db, () => {
-      touchInputSessionRecord(this.db, inputId);
-      deleteInputStream(this.db, inputId);
-      deleteInputFileLinks(this.db, inputId);
+      if (deleteStreamSegment(this.db, inputId, after) > 0) {
+        touchInputSessionRecord(this.db, inputId);
+      }
     });
     this.fileLinks.discardInputs([inputId]);
   }
